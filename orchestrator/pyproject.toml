@@ -4,9 +4,12 @@ version = "0.1.0"
 description = "Container orchestrator for the colorscheme-generator tool"
 requires-python = ">=3.12"
 dependencies = [
-    "colorscheme-generator @ file:///home/inumaki/Development/v2.0/color-scheme-generator/core",
+    "colorscheme-generator",
     "container-manager @ git+https://github.com/RandomGenericUsername/container-manager",
 ]
+
+[tool.uv.sources]
+colorscheme-generator = { path = "../core", editable = true }
 
 [project.scripts]
 color-scheme = "color_scheme.cli:main"
