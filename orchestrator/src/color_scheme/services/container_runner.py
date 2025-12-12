@@ -63,11 +63,16 @@ class ContainerRunner:
 
         container_name = f"color-scheme-{backend}-{uuid.uuid4().hex[:8]}"
 
+        # Extract and mount image path if present in args
+        translated_args, image_mount = self._extract_and_mount_image(args)
+
         # Build volume mounts
         volumes = self._prepare_volume_mounts()
+        if image_mount:
+            volumes.append(image_mount)
 
-        # Build the command
-        cmd = build_passthrough_command(command, args)
+        # Build the command with translated paths
+        cmd = build_passthrough_command(command, translated_args)
 
         logger.info(
             f"Running {backend} backend: {' '.join(cmd)}"
@@ -164,6 +169,63 @@ class ContainerRunner:
         logger.info(f"Generating scheme with {backend}")
         return self.run_backend(backend, "generate", args)
 
+    def _extract_and_mount_image(
+        self, args: list[str]
+    ) -> tuple[list[str], Optional[VolumeMount]]:
+        """
+        Extract image path from args and prepare volume mount.
+
+        Args:
+            args: Command arguments that may contain an image path
+
+        Returns:
+            Tuple of (translated_args, volume_mount) where translated_args
+            has the image path replaced with the container path, and
+            volume_mount is the mount for the image directory (or None)
+        """
+        from pathlib import Path
+
+        # Look for image path in args (it's the first positional argument)
+        image_path = None
+        image_arg_index = None
+
+        for i, arg in enumerate(args):
+            # Skip flags and their values
+            if arg.startswith("-"):
+                continue
+            # Found a positional argument - assume it's the image path
+            if not arg.startswith("-"):
+                image_path = arg
+                image_arg_index = i
+                break
+
+        if not image_path or image_arg_index is None or not Path(image_path).exists():
+            # No image path found or doesn't exist - return args unchanged
+            return args, None
+
+        # Expand and resolve the path
+        host_path = Path(image_path).expanduser().resolve()
+
+        # Mount the parent directory
+        mount_source = str(host_path.parent)
+        mount_target = "/workspace/input"
+
+        # Translate the path for the container
+        container_path = f"{mount_target}/{host_path.name}"
+
+        # Replace the image path in args with the container path
+        translated_args = args.copy()
+        translated_args[image_arg_index] = container_path
+
+        logger.debug(f"Mounting image directory: {mount_source} -> {mount_target}")
+        logger.debug(f"Translated image path: {host_path} -> {container_path}")
+
+        return translated_args, VolumeMount(
+            source=mount_source,
+            target=mount_target,
+            read_only=True,
+        )
+
     def _prepare_volume_mounts(self) -> list[VolumeMount]:
         """
         Prepare volume mounts for container.
@@ -190,18 +252,21 @@ class ContainerRunner:
             mounts.append(
                 VolumeMount(
                     source=str(self.config.cache_dir),
-                    target="/root/.cache/color-scheme",
+                    target="/home/colorscheme/.cache",
                     read_only=False,
                 )
             )
 
-        # Mount config directory
+        # Mount config directory - mount entire .config to allow backends to write their own subdirs
         if self.config.config_dir:
+            # Create parent .config directory
+            config_parent = self.config.config_dir.parent
+            config_parent.mkdir(parents=True, exist_ok=True)
             self.config.config_dir.mkdir(parents=True, exist_ok=True)
             mounts.append(
                 VolumeMount(
-                    source=str(self.config.config_dir),
-                    target="/root/.config/color-scheme",
+                    source=str(config_parent),
+                    target="/home/colorscheme/.config",
                     read_only=False,
                 )
             )
@@ -217,7 +282,7 @@ class ContainerRunner:
             Dictionary of environment variables
         """
         env = {
-            "HOME": "/root",
+            "HOME": "/home/colorscheme",
             "PYTHONUNBUFFERED": "1",
             "PYTHONDONTWRITEBYTECODE": "1",
         }

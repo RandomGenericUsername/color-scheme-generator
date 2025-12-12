@@ -128,23 +128,23 @@ docker-build: docker-build-pywal docker-build-wallust docker-build-custom ## Bui
 
 docker-build-pywal: ## Build pywal backend Docker image
 	@echo "$(BLUE)Building pywal Docker image...$(NC)"
-	docker build -f docker/Dockerfile.pywal -t colorscheme-generator:pywal .
+	cd .. && docker build -f orchestrator/docker/Dockerfile.pywal -t color-scheme-pywal:latest .
 
 docker-build-wallust: ## Build wallust backend Docker image
 	@echo "$(BLUE)Building wallust Docker image...$(NC)"
-	docker build -f docker/Dockerfile.wallust -t colorscheme-generator:wallust .
+	docker build -f docker/Dockerfile.wallust -t color-scheme-wallust:latest .
 
 docker-build-custom: ## Build custom backend Docker image (requires backend.py)
 	@if [ -f backend.py ]; then \
 		echo "$(BLUE)Building custom Docker image...$(NC)"; \
-		docker build -f docker/Dockerfile.custom -t colorscheme-generator:custom .; \
+		docker build -f docker/Dockerfile.custom -t color-scheme-custom:latest .; \
 	else \
 		echo "$(YELLOW)Skipping custom backend build (backend.py not found)$(NC)"; \
 	fi
 
 docker-clean: ## Remove all Docker images
 	@echo "$(BLUE)Removing Docker images...$(NC)"
-	docker rmi colorscheme-generator:pywal colorscheme-generator:wallust colorscheme-generator:custom || true
+	docker rmi color-scheme-pywal:latest color-scheme-wallust:latest color-scheme-custom:latest || true
 
 docker-test: docker-build ## Build images and run a test
 	@echo "$(BLUE)Testing Docker setup...$(NC)"

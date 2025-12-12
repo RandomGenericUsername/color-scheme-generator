@@ -51,8 +51,12 @@ def build_passthrough_command(
 
     Returns:
         Complete command list for container execution
+
+    Note:
+        The Docker images have ENTRYPOINT set to colorscheme-gen,
+        so we only need to pass the subcommand and args.
     """
-    return ["colorscheme-generator", core_command] + additional_args
+    return [core_command] + additional_args
 
 
 def format_volume_mount(
@@ -100,7 +104,8 @@ def get_backend_dockerfile(backend_name: str) -> Path:
         )
 
     # Get the orchestrator's docker directory
-    orchestrator_dir = Path(__file__).parent.parent.parent
+    # Path: src/color_scheme/utils/passthrough.py -> go up 4 levels to orchestrator root
+    orchestrator_dir = Path(__file__).parent.parent.parent.parent
     dockerfile = orchestrator_dir / "docker" / f"Dockerfile.{backend_name}"
 
     if not dockerfile.exists():
