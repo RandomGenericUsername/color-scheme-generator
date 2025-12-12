@@ -1,9 +1,13 @@
-"""Command-line interface for colorscheme generator."""
+"""Command-line interface for colorscheme generator using Typer."""
 
-import argparse
 import json
 import sys
 from pathlib import Path
+from typing import Annotated, Optional
+
+import typer
+from rich.console import Console
+from rich.table import Table
 
 from colorscheme_generator import ColorSchemeGeneratorFactory
 from colorscheme_generator.config.enums import Backend, ColorFormat
@@ -20,6 +24,16 @@ from colorscheme_generator.core.types import (
     ColorScheme,
     GeneratorConfig,
 )
+
+# Create Typer app
+app = typer.Typer(
+    name="colorscheme-gen",
+    help="Generate color schemes from images using multiple backends",
+    add_completion=False,
+)
+
+# Rich console for pretty output
+console = Console()
 
 
 def _ansi_color_block(color: Color, width: int = 8) -> str:
@@ -104,42 +118,33 @@ def _load_colorscheme_from_json(path: Path) -> ColorScheme:
 
 
 def _show_colorscheme(scheme: ColorScheme) -> None:
-    """Display colorscheme in terminal with colored blocks.
+    """Display a color scheme with colored blocks.
 
     Args:
         scheme: ColorScheme to display
     """
-    # Print header
-    print("\n" + "=" * 60)
-    print("Color Scheme")
-    print("=" * 60)
-    print(f"Source:  {scheme.source_image}")
-    print(f"Backend: {scheme.backend}")
-    print("=" * 60)
+    console.print("\n[bold]Color Scheme[/bold]")
+    console.print(f"Source: {scheme.source_image}")
+    console.print(f"Backend: {scheme.backend}\n")
 
-    # Print special colors
-    print("\nSpecial Colors:")
-    print("-" * 60)
+    # Special colors
+    console.print("[bold]Special Colors:[/bold]")
+    console.print(
+        f"Background: {_ansi_color_block(scheme.background)} {scheme.background.hex}"
+    )
+    console.print(
+        f"Foreground: {_ansi_color_block(scheme.foreground)} {scheme.foreground.hex}"
+    )
+    console.print(
+        f"Cursor:     {_ansi_color_block(scheme.cursor)} {scheme.cursor.hex}"
+    )
 
-    special_colors = [
-        ("background", scheme.background),
-        ("foreground", scheme.foreground),
-        ("cursor", scheme.cursor),
-    ]
-
-    for name, color in special_colors:
-        block = _ansi_color_block(color)
-        print(f"{name:12} {block}  {color.hex}")
-
-    # Print terminal colors
-    print("\nTerminal Colors:")
-    print("-" * 60)
-
+    # Regular colors
+    console.print("\n[bold]Colors:[/bold]")
     for i, color in enumerate(scheme.colors):
-        block = _ansi_color_block(color)
-        print(f"color{i:<7} {block}  {color.hex}")
-
-    print("=" * 60 + "\n")
+        console.print(
+            f"Color {i:2d}:   {_ansi_color_block(color)} {color.hex}"
+        )
 
 
 def _find_last_colorscheme() -> Path | None:
@@ -164,201 +169,349 @@ def _find_last_colorscheme() -> Path | None:
         return None
 
 
-def cmd_show(args: argparse.Namespace) -> int:
-    """Show colorscheme with colored blocks in terminal.
+@app.command()
+def show(
+    file: Annotated[
+        Optional[Path],
+        typer.Option(
+            "--file",
+            "-f",
+            help="Path to color scheme JSON file",
+            exists=True,
+            dir_okay=False,
+        ),
+    ] = None,
+    last: Annotated[
+        bool,
+        typer.Option(
+            "--last",
+            "-l",
+            help="Show last generated color scheme",
+        ),
+    ] = False,
+    verbose: Annotated[
+        bool,
+        typer.Option(
+            "--verbose",
+            "-v",
+            help="Verbose output",
+        ),
+    ] = False,
+) -> None:
+    """Display a color scheme with colored blocks.
 
-    Args:
-        args: Parsed command-line arguments
-
-    Returns:
-        Exit code (0 for success, 1 for error)
+    Examples:
+        colorscheme-gen show --file colors.json
+        colorscheme-gen show --last
     """
-    # Determine which file to show
-    if args.last:
+    # Determine which file to use
+    if last:
         colors_file = _find_last_colorscheme()
         if not colors_file:
-            print(
-                "Error: No recent colorscheme found. "
+            console.print(
+                "[red]Error:[/red] No recent colorscheme found. "
                 "Generate one first or specify a file.",
                 file=sys.stderr,
             )
-            return 1
-        if args.verbose:
-            print(f"Using last generated: {colors_file}")
+            raise typer.Exit(1)
+        if verbose:
+            console.print(f"Using last generated: {colors_file}")
     else:
-        colors_file = args.file
+        colors_file = file
         if not colors_file:
-            print(
-                "Error: Either --file or --last must be specified",
+            console.print(
+                "[red]Error:[/red] Either --file or --last must be specified",
                 file=sys.stderr,
             )
-            return 1
+            raise typer.Exit(1)
 
     # Check file exists
     if not colors_file.exists():
-        print(f"Error: File not found: {colors_file}", file=sys.stderr)
-        return 1
+        console.print(
+            f"[red]Error:[/red] File not found: {colors_file}",
+            file=sys.stderr,
+        )
+        raise typer.Exit(1)
 
     # Load and display colorscheme
     try:
         scheme = _load_colorscheme_from_json(colors_file)
         _show_colorscheme(scheme)
-        return 0
     except Exception as e:
-        print(f"Error: Failed to load colorscheme: {e}", file=sys.stderr)
-        if args.verbose:
+        console.print(
+            f"[red]Error:[/red] Failed to load colorscheme: {e}",
+            file=sys.stderr,
+        )
+        if verbose:
             import traceback
-
             traceback.print_exc()
-        return 1
+        raise typer.Exit(1)
 
 
-def cmd_generate(args: argparse.Namespace) -> int:
-    """Generate colorscheme from image.
+@app.command()
+def generate(
+    image: Annotated[
+        Optional[Path],
+        typer.Argument(
+            help="Path to source image",
+            exists=True,
+            dir_okay=False,
+        ),
+    ] = None,
+    backend: Annotated[
+        str,
+        typer.Option(
+            "--backend",
+            "-b",
+            help="Backend to use for color extraction",
+        ),
+    ] = "auto",
+    formats: Annotated[
+        Optional[list[str]],
+        typer.Option(
+            "--formats",
+            "-f",
+            help="Output formats (can specify multiple)",
+        ),
+    ] = None,
+    output_dir: Annotated[
+        Optional[Path],
+        typer.Option(
+            "--output-dir",
+            "-o",
+            help="Output directory for generated files",
+        ),
+    ] = None,
+    saturation: Annotated[
+        Optional[float],
+        typer.Option(
+            "--saturation",
+            "-s",
+            help="Saturation multiplier (0.0=grayscale, 1.0=unchanged, 2.0=max)",
+        ),
+    ] = None,
+    pywal_algorithm: Annotated[
+        Optional[str],
+        typer.Option(
+            "--pywal-algorithm",
+            help="Pywal color extraction algorithm",
+        ),
+    ] = None,
+    wallust_backend: Annotated[
+        Optional[str],
+        typer.Option(
+            "--wallust-backend",
+            help="Wallust backend type",
+        ),
+    ] = None,
+    custom_algorithm: Annotated[
+        Optional[str],
+        typer.Option(
+            "--custom-algorithm",
+            help="Custom backend algorithm",
+        ),
+    ] = None,
+    custom_clusters: Annotated[
+        Optional[int],
+        typer.Option(
+            "--custom-clusters",
+            help="Number of color clusters for custom backend",
+        ),
+    ] = None,
+    template_dir: Annotated[
+        Optional[Path],
+        typer.Option(
+            "--template-dir",
+            help="Custom template directory",
+            exists=True,
+            dir_okay=True,
+        ),
+    ] = None,
+    list_backends: Annotated[
+        bool,
+        typer.Option(
+            "--list-backends",
+            help="List available backends and exit",
+        ),
+    ] = False,
+    verbose: Annotated[
+        bool,
+        typer.Option(
+            "--verbose",
+            "-v",
+            help="Verbose output",
+        ),
+    ] = False,
+) -> None:
+    """Generate color scheme from an image.
 
-    Args:
-        args: Parsed command-line arguments
-
-    Returns:
-        Exit code (0 for success, 1 for error)
+    Examples:
+        colorscheme-gen generate wallpaper.png
+        colorscheme-gen generate wallpaper.png --backend pywal
+        colorscheme-gen generate wallpaper.png -o ~/.config/colors -f json css
     """
-
     # Load settings
     try:
         settings = Settings.get()
     except Exception as e:
-        print(f"Error loading settings: {e}", file=sys.stderr)
-        return 1
+        console.print(
+            f"[red]Error loading settings:[/red] {e}",
+            file=sys.stderr,
+        )
+        raise typer.Exit(1)
 
     # List backends if requested
-    if hasattr(args, "list_backends") and args.list_backends:
+    if list_backends:
         available = ColorSchemeGeneratorFactory.list_available(settings)
-        print("Available backends:")
-        for backend in available:
-            print(f"  - {backend}")
-        return 0
+        console.print("[bold]Available backends:[/bold]")
+        for backend_name in available:
+            console.print(f"  • {backend_name}")
+        return
 
     # Require image argument
-    if not args.image:
-        print("Error: image argument is required", file=sys.stderr)
-        return 1
+    if not image:
+        console.print(
+            "[red]Error:[/red] image argument is required",
+            file=sys.stderr,
+        )
+        raise typer.Exit(1)
 
     # Create runtime config
     config_kwargs = {}
 
-    if args.backend != "auto":
-        config_kwargs["backend"] = Backend(args.backend)
-    if args.output_dir:
-        config_kwargs["output_dir"] = args.output_dir.expanduser()
-
-    if args.formats:
-        config_kwargs["formats"] = [ColorFormat(f) for f in args.formats]
-
-    # Build overrides dictionary from CLI args
-    overrides = {}
-
-    if args.saturation is not None:
-        overrides["generation.saturation_adjustment"] = args.saturation
-
-    if args.pywal_algorithm is not None:
-        overrides["backends.pywal.backend_algorithm"] = args.pywal_algorithm
-
-    if args.wallust_backend is not None:
-        overrides["backends.wallust.backend_type"] = args.wallust_backend
-
-    if args.custom_algorithm is not None:
-        overrides["backends.custom.algorithm"] = args.custom_algorithm
-
-    if args.custom_clusters is not None:
-        overrides["backends.custom.n_clusters"] = args.custom_clusters
-
-    if args.template_dir is not None:
-        overrides["templates.directory"] = args.template_dir.expanduser().resolve()
-
-    # Apply overrides
-    if overrides:
-        from colorscheme_generator.cli_overrides import SettingsOverrider
-
-        settings = SettingsOverrider.apply_overrides(settings, overrides)
-
-    # Build overrides dictionary from CLI args
-    overrides = {}
-
-    if args.saturation is not None:
-        overrides["generation.saturation_adjustment"] = args.saturation
-
-    if args.pywal_algorithm is not None:
-        overrides["backends.pywal.backend_algorithm"] = args.pywal_algorithm
-
-    if args.wallust_backend is not None:
-        overrides["backends.wallust.backend_type"] = args.wallust_backend
-
-    if args.custom_algorithm is not None:
-        overrides["backends.custom.algorithm"] = args.custom_algorithm
-
-    if args.custom_clusters is not None:
-        overrides["backends.custom.n_clusters"] = args.custom_clusters
-
-    if args.template_dir is not None:
-        overrides["templates.directory"] = args.template_dir.expanduser().resolve()
-
-    # Apply overrides
-    if overrides:
-        from colorscheme_generator.cli_overrides import SettingsOverrider
-
-        settings = SettingsOverrider.apply_overrides(settings, overrides)
-
-    # Create generator config
-    config = GeneratorConfig.from_settings(
-settings, **config_kwargs)
-
-    # Create backend
-    try:
-        if args.backend == "auto":
-            if args.verbose:
-                print("Auto-detecting backend...")
-            generator = ColorSchemeGeneratorFactory.create_auto(settings)
-        else:
-            generator = ColorSchemeGeneratorFactory.create(
-                Backend(args.backend), settings
+    if backend != "auto":
+        try:
+            config_kwargs["backend"] = Backend(backend)
+        except ValueError:
+            console.print(
+                f"[red]Error:[/red] Invalid backend: {backend}",
+                file=sys.stderr,
             )
+            console.print(
+                "Valid backends: pywal, wallust, custom, auto"
+            )
+            raise typer.Exit(1)
 
-        if args.verbose:
-            print(f"Using backend: {generator.backend_name}")
+    if output_dir:
+        config_kwargs["output_dir"] = output_dir.expanduser()
+
+    if formats:
+        try:
+            config_kwargs["formats"] = [ColorFormat(f) for f in formats]
+        except ValueError as e:
+            console.print(
+                f"[red]Error:[/red] Invalid format: {e}",
+                file=sys.stderr,
+            )
+            raise typer.Exit(1)
+
+    # Build overrides dictionary from CLI args
+    overrides = {}
+
+    if saturation is not None:
+        overrides["saturation"] = saturation
+
+    # Backend-specific overrides
+    if pywal_algorithm:
+        overrides["pywal_algorithm"] = pywal_algorithm
+    if wallust_backend:
+        overrides["wallust_backend"] = wallust_backend
+    if custom_algorithm:
+        overrides["custom_algorithm"] = custom_algorithm
+    if custom_clusters:
+        overrides["custom_clusters"] = custom_clusters
+
+    # Template directory
+    if template_dir:
+        overrides["template_dir"] = template_dir
+
+    # Create runtime config
+    try:
+        config = GeneratorConfig(**config_kwargs)
+    except Exception as e:
+        console.print(
+            f"[red]Error creating config:[/red] {e}",
+            file=sys.stderr,
+        )
+        raise typer.Exit(1)
+
+    # Apply overrides to settings
+    if overrides:
+        settings = settings.with_overrides(overrides)
+
+    if verbose:
+        console.print(f"[dim]Image:[/dim] {image}")
+        console.print(f"[dim]Backend:[/dim] {config.backend.value}")
+        console.print(f"[dim]Output dir:[/dim] {config.output_dir}")
+        console.print(f"[dim]Formats:[/dim] {[f.value for f in config.formats]}")
+
+    # Create generator
+    try:
+        generator = ColorSchemeGeneratorFactory.create(
+            backend=config.backend,
+            settings=settings,
+        )
     except BackendNotAvailableError as e:
-        print(f"Error: {e}", file=sys.stderr)
-        return 1
+        console.print(
+            f"[red]Error:[/red] Backend not available: {e}",
+            file=sys.stderr,
+        )
+        console.print(
+            "\nAvailable backends:"
+        )
+        available = ColorSchemeGeneratorFactory.list_available(settings)
+        for backend_name in available:
+            console.print(f"  • {backend_name}")
+        raise typer.Exit(1)
+    except Exception as e:
+        console.print(
+            f"[red]Error creating generator:[/red] {e}",
+            file=sys.stderr,
+        )
+        if verbose:
+            import traceback
+            traceback.print_exc()
+        raise typer.Exit(1)
 
     # Generate color scheme
     try:
-        if args.verbose:
-            print(f"Extracting colors from: {args.image}")
+        if verbose:
+            console.print(f"\n[dim]Extracting colors from {image}...[/dim]")
 
-        scheme = generator.generate(args.image, config)
+        scheme = generator.generate(image)
 
-        if args.verbose:
-            print(f"Background: {scheme.background.hex}")
-            print(f"Foreground: {scheme.foreground.hex}")
-            print(f"Cursor: {scheme.cursor.hex}")
-            print(f"Colors: {len(scheme.colors)}")
+        if verbose:
+            console.print("[green]✓[/green] Color extraction successful")
+
     except InvalidImageError as e:
-        print(f"Error: Invalid image: {e}", file=sys.stderr)
-        return 1
+        console.print(
+            f"[red]Error:[/red] Invalid image: {e}",
+            file=sys.stderr,
+        )
+        raise typer.Exit(1)
     except ColorExtractionError as e:
-        print(f"Error: Color extraction failed: {e}", file=sys.stderr)
-        return 1
-    except Exception as e:
-        print(f"Error: {e}", file=sys.stderr)
-        if args.verbose:
+        console.print(
+            f"[red]Error:[/red] Color extraction failed: {e}",
+            file=sys.stderr,
+        )
+        if verbose:
             import traceback
-
             traceback.print_exc()
-        return 1
+        raise typer.Exit(1)
+    except Exception as e:
+        console.print(
+            f"[red]Error:[/red] Unexpected error: {e}",
+            file=sys.stderr,
+        )
+        if verbose:
+            import traceback
+            traceback.print_exc()
+        raise typer.Exit(1)
 
     # Write output files
     try:
-        if args.verbose:
-            print(f"Writing output to: {config.output_dir}")
+        if verbose:
+            console.print(f"\n[dim]Writing output to: {config.output_dir}[/dim]")
 
         output_manager = OutputManager(settings)
         output_files = output_manager.write_outputs(
@@ -367,211 +520,31 @@ settings, **config_kwargs)
             config.formats,
         )
 
-        print("Generated files:")
+        console.print("\n[bold green]✓ Generated files:[/bold green]")
         for format_name, file_path in output_files.items():
-            print(f"  {format_name}: {file_path}")
+            console.print(f"  • {format_name}: {file_path}")
+
     except OutputWriteError as e:
-        print(f"Error: Failed to write output: {e}", file=sys.stderr)
-        return 1
+        console.print(
+            f"[red]Error writing output:[/red] {e}",
+            file=sys.stderr,
+        )
+        raise typer.Exit(1)
     except Exception as e:
-        print(f"Error: {e}", file=sys.stderr)
-        if args.verbose:
+        console.print(
+            f"[red]Error:[/red] Unexpected error writing output: {e}",
+            file=sys.stderr,
+        )
+        if verbose:
             import traceback
-
             traceback.print_exc()
-        return 1
-
-    # Display the color scheme
-    _show_colorscheme(scheme)
-
-    return 0
+        raise typer.Exit(1)
 
 
-def main() -> int:
-    """Main CLI entry point with subcommands.
-
-    Returns:
-        Exit code (0 for success, 1 for error)
-    """
-    parser = argparse.ArgumentParser(
-        description="Generate and display color schemes from images",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-
-    # Create subparsers
-    subparsers = parser.add_subparsers(
-        dest="command",
-        help="Available commands",
-        required=False,
-    )
-
-    # Generate command (default)
-    generate_parser = subparsers.add_parser(
-        "generate",
-        help="Generate color scheme from image",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  # Generate with auto-detected backend
-  colorscheme-gen generate wallpaper.png
-
-  # Use specific backend
-  colorscheme-gen generate wallpaper.png --backend pywal
-
-  # Custom output directory and formats
-  colorscheme-gen generate wallpaper.png -o ~/.config/colors -f json css
-
-  # List available backends
-  colorscheme-gen generate --list-backends
-        """,
-    )
-
-    generate_parser.add_argument(
-        "image",
-        type=Path,
-        nargs="?",
-        help="Path to source image",
-    )
-
-    generate_parser.add_argument(
-        "-b",
-        "--backend",
-        type=str,
-        choices=["pywal", "wallust", "custom", "auto"],
-        default="auto",
-        help="Backend to use (default: auto-detect)",
-    )
-
-    generate_parser.add_argument(
-        "-f",
-        "--formats",
-        nargs="+",
-        choices=["json", "sh", "css", "gtk.css", "yaml", "toml", "sequences"],
-        help="Output formats (default: from settings)",
-    )
-
-
-    generate_parser.add_argument(
-        "--list-backends",
-        action="store_true",
-        help="List available backends and exit",
-    )
-
-    # Generation settings
-    generate_parser.add_argument(
-        "-s",
-        "--saturation",
-        type=float,
-        metavar="FACTOR",
-        help="Saturation multiplier (0.0=grayscale, 1.0=unchanged, 2.0=max, default: 1.0)",
-    )
-
-    # Pywal backend settings
-    generate_parser.add_argument(
-        "--pywal-algorithm",
-        type=str,
-        choices=["wal", "colorz", "colorthief", "haishoku", "schemer2"],
-        help="Pywal color extraction algorithm (default: wal)",
-    )
-
-    # Wallust backend settings
-    generate_parser.add_argument(
-        "--wallust-backend",
-        type=str,
-        choices=["resized", "full", "thumb", "fastresize", "wal"],
-        help="Wallust backend type (default: resized)",
-    )
-
-    # Custom backend settings
-    generate_parser.add_argument(
-        "--custom-algorithm",
-        type=str,
-        choices=["kmeans", "minibatch"],
-        help="Custom backend algorithm (default: kmeans)",
-    )
-
-    generate_parser.add_argument(
-        "--custom-clusters",
-        type=int,
-        metavar="N",
-        help="Number of color clusters for custom backend (default: 16)",
-    )
-
-    # Template settings
-    generate_parser.add_argument(
-        "--template-dir",
-        type=Path,
-        metavar="DIR",
-        help="Custom template directory (default: built-in templates)",
-    )
-
-    generate_parser.add_argument(
-        "-v",
-        "--verbose",
-        action="store_true",
-        help="Verbose output",
-    )
-
-    # Show command
-    show_parser = subparsers.add_parser(
-        "show",
-        help="Display color scheme with colored blocks",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  # Show specific color scheme file
-  colorscheme-gen show colors.json
-  colorscheme-gen show --file ~/.config/colors/colors.json
-
-  # Show last generated color scheme
-  colorscheme-gen show --last
-        """,
-    )
-
-    show_parser.add_argument(
-        "file",
-        type=Path,
-        nargs="?",
-        help="Path to color scheme JSON file",
-    )
-
-    show_parser.add_argument(
-        "--last",
-        action="store_true",
-        help="Show last generated color scheme",
-    )
-
-    show_parser.add_argument(
-        "-v",
-        "--verbose",
-        action="store_true",
-        help="Verbose output",
-    )
-
-    # Check if first arg is a file path (backward compatibility)
-    if len(sys.argv) > 1 and not sys.argv[1].startswith("-"):
-        first_arg = sys.argv[1]
-        # If it's not a known command, treat as generate
-        if first_arg not in ["generate", "show"]:
-            sys.argv.insert(1, "generate")
-
-    # Parse arguments
-    args = parser.parse_args()
-
-    # If no command specified, show help
-    if not args.command:
-        parser.print_help()
-        return 0
-
-    # Route to appropriate command
-    if args.command == "generate":
-        return cmd_generate(args)
-    elif args.command == "show":
-        return cmd_show(args)
-    else:
-        parser.print_help()
-        return 0
+def main() -> None:
+    """Main entry point for the CLI."""
+    app()
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()
