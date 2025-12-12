@@ -35,49 +35,94 @@ The Color Scheme Generator project consists of two main components:
 
 ## 🚀 Quick Start
 
+**📖 See [QUICK_START.md](QUICK_START.md) for detailed installation and usage instructions.**
+
 ### Prerequisites
 
 - Python 3.12+
 - [uv](https://docs.astral.sh/uv/) package manager
 - Docker or Podman (for orchestrator)
+- Make (usually pre-installed on Linux/macOS)
 
 Install uv if you haven't already:
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-### Option 1: Using the Orchestrator (Recommended)
+### Installation
 
-The orchestrator provides containerized backend execution for security and consistency:
+There are two ways to install and use the project:
+
+#### Approach 1: Using Make (Recommended)
+
+Makefiles provide simple, standardized commands:
 
 ```bash
-# Install both components using Makefile
+# Install everything from root
 make install
 
-# Build backend Docker images
+# Build Docker images for backends
 make docker-build
 
 # Generate color scheme
 cd orchestrator
-uv run color-scheme generate -i /path/to/image.jpg
+uv run color-scheme generate /path/to/wallpaper.png
 ```
 
-**Documentation**: [orchestrator/docs/](orchestrator/docs/)
+#### Approach 2: Using uv Directly
 
-### Option 2: Using the Core Tool Directly
-
-For direct usage without containers:
+For more control over the installation:
 
 ```bash
-# Install core tool using Makefile
-cd core
-make install
+# Install core
+cd core && uv sync
+
+# Install orchestrator
+cd ../orchestrator && uv sync
+
+# Build Docker images
+cd .. && make docker-build
 
 # Generate color scheme
-uv run colorscheme-gen generate -i /path/to/image.jpg --backend pywal
+cd orchestrator
+uv run color-scheme generate /path/to/wallpaper.png
 ```
 
-**Documentation**: [core/docs/](core/docs/)
+### Usage Examples
+
+**Orchestrator (containerized backends):**
+```bash
+cd orchestrator
+
+# Generate with default backend
+uv run color-scheme generate /path/to/wallpaper.png
+
+# Specify backend explicitly
+uv run color-scheme generate /path/to/wallpaper.png --backend pywal
+uv run color-scheme generate /path/to/wallpaper.png --backend wallust
+```
+
+**Core tool (direct execution):**
+```bash
+cd core
+
+# Generate with pywal backend
+uv run colorscheme-gen generate /path/to/wallpaper.png --backend pywal
+
+# Show generated colors
+uv run colorscheme-gen show ~/.cache/colorscheme/colors.json
+```
+
+**Using Make shortcuts:**
+```bash
+# From core directory
+make run ARGS="generate wallpaper.png"
+
+# From orchestrator directory
+make run ARGS="generate wallpaper.png --backend pywal"
+```
+
+**📖 Full documentation**: See [QUICK_START.md](QUICK_START.md) for complete installation and usage guide.
 
 ## 📚 Documentation
 

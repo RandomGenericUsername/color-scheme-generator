@@ -6,15 +6,16 @@
 # 0. Install uv package manager (if not already installed)
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# 1. Install the orchestrator package
-cd orchestrator
+# 1. Install from project root (installs both core and orchestrator)
+cd color-scheme-generator
 make install
 
 # 2. Build backend Docker images
 make docker-build
 
 # 3. Generate your first color scheme
-uv run color-scheme generate -i /path/to/image.jpg
+cd orchestrator
+uv run color-scheme generate /path/to/wallpaper.png
 
 # 4. Check status
 uv run color-scheme status
@@ -26,29 +27,58 @@ uv run color-scheme status
 - Python 3.12 or higher
 - [uv](https://docs.astral.sh/uv/) package manager
 - Docker or Podman installed and running
-- The colorscheme-generator core tool (installed automatically)
+- Make (usually pre-installed on Linux/macOS)
+- The colorscheme-generator core tool (installed automatically as dependency)
 
-### Install Package
+### Installation Approaches
+
+There are two ways to install the orchestrator:
+
+#### Approach 1: Using Make (Recommended)
+
+Makefiles provide simple, standardized commands:
 
 ```bash
-# Using Makefile (recommended)
+# From project root - installs both core and orchestrator
+cd color-scheme-generator
+make install
+
+# Or install orchestrator only
 cd orchestrator
 make install
 
-# Or manually with uv
+# Install with dev dependencies
+make install-dev
+```
+
+#### Approach 2: Using uv Directly
+
+For more control over the installation:
+
+```bash
+# Install orchestrator (automatically installs core as dependency)
+cd orchestrator
 uv sync
 
 # Install with dev dependencies
-make install-dev
+uv sync --all-extras
+
+# Verify the core dependency is installed
+uv pip show colorscheme-generator
 ```
 
 ### Verify Installation
 
 ```bash
 # Check that color-scheme command is available
+cd orchestrator
 uv run color-scheme --help
 
-# Output should show available commands
+# Output should show available commands:
+# - install: Install and configure backends
+# - generate: Generate color schemes from images
+# - show: Show information about backends and configuration
+# - status: Show system status
 ```
 
 ## Common Commands
@@ -56,10 +86,14 @@ uv run color-scheme --help
 ### 1. Build Backend Images
 
 ```bash
-# Build all backend Docker images (pywal + wallust)
+# From project root - build all backend Docker images (pywal + wallust)
 make docker-build
 
-# Or build individually
+# Or from orchestrator directory
+cd orchestrator
+make docker-build
+
+# Build individually
 make docker-build-pywal
 make docker-build-wallust
 
@@ -69,29 +103,35 @@ make docker-clean
 
 ### 2. Generate Color Schemes
 
+**Note**: The image path is a positional argument, not a flag.
+
 ```bash
-# Generate using default backends
-uv run color-scheme generate -i image.jpg
+cd orchestrator
+
+# Generate using default backend (pywal)
+uv run color-scheme generate /path/to/wallpaper.png
 
 # Generate using specific backend
-uv run color-scheme generate --backend pywal -i image.jpg
-
-# Generate with custom settings (passed to core tool)
-uv run color-scheme generate -i image.jpg --saturation 0.8
-
-# Generate and output as JSON
-uv run color-scheme generate -i image.jpg --output-format json
+uv run color-scheme generate /path/to/wallpaper.png --backend pywal
+uv run color-scheme generate /path/to/wallpaper.png --backend wallust
 
 # Generate with verbose output
-uv run color-scheme generate -i image.jpg --verbose
+uv run color-scheme generate /path/to/wallpaper.png --verbose
 
-# Use alternative output directory
-uv run color-scheme generate -i image.jpg --output-dir /custom/output
+# Using Make shortcut
+make run ARGS="generate /path/to/wallpaper.png --backend pywal"
 ```
+
+**How it works:**
+- The orchestrator automatically mounts the image's parent directory into the container
+- The image path is translated from host path to container path
+- All other arguments are passed through to the core tool inside the container
 
 ### 3. Check System Status
 
 ```bash
+cd orchestrator
+
 # Show overall status
 uv run color-scheme status
 
@@ -105,14 +145,16 @@ uv run color-scheme status
 ### 4. Show Information
 
 ```bash
+cd orchestrator
+
 # Show available backends
-color-scheme show backends
+uv run color-scheme show backends
 
 # Show current configuration
-color-scheme show config
+uv run color-scheme show config
 
 # Show help information
-color-scheme show help
+uv run color-scheme show help
 ```
 
 ## Configuration

@@ -32,6 +32,12 @@
 
 ### Installation
 
+There are two ways to install the core tool:
+
+#### Approach 1: Using Make (Recommended)
+
+Makefiles provide simple, standardized commands:
+
 ```bash
 # Install uv package manager (if not already installed)
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -42,14 +48,36 @@ make install
 
 # Or install with dev dependencies
 make install-dev
+```
 
-# Optional: Install wallust (Rust-based, faster)
+#### Approach 2: Using uv Directly
+
+For more control over the installation:
+
+```bash
+# Install from source
+cd core
+uv sync
+
+# Install with dev dependencies
+uv sync --all-extras
+
+# Verify installation
+uv pip show colorscheme-generator
+```
+
+**Optional**: Install wallust backend (Rust-based, faster):
+```bash
 cargo install wallust
 ```
 
 ### Basic Usage
 
+#### Using uv run
+
 ```bash
+cd core
+
 # Generate color scheme from an image (auto-detect backend)
 uv run colorscheme-gen generate wallpaper.png
 
@@ -66,9 +94,24 @@ uv run colorscheme-gen generate wallpaper.png \
 
 # Show generated color scheme
 uv run colorscheme-gen show ~/.cache/colorscheme/colors.json
+```
 
-# Or use the Makefile shortcut
+#### Using Make Shortcuts
+
+```bash
+cd core
+
+# Generate color scheme
 make run ARGS="generate wallpaper.png"
+
+# Show colors
+make run ARGS="show ~/.cache/colorscheme/colors.json"
+
+# Run tests
+make test
+
+# Run linter
+make lint
 ```
 
 ### Python Library Usage
