@@ -1,7 +1,6 @@
 """Command-line interface for colorscheme generator using Typer."""
 
 import json
-import sys
 from pathlib import Path
 from typing import Annotated, Optional
 
@@ -210,8 +209,7 @@ def show(
         if not colors_file:
             console.print(
                 "[red]Error:[/red] No recent colorscheme found. "
-                "Generate one first or specify a file.",
-                file=sys.stderr,
+                "Generate one first or specify a file."
             )
             raise typer.Exit(1)
         if verbose:
@@ -220,16 +218,14 @@ def show(
         colors_file = file
         if not colors_file:
             console.print(
-                "[red]Error:[/red] Either --file or --last must be specified",
-                file=sys.stderr,
+                "[red]Error:[/red] Either --file or --last must be specified"
             )
             raise typer.Exit(1)
 
     # Check file exists
     if not colors_file.exists():
         console.print(
-            f"[red]Error:[/red] File not found: {colors_file}",
-            file=sys.stderr,
+            f"[red]Error:[/red] File not found: {colors_file}"
         )
         raise typer.Exit(1)
 
@@ -239,8 +235,7 @@ def show(
         _show_colorscheme(scheme)
     except Exception as e:
         console.print(
-            f"[red]Error:[/red] Failed to load colorscheme: {e}",
-            file=sys.stderr,
+            f"[red]Error:[/red] Failed to load colorscheme: {e}"
         )
         if verbose:
             import traceback
@@ -355,8 +350,7 @@ def generate(
         settings = Settings.get()
     except Exception as e:
         console.print(
-            f"[red]Error loading settings:[/red] {e}",
-            file=sys.stderr,
+            f"[red]Error loading settings:[/red] {e}"
         )
         raise typer.Exit(1)
 
@@ -371,8 +365,7 @@ def generate(
     # Require image argument
     if not image:
         console.print(
-            "[red]Error:[/red] image argument is required",
-            file=sys.stderr,
+            "[red]Error:[/red] image argument is required"
         )
         raise typer.Exit(1)
 
@@ -384,13 +377,15 @@ def generate(
             config_kwargs["backend"] = Backend(backend)
         except ValueError:
             console.print(
-                f"[red]Error:[/red] Invalid backend: {backend}",
-                file=sys.stderr,
+                f"[red]Error:[/red] Invalid backend: {backend}"
             )
             console.print(
                 "Valid backends: pywal, wallust, custom, auto"
             )
             raise typer.Exit(1)
+    else:
+        # When backend is "auto", use the default backend from settings
+        config_kwargs["backend"] = Backend(settings.generation.default_backend)
 
     if output_dir:
         config_kwargs["output_dir"] = output_dir.expanduser()
@@ -400,8 +395,7 @@ def generate(
             config_kwargs["formats"] = [ColorFormat(f) for f in formats]
         except ValueError as e:
             console.print(
-                f"[red]Error:[/red] Invalid format: {e}",
-                file=sys.stderr,
+                f"[red]Error:[/red] Invalid format: {e}"
             )
             raise typer.Exit(1)
 
@@ -430,20 +424,32 @@ def generate(
         config = GeneratorConfig(**config_kwargs)
     except Exception as e:
         console.print(
-            f"[red]Error creating config:[/red] {e}",
-            file=sys.stderr,
+            f"[red]Error creating config:[/red] {e}"
         )
         raise typer.Exit(1)
 
     # Apply overrides to settings
     if overrides:
-        settings = settings.with_overrides(overrides)
+        # Manually apply overrides to settings
+        if "saturation" in overrides:
+            settings.generation.saturation_adjustment = overrides["saturation"]
+        if "pywal_algorithm" in overrides:
+            settings.backends.pywal.backend_algorithm = overrides["pywal_algorithm"]
+        if "wallust_backend" in overrides:
+            settings.backends.wallust.backend_type = overrides["wallust_backend"]
+        if "custom_algorithm" in overrides:
+            settings.backends.custom.algorithm = overrides["custom_algorithm"]
+        if "custom_clusters" in overrides:
+            settings.backends.custom.n_clusters = overrides["custom_clusters"]
+        if "template_dir" in overrides:
+            settings.templates.directory = Path(overrides["template_dir"])
 
     if verbose:
         console.print(f"[dim]Image:[/dim] {image}")
         console.print(f"[dim]Backend:[/dim] {config.backend.value}")
         console.print(f"[dim]Output dir:[/dim] {config.output_dir}")
-        console.print(f"[dim]Formats:[/dim] {[f.value for f in config.formats]}")
+        formats_str = [f.value for f in config.formats] if config.formats else "default"
+        console.print(f"[dim]Formats:[/dim] {formats_str}")
 
     # Create generator
     try:
@@ -453,8 +459,7 @@ def generate(
         )
     except BackendNotAvailableError as e:
         console.print(
-            f"[red]Error:[/red] Backend not available: {e}",
-            file=sys.stderr,
+            f"[red]Error:[/red] Backend not available: {e}"
         )
         console.print(
             "\nAvailable backends:"
@@ -465,8 +470,7 @@ def generate(
         raise typer.Exit(1)
     except Exception as e:
         console.print(
-            f"[red]Error creating generator:[/red] {e}",
-            file=sys.stderr,
+            f"[red]Error creating generator:[/red] {e}"
         )
         if verbose:
             import traceback
@@ -478,21 +482,19 @@ def generate(
         if verbose:
             console.print(f"\n[dim]Extracting colors from {image}...[/dim]")
 
-        scheme = generator.generate(image)
+        scheme = generator.generate(image, config)
 
         if verbose:
             console.print("[green]✓[/green] Color extraction successful")
 
     except InvalidImageError as e:
         console.print(
-            f"[red]Error:[/red] Invalid image: {e}",
-            file=sys.stderr,
+            f"[red]Error:[/red] Invalid image: {e}"
         )
         raise typer.Exit(1)
     except ColorExtractionError as e:
         console.print(
-            f"[red]Error:[/red] Color extraction failed: {e}",
-            file=sys.stderr,
+            f"[red]Error:[/red] Color extraction failed: {e}"
         )
         if verbose:
             import traceback
@@ -500,8 +502,7 @@ def generate(
         raise typer.Exit(1)
     except Exception as e:
         console.print(
-            f"[red]Error:[/red] Unexpected error: {e}",
-            file=sys.stderr,
+            f"[red]Error:[/red] Unexpected error: {e}"
         )
         if verbose:
             import traceback
@@ -510,14 +511,19 @@ def generate(
 
     # Write output files
     try:
+        # Use default output directory if not specified
+        output_dir = config.output_dir if config.output_dir else settings.output.directory
+        # Use default formats if not specified
+        formats = config.formats if config.formats else [ColorFormat(f) for f in settings.output.formats]
+
         if verbose:
-            console.print(f"\n[dim]Writing output to: {config.output_dir}[/dim]")
+            console.print(f"\n[dim]Writing output to: {output_dir}[/dim]")
 
         output_manager = OutputManager(settings)
         output_files = output_manager.write_outputs(
             scheme,
-            config.output_dir,
-            config.formats,
+            output_dir,
+            formats,
         )
 
         console.print("\n[bold green]✓ Generated files:[/bold green]")
@@ -526,14 +532,12 @@ def generate(
 
     except OutputWriteError as e:
         console.print(
-            f"[red]Error writing output:[/red] {e}",
-            file=sys.stderr,
+            f"[red]Error writing output:[/red] {e}"
         )
         raise typer.Exit(1)
     except Exception as e:
         console.print(
-            f"[red]Error:[/red] Unexpected error writing output: {e}",
-            file=sys.stderr,
+            f"[red]Error:[/red] Unexpected error writing output: {e}"
         )
         if verbose:
             import traceback
