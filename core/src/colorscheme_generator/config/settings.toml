@@ -13,7 +13,8 @@ saturation_adjustment = 1.0  # 0.0-2.0: Saturation multiplier (0.0=grayscale, 1.
 [backends.pywal]
 # Pywal writes to ~/.cache/wal/ internally (hardcoded by pywal, cannot be changed)
 # Pywal is always used via CLI (library mode has API issues)
-backend_algorithm = "wal"  # Options: "wal", "colorz", "colorthief", "haishoku", "schemer2"
+# Using haishoku as default because wal backend has imagemagick policy issues
+backend_algorithm = "haishoku"  # Options: "wal", "colorz", "colorthief", "haishoku", "schemer2"
 
 [backends.wallust]
 # Wallust outputs JSON to stdout (we parse it - JSON format is hardcoded)

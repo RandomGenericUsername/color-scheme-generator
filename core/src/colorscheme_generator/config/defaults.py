@@ -13,7 +13,8 @@ saturation_adjustment = 1.0
 
 # Pywal backend defaults (color extraction)
 # Pywal is always used via CLI (library mode has API issues)
-pywal_backend_algorithm = "wal"  # Default pywal algorithm
+# Using haishoku as default because wal backend has imagemagick policy issues
+pywal_backend_algorithm = "haishoku"  # Default pywal algorithm
 
 # Wallust backend defaults (color extraction)
 wallust_backend_type = "resized"
@@ -24,4 +25,3 @@ custom_n_clusters = 16
 
 # Template defaults (OutputManager)
 template_directory = Path("templates")
-
