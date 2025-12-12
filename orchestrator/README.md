@@ -7,15 +7,18 @@ The orchestrator wraps the `colorscheme-generator` core tool to run backends (py
 ## 🚀 Quick Start
 
 ```bash
-# 1. Install the orchestrator
-cd orchestrator
-pip install -e .
+# 0. Install uv package manager (if not already installed)
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# 2. Build backend images
-color-scheme install
+# 1. Install the orchestrator using Makefile
+cd orchestrator
+make install
+
+# 2. Build backend Docker images
+make docker-build
 
 # 3. Generate your first color scheme
-color-scheme generate -i /path/to/image.jpg
+uv run color-scheme generate -i /path/to/image.jpg
 ```
 
 ## ✨ Key Features
@@ -42,23 +45,24 @@ color-scheme generate -i /path/to/image.jpg
 ## 📋 Requirements
 
 - **Python** 3.12 or higher
+- **[uv](https://docs.astral.sh/uv/)** package manager
 - **Docker** or **Podman** (container runtime)
 - The `colorscheme-generator` core tool (auto-installed)
 
 ## 🎯 Basic Usage
 
 ```bash
-# Install backends
-color-scheme install
+# Build backend Docker images
+make docker-build
 
 # Generate color scheme
-color-scheme generate -i image.jpg
+uv run color-scheme generate -i image.jpg
 
 # Check status
-color-scheme status
+uv run color-scheme status
 
 # Show available backends
-color-scheme show backends
+uv run color-scheme show backends
 ```
 
 See [CLI Reference](docs/cli-reference.md) for complete usage documentation.
@@ -101,14 +105,20 @@ See [Quick Start Guide](docs/quick-start.md) for more troubleshooting.
 ## 🛠️ Development
 
 ```bash
+# Install with dev dependencies
+make install-dev
+
 # Run tests
-pytest tests/
+make test
 
 # Format code
-black src/
+make format
 
 # Type checking
-mypy src/
+make type-check
+
+# Lint code
+make lint
 ```
 
 See [Developer Guide](docs/developer-guide.md) for complete development documentation.

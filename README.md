@@ -35,20 +35,31 @@ The Color Scheme Generator project consists of two main components:
 
 ## 🚀 Quick Start
 
+### Prerequisites
+
+- Python 3.12+
+- [uv](https://docs.astral.sh/uv/) package manager
+- Docker or Podman (for orchestrator)
+
+Install uv if you haven't already:
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
 ### Option 1: Using the Orchestrator (Recommended)
 
 The orchestrator provides containerized backend execution for security and consistency:
 
 ```bash
-# Install orchestrator
-cd orchestrator
-pip install -e .
+# Install both components using Makefile
+make install
 
-# Build backend images
-color-scheme install
+# Build backend Docker images
+make docker-build
 
 # Generate color scheme
-color-scheme generate -i /path/to/image.jpg
+cd orchestrator
+uv run color-scheme generate -i /path/to/image.jpg
 ```
 
 **Documentation**: [orchestrator/docs/](orchestrator/docs/)
@@ -58,12 +69,12 @@ color-scheme generate -i /path/to/image.jpg
 For direct usage without containers:
 
 ```bash
-# Install core tool
+# Install core tool using Makefile
 cd core
-pip install -e .
+make install
 
 # Generate color scheme
-colorscheme-generator generate -i /path/to/image.jpg --backend pywal
+uv run colorscheme-gen generate -i /path/to/image.jpg --backend pywal
 ```
 
 **Documentation**: [core/docs/](core/docs/)
@@ -151,29 +162,50 @@ color-scheme-generator/
 
 ### Core Tool
 - Python 3.12+
+- [uv](https://docs.astral.sh/uv/) package manager
 - Backend dependencies (pywal, wallust, or custom)
 
 ### Orchestrator
 - Python 3.12+
+- [uv](https://docs.astral.sh/uv/) package manager
 - Docker or Podman
 - Core tool (auto-installed)
 
 ## 🛠️ Development
 
+### Quick Development Setup
+
+```bash
+# Install both components with dev dependencies
+make install-dev
+
+# Run all tests
+make test
+
+# Run linting
+make lint
+
+# Build distribution packages
+make build
+```
+
 ### Core Tool Development
 
 ```bash
 cd core
-pip install -e ".[dev]"
-pytest tests/
+make install-dev  # Install with dev dependencies
+make test         # Run tests
+make lint         # Run linter
+make format       # Format code
 ```
 
 ### Orchestrator Development
 
 ```bash
 cd orchestrator
-pip install -e ".[dev]"
-pytest tests/
+make install-dev     # Install with dev dependencies
+make test            # Run tests
+make docker-build    # Build Docker images
 ```
 
 See respective documentation for detailed development guides.

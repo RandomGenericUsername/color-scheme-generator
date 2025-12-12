@@ -20,10 +20,16 @@ Guide for contributing to and developing colorscheme-generator.
 ### Prerequisites
 
 - Python ≥3.12
-- pip
+- [uv](https://docs.astral.sh/uv/) package manager
 - git
 - (Optional) pyenv for Python version management
 - (Optional) Rust/Cargo for wallust backend testing
+
+### Install uv
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
 
 ### Clone Repository
 
@@ -32,24 +38,19 @@ git clone https://github.com/yourusername/colorscheme-generator.git
 cd colorscheme-generator
 ```
 
-### Create Virtual Environment
-
-```bash
-# Using venv
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Or using pyenv
-pyenv virtualenv 3.12 colorscheme-dev
-pyenv activate colorscheme-dev
-```
-
 ### Install Development Dependencies
 
 ```bash
 cd core
-pip install -e ".[dev,pywal]"
+
+# Install with dev dependencies using Makefile
+make install-dev
+
+# Or manually with uv
+uv sync --all-extras --dev
 ```
+
+The virtual environment will be automatically created by uv in `.venv/`.
 
 This installs:
 - The package in editable mode (`-e`)

@@ -3,95 +3,97 @@
 ## 30-Second Setup
 
 ```bash
+# 0. Install uv package manager (if not already installed)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
 # 1. Install the orchestrator package
 cd orchestrator
-pip install -e .
+make install
 
-# 2. Build backend images
-color-scheme install
+# 2. Build backend Docker images
+make docker-build
 
 # 3. Generate your first color scheme
-color-scheme generate -i /path/to/image.jpg
+uv run color-scheme generate -i /path/to/image.jpg
 
 # 4. Check status
-color-scheme status
+uv run color-scheme status
 ```
 
 ## Installation Details
 
 ### Prerequisites
 - Python 3.12 or higher
+- [uv](https://docs.astral.sh/uv/) package manager
 - Docker or Podman installed and running
 - The colorscheme-generator core tool (installed automatically)
 
 ### Install Package
 
 ```bash
-# Development mode (recommended for testing)
+# Using Makefile (recommended)
 cd orchestrator
-pip install -e .
+make install
 
-# Production mode
-pip install .
+# Or manually with uv
+uv sync
 
-# From project root
-pip install -e ./orchestrator
+# Install with dev dependencies
+make install-dev
 ```
 
 ### Verify Installation
 
 ```bash
 # Check that color-scheme command is available
-color-scheme --help
+uv run color-scheme --help
 
 # Output should show available commands
 ```
 
 ## Common Commands
 
-### 1. Install Backends
+### 1. Build Backend Images
 
 ```bash
-# Install default backends (pywal + wallust)
-color-scheme install
+# Build all backend Docker images (pywal + wallust)
+make docker-build
 
-# Force rebuild images (even if they already exist)
-color-scheme install --force-rebuild
+# Or build individually
+make docker-build-pywal
+make docker-build-wallust
 
-# With verbose output
-color-scheme install --verbose
-
-# With debug information
-color-scheme install --debug
+# Clean Docker images
+make docker-clean
 ```
 
 ### 2. Generate Color Schemes
 
 ```bash
 # Generate using default backends
-color-scheme generate -i image.jpg
+uv run color-scheme generate -i image.jpg
 
 # Generate using specific backend
-color-scheme generate --backend pywal -i image.jpg
+uv run color-scheme generate --backend pywal -i image.jpg
 
 # Generate with custom settings (passed to core tool)
-color-scheme generate -i image.jpg --saturation 0.8
+uv run color-scheme generate -i image.jpg --saturation 0.8
 
 # Generate and output as JSON
-color-scheme generate -i image.jpg --output-format json
+uv run color-scheme generate -i image.jpg --output-format json
 
 # Generate with verbose output
-color-scheme generate -i image.jpg --verbose
+uv run color-scheme generate -i image.jpg --verbose
 
 # Use alternative output directory
-color-scheme generate -i image.jpg --output-dir /custom/output
+uv run color-scheme generate -i image.jpg --output-dir /custom/output
 ```
 
 ### 3. Check System Status
 
 ```bash
 # Show overall status
-color-scheme status
+uv run color-scheme status
 
 # This displays:
 # - Container runtime availability (Docker/Podman)

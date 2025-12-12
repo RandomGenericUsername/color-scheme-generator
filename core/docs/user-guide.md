@@ -21,7 +21,13 @@ Complete guide to using colorscheme-generator for extracting and generating colo
 ### Prerequisites
 
 - Python ≥3.12
-- pip or pipx
+- [uv](https://docs.astral.sh/uv/) package manager
+
+### Install uv
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
 
 ### Install from Source
 
@@ -30,24 +36,18 @@ Complete guide to using colorscheme-generator for extracting and generating colo
 git clone https://github.com/yourusername/colorscheme-generator.git
 cd colorscheme-generator/core
 
-# Install in development mode
-pip install -e .
+# Install using Makefile
+make install
 
 # Verify installation
-colorscheme-gen --help
+uv run colorscheme-gen --help
 ```
 
 ### Optional Dependencies
 
 #### Pywal Backend
 
-```bash
-# Install pywal
-pip install pywal
-
-# Or with the package
-pip install -e ".[pywal]"
-```
+The pywal backend is included by default. No additional installation needed.
 
 #### Wallust Backend
 
@@ -70,12 +70,15 @@ wallust --version
 
 ```bash
 # Auto-detect backend
-colorscheme-gen generate wallpaper.png
+uv run colorscheme-gen generate wallpaper.png
 
 # Specify backend
-colorscheme-gen generate wallpaper.png --backend pywal
-colorscheme-gen generate wallpaper.png --backend wallust
-colorscheme-gen generate wallpaper.png --backend custom
+uv run colorscheme-gen generate wallpaper.png --backend pywal
+uv run colorscheme-gen generate wallpaper.png --backend wallust
+uv run colorscheme-gen generate wallpaper.png --backend custom
+
+# Or use Makefile shortcut
+make run ARGS="generate wallpaper.png"
 
 # Specify output directory
 colorscheme-gen generate wallpaper.png --output-dir ~/my-colors

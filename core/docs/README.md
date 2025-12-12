@@ -33,12 +33,15 @@
 ### Installation
 
 ```bash
-# Install from source
-cd core
-pip install -e .
+# Install uv package manager (if not already installed)
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Optional: Install pywal backend support
-pip install -e ".[pywal]"
+# Install from source using Makefile
+cd core
+make install
+
+# Or install with dev dependencies
+make install-dev
 
 # Optional: Install wallust (Rust-based, faster)
 cargo install wallust
@@ -48,21 +51,24 @@ cargo install wallust
 
 ```bash
 # Generate color scheme from an image (auto-detect backend)
-colorscheme-gen generate wallpaper.png
+uv run colorscheme-gen generate wallpaper.png
 
 # Use specific backend
-colorscheme-gen generate wallpaper.png --backend pywal
+uv run colorscheme-gen generate wallpaper.png --backend pywal
 
 # Customize saturation
-colorscheme-gen generate wallpaper.png --saturation 1.5
+uv run colorscheme-gen generate wallpaper.png --saturation 1.5
 
 # Specify output directory and formats
-colorscheme-gen generate wallpaper.png \
+uv run colorscheme-gen generate wallpaper.png \
   --output-dir ~/my-colors \
   --formats json css sh
 
 # Show generated color scheme
-colorscheme-gen show ~/.cache/colorscheme/colors.json
+uv run colorscheme-gen show ~/.cache/colorscheme/colors.json
+
+# Or use the Makefile shortcut
+make run ARGS="generate wallpaper.png"
 ```
 
 ### Python Library Usage
