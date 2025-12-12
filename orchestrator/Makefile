@@ -134,9 +134,13 @@ docker-build-wallust: ## Build wallust backend Docker image
 	@echo "$(BLUE)Building wallust Docker image...$(NC)"
 	docker build -f docker/Dockerfile.wallust -t colorscheme-generator:wallust .
 
-docker-build-custom: ## Build custom backend Docker image
-	@echo "$(BLUE)Building custom Docker image...$(NC)"
-	docker build -f docker/Dockerfile.custom -t colorscheme-generator:custom .
+docker-build-custom: ## Build custom backend Docker image (requires backend.py)
+	@if [ -f backend.py ]; then \
+		echo "$(BLUE)Building custom Docker image...$(NC)"; \
+		docker build -f docker/Dockerfile.custom -t colorscheme-generator:custom .; \
+	else \
+		echo "$(YELLOW)Skipping custom backend build (backend.py not found)$(NC)"; \
+	fi
 
 docker-clean: ## Remove all Docker images
 	@echo "$(BLUE)Removing Docker images...$(NC)"
