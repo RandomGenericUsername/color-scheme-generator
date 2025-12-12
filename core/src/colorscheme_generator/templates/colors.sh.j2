@@ -1,0 +1,20 @@
+#!/bin/sh
+# Color scheme generated from: {{ source_image }}
+# Backend: {{ backend }}
+# Generated: {{ generated_at }}
+
+# Special colors
+background="{{ background.hex }}"
+foreground="{{ foreground.hex }}"
+cursor="{{ cursor.hex }}"
+
+# Terminal colors (0-15)
+{% for color in colors -%}
+color{{ loop.index0 }}="{{ color.hex }}"
+{% endfor -%}
+
+# Export for use in other scripts
+export background foreground cursor
+{% for i in range(16) -%}
+export color{{ i }}
+{% endfor -%}

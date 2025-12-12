@@ -1,0 +1,132 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+
+# PyCharm
+.idea/
+
+# VSCode
+.vscode/
+*.code-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Testing
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# Type checking
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pytype/
+
+# Linting
+.ruff_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# Cache directories
+.cache/
+*.cache/
+__pypackages__/
+
+# Output directories
+output/
+outputs/
+color-schemes/
+schemes/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# UV (Python package manager)
+.uv/
+uv.lock
+
+# Docker
+.dockerignore
+
+# Container runtime
+.container-manager/
+
+# Claude/AI artifacts
+.claude/
+.augment/
+*.claude.md
+
+# Build artifacts
+*.whl
+*.tar.gz
+
+# OS-specific
+Thumbs.db
+Desktop.ini
+
+# Project-specific
+test-images/
+sample-output/
+

@@ -1,0 +1,56 @@
+# Multi-stage build for custom backend runner
+# Supports executing arbitrary Python-based color scheme backends
+FROM python:3.12-slim-bookworm AS builder
+
+WORKDIR /tmp
+
+# Install build dependencies (cached layer)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    g++ \
+    make \
+    libffi-dev \
+    libssl-dev \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create virtual environment
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Upgrade pip and install wheel/setuptools
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+
+# Install base dependencies for color processing
+RUN pip install --no-cache-dir \
+    pillow>=10.0.0 \
+    numpy>=1.24.0 \
+    scipy>=1.11.0
+
+# Stage 2: Runtime image
+FROM python:3.12-slim-bookworm
+
+WORKDIR /workspace
+
+# Copy virtual environment from builder
+COPY --from=builder /opt/venv /opt/venv
+
+# Install only runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    imagemagick \
+    ghostscript \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set up environment
+ENV PATH="/opt/venv/bin:$PATH" \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+# Create non-root user (will be overridden at runtime)
+RUN useradd -m -u 1000 colorscheme || true
+
+# Copy custom backend script (injected at runtime)
+COPY --chown=colorscheme:colorscheme backend.py /workspace/
+
+# Default entrypoint: run the custom backend
+ENTRYPOINT ["python", "/workspace/backend.py"]

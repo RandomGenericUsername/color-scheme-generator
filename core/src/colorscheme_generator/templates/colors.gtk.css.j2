@@ -1,0 +1,12 @@
+/* GTK CSS color definitions */
+/* Color scheme generated from: {{ source_image }} */
+/* Backend: {{ backend }} */
+/* Generated: {{ generated_at }} */
+
+@define-color foreground {{ foreground.hex }};
+@define-color background {{ background.hex }};
+@define-color cursor {{ cursor.hex }};
+
+{% for color in colors -%}
+@define-color color{{ loop.index0 }} {{ color.hex }};
+{% endfor -%}

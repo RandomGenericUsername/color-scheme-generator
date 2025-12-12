@@ -1,0 +1,24 @@
+# Lightweight wallust backend using Alpine
+# Uses pre-compiled binary for efficiency
+FROM alpine:3.20
+
+WORKDIR /workspace
+
+# Install runtime dependencies
+RUN apk add --no-cache \
+    curl \
+    ca-certificates
+
+# Download wallust pre-compiled binary (v2.6.0)
+RUN curl -L https://github.com/colorust/wallust/releases/download/v2.6.0/wallust-x86_64-unknown-linux-musl \
+    -o /usr/local/bin/wallust && \
+    chmod +x /usr/local/bin/wallust
+
+# Create non-root user (will be overridden at runtime)
+RUN addgroup -S colorscheme && adduser -S colorscheme -G colorscheme || true
+
+# Verify installation
+RUN wallust --version
+
+# Set entrypoint to wallust
+ENTRYPOINT ["wallust"]
