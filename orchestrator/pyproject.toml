@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Container orchestrator for the colorscheme-generator tool"
 requires-python = ">=3.12"
 dependencies = [
-    "colorscheme-generator @ file://../core",
+    "colorscheme-generator @ file:///home/inumaki/Development/v2.0/color-scheme-generator/core",
     "container-manager @ git+https://github.com/RandomGenericUsername/container-manager",
 ]
 
@@ -29,6 +29,9 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/color_scheme"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
