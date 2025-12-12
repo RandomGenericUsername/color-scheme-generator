@@ -8,143 +8,85 @@ A comprehensive color scheme generation system with a modular architecture, supp
 
 The Color Scheme Generator project consists of two main components:
 
-1. **[Core Tool](core/)** - The main color extraction engine
-2. **[Orchestrator](orchestrator/)** - Container-based backend wrapper
+1. **[Core Tool](core/)** (`colorscheme-gen`) - The main color extraction engine
+2. **[Orchestrator](orchestrator/)** (`color-scheme`) - Container-based backend wrapper
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                         User                                 │
-└────────────────────────┬────────────────────────────────────┘
-                         │
-                         ↓
-┌─────────────────────────────────────────────────────────────┐
-│                    Orchestrator                              │
-│  • Container management (Docker/Podman)                      │
-│  • Backend isolation and execution                           │
-│  • Argument passthrough                                      │
-└────────────────────────┬────────────────────────────────────┘
-                         │
-                         ↓
-┌─────────────────────────────────────────────────────────────┐
-│                     Core Tool                                │
-│  • Color extraction (pywal, wallust, custom)                 │
-│  • Multiple output formats (JSON, CSS, YAML, etc.)           │
-│  • Configuration management                                  │
-└─────────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────────┐
+│                              User                                  │
+└─────────────────────────────────┬─────────────────────────────────┘
+                                  │
+                    ┌─────────────┴─────────────┐
+                    ▼                           ▼
+┌───────────────────────────────┐  ┌───────────────────────────────┐
+│         Orchestrator          │  │       Standalone Tool         │
+│        (color-scheme)         │  │      (colorscheme-gen)        │
+│  • Containerized execution    │  │  • Direct execution           │
+│  • Docker/Podman support      │  │  • Local backend deps         │
+└───────────────────────────────┘  └───────────────────────────────┘
+                    │                           │
+                    └─────────────┬─────────────┘
+                                  ▼
+┌───────────────────────────────────────────────────────────────────┐
+│                         Backend Layer                              │
+│       pywal  •  wallust  •  custom (built-in)                     │
+└───────────────────────────────────────────────────────────────────┘
 ```
 
 ## 🚀 Quick Start
 
-**📖 See [QUICK_START.md](QUICK_START.md) for detailed installation and usage instructions.**
-
 ### Prerequisites
 
-- Python 3.12+
+- Python 3.11+
 - [uv](https://docs.astral.sh/uv/) package manager
 - Docker or Podman (for orchestrator)
-- Make (usually pre-installed on Linux/macOS)
 
-Install uv if you haven't already:
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
 ### Installation
 
-There are two ways to install and use the project:
-
-#### Approach 1: Using Make (Recommended)
-
-Makefiles provide simple, standardized commands:
-
 ```bash
-# Install everything from root
+# Install everything
 make install
 
-# Build Docker images for backends
+# Build Docker images (for orchestrator)
 make docker-build
-
-# Generate color scheme
-cd orchestrator
-uv run color-scheme generate /path/to/wallpaper.png
 ```
 
-#### Approach 2: Using uv Directly
+### Usage
 
-For more control over the installation:
-
-```bash
-# Install core
-cd core && uv sync
-
-# Install orchestrator
-cd ../orchestrator && uv sync
-
-# Build Docker images
-cd .. && make docker-build
-
-# Generate color scheme
-cd orchestrator
-uv run color-scheme generate /path/to/wallpaper.png
-```
-
-### Usage Examples
-
-**Orchestrator (containerized backends):**
+**Orchestrator (containerized):**
 ```bash
 cd orchestrator
-
-# Generate with default backend
-uv run color-scheme generate /path/to/wallpaper.png
-
-# Specify backend explicitly
-uv run color-scheme generate /path/to/wallpaper.png --backend pywal
-uv run color-scheme generate /path/to/wallpaper.png --backend wallust
+uv run color-scheme generate ~/Pictures/wallpaper.png
 ```
 
-**Core tool (direct execution):**
+**Standalone tool (direct):**
 ```bash
 cd core
-
-# Generate with pywal backend
-uv run colorscheme-gen generate /path/to/wallpaper.png --backend pywal
-
-# Show generated colors
-uv run colorscheme-gen show ~/.cache/colorscheme/colors.json
+uv run colorscheme-gen generate ~/Pictures/wallpaper.png
 ```
 
-**Using Make shortcuts:**
-```bash
-# From core directory
-make run ARGS="generate wallpaper.png"
-
-# From orchestrator directory
-make run ARGS="generate wallpaper.png --backend pywal"
-```
-
-**📖 Full documentation**: See [QUICK_START.md](QUICK_START.md) for complete installation and usage guide.
+**Output location:** `~/.config/color-scheme/output/`
 
 ## 📚 Documentation
 
-### Orchestrator Documentation
+All documentation is centralized in the [`docs/`](docs/) directory:
 
-Complete documentation for the container-based orchestrator:
+| Section | Description |
+|---------|-------------|
+| [Getting Started](docs/getting-started/) | Installation, prerequisites, quick start |
+| [Guides](docs/guides/) | How-to guides for common tasks |
+| [Configuration](docs/configuration/) | All configuration options |
+| [Architecture](docs/architecture/) | System design and internals |
+| [API Reference](docs/api/) | CLI and Python library reference |
+| [Examples](docs/examples/) | Code examples and integrations |
+| [Troubleshooting](docs/troubleshooting/) | Common issues and solutions |
+| [Development](docs/development/) | Contributing and development setup |
 
-- **[Quick Start](orchestrator/docs/quick-start.md)** - Get started in 30 seconds
-- **[Architecture](orchestrator/docs/architecture.md)** - System design and components
-- **[CLI Reference](orchestrator/docs/cli-reference.md)** - Complete command documentation
-- **[Configuration](orchestrator/docs/configuration.md)** - Configuration options
-- **[Developer Guide](orchestrator/docs/developer-guide.md)** - Development workflows
-- **[API Reference](orchestrator/docs/api-reference.md)** - Python API documentation
-
-**Start here**: [orchestrator/docs/index.md](orchestrator/docs/index.md)
-
-### Core Tool Documentation
-
-Documentation for the core color extraction engine:
-
-- **[Core README](core/README.md)** - Core tool overview
-- **[Core Documentation](core/docs/)** - Detailed core tool docs
+**Start here:** [docs/README.md](docs/README.md)
 
 ## ✨ Features
 
@@ -168,30 +110,16 @@ Documentation for the core color extraction engine:
 
 ```
 color-scheme-generator/
-├── core/                           # Core color extraction tool
+├── core/                           # Standalone tool (colorscheme-gen)
 │   ├── src/colorscheme_generator/  # Main package
-│   │   ├── domain/                 # Domain models (ColorScheme, Color)
-│   │   ├── application/            # Application layer (factories, settings)
-│   │   ├── infrastructure/         # Infrastructure (backends, templates)
-│   │   └── cli.py                  # CLI entry point
-│   ├── docs/                       # Core documentation
-│   ├── tests/                      # Core tests
-│   └── pyproject.toml              # Core package configuration
+│   └── tests/                      # Core tests
 │
-├── orchestrator/                   # Container orchestrator
+├── orchestrator/                   # Container orchestrator (color-scheme)
 │   ├── src/color_scheme/           # Orchestrator package
-│   │   ├── cli.py                  # CLI entry point
-│   │   ├── commands/               # Command implementations
-│   │   ├── services/               # Container services
-│   │   ├── config/                 # Configuration management
-│   │   └── utils/                  # Utilities
 │   ├── docker/                     # Dockerfile definitions
-│   │   ├── Dockerfile.pywal        # Pywal backend
-│   │   ├── Dockerfile.wallust      # Wallust backend
-│   │   └── Dockerfile.custom       # Custom backend template
-│   ├── docs/                       # Orchestrator documentation
-│   ├── tests/                      # Orchestrator tests
-│   └── pyproject.toml              # Orchestrator package configuration
+│   └── tests/                      # Orchestrator tests
+│
+├── docs/                           # Centralized documentation
 │
 └── README.md                       # This file
 ```
@@ -205,34 +133,24 @@ color-scheme-generator/
 
 ## 📋 Requirements
 
-### Core Tool
-- Python 3.12+
+- Python 3.11+
 - [uv](https://docs.astral.sh/uv/) package manager
-- Backend dependencies (pywal, wallust, or custom)
-
-### Orchestrator
-- Python 3.12+
-- [uv](https://docs.astral.sh/uv/) package manager
-- Docker or Podman
-- Core tool (auto-installed)
+- Docker or Podman (for orchestrator)
 
 ## 🛠️ Development
 
-### Quick Development Setup
-
 ```bash
-# Install both components with dev dependencies
+# Install with dev dependencies
 make install-dev
 
-# Run all tests
+# Run tests
 make test
 
 # Run linting
 make lint
-
-# Build distribution packages
-make build
 ```
+
+See [Development Guide](docs/development/setup.md) for complete setup.
 
 ### Core Tool Development
 
@@ -253,22 +171,15 @@ make test            # Run tests
 make docker-build    # Build Docker images
 ```
 
-See respective documentation for detailed development guides.
-
 ## 📄 License
 
-MIT License - see LICENSE file for details
+MIT License - see LICENSE file for details.
 
 ## 🤝 Contributing
 
-Contributions welcome! Please see the respective component documentation for contribution guidelines:
-
-- [Orchestrator Developer Guide](orchestrator/docs/developer-guide.md)
-- [Core Tool Documentation](core/docs/)
+Contributions welcome! See [Contributing Guide](docs/development/contributing.md).
 
 ## 📞 Support
 
-- **Orchestrator Documentation**: [orchestrator/docs/](orchestrator/docs/)
-- **Core Documentation**: [core/docs/](core/docs/)
+- **Documentation**: [docs/](docs/)
 - **Issues**: [GitHub Issues](https://github.com/RandomGenericUsername/color-scheme-generator/issues)
-

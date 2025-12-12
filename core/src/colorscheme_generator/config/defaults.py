@@ -3,7 +3,7 @@
 from pathlib import Path
 
 # Output defaults (OutputManager)
-output_directory = Path.home() / ".cache/colorscheme"
+output_directory = Path.home() / ".config/color-scheme/output"
 default_formats = ["json", "sh", "css", "gtk.css", "scss", "yaml", "rasi"]
 
 # Generation defaults

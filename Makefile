@@ -11,19 +11,19 @@ RED := \033[0;31m
 NC := \033[0m # No Color
 
 help: ## Show this help message
-	@echo "$(BLUE)Color Scheme Generator - Root$(NC)"
-	@echo ""
-	@echo "$(GREEN)Available targets (runs on both core and orchestrator):$(NC)"
+	@printf "$(BLUE)Color Scheme Generator - Root$(NC)\n"
+	@printf "\n"
+	@printf "$(GREEN)Available targets (runs on both core and orchestrator):$(NC)\n"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(YELLOW)%-20s$(NC) %s\n", $$1, $$2}'
-	@echo ""
-	@echo "$(GREEN)Component-specific targets:$(NC)"
-	@echo "  $(YELLOW)make core-<target>$(NC)         Run target in core/"
-	@echo "  $(YELLOW)make orchestrator-<target>$(NC) Run target in orchestrator/"
-	@echo ""
-	@echo "$(GREEN)Examples:$(NC)"
-	@echo "  make install              # Install both components"
-	@echo "  make core-test            # Run tests in core only"
-	@echo "  make orchestrator-build   # Build orchestrator only"
+	@printf "\n"
+	@printf "$(GREEN)Component-specific targets:$(NC)\n"
+	@printf "  $(YELLOW)make core-<target>$(NC)         Run target in core/\n"
+	@printf "  $(YELLOW)make orchestrator-<target>$(NC) Run target in orchestrator/\n"
+	@printf "\n"
+	@printf "$(GREEN)Examples:$(NC)\n"
+	@printf "  make install              # Install both components\n"
+	@printf "  make core-test            # Run tests in core only\n"
+	@printf "  make orchestrator-build   # Build orchestrator only\n"
 
 install: core-install orchestrator-install ## Install both core and orchestrator
 
@@ -44,7 +44,7 @@ build: core-build orchestrator-build ## Build both components
 check: core-check orchestrator-check ## Run all checks on both components
 
 dev: install-dev ## Setup development environment for both components
-	@echo "$(GREEN)Development environment ready for both components!$(NC)"
+	@printf "$(GREEN)Development environment ready for both components!$(NC)\n"
 
 # Docker targets (orchestrator only)
 docker-build: orchestrator-docker-build ## Build all Docker images
@@ -53,62 +53,60 @@ docker-clean: orchestrator-docker-clean ## Remove all Docker images
 
 # Core targets
 core-%:
-	@echo "$(BLUE)Running target '$*' in core/$(NC)"
+	@printf "$(BLUE)Running target '$*' in core/$(NC)\n"
 	@$(MAKE) -C core $*
 
 # Orchestrator targets
 orchestrator-%:
-	@echo "$(BLUE)Running target '$*' in orchestrator/$(NC)"
+	@printf "$(BLUE)Running target '$*' in orchestrator/$(NC)\n"
 	@$(MAKE) -C orchestrator $*
 
 # Quick start targets
 quick-start: ## Quick start guide
-	@echo "$(GREEN)Color Scheme Generator - Quick Start$(NC)"
-	@echo ""
-	@echo "$(YELLOW)1. Install dependencies:$(NC)"
-	@echo "   make install-dev"
-	@echo ""
-	@echo "$(YELLOW)2. Run tests:$(NC)"
-	@echo "   make test"
-	@echo ""
-	@echo "$(YELLOW)3. Build Docker images (orchestrator):$(NC)"
-	@echo "   make docker-build"
-	@echo ""
-	@echo "$(YELLOW)4. Use the CLI:$(NC)"
-	@echo "   # Direct usage (core):"
-	@echo "   cd core && source .venv/bin/activate"
-	@echo "   colorscheme-gen generate wallpaper.png"
-	@echo ""
-	@echo "   # Container orchestration:"
-	@echo "   cd orchestrator && source .venv/bin/activate"
-	@echo "   color-scheme generate wallpaper.png --backend pywal"
-	@echo ""
-	@echo "For more information, see README.md"
+	@printf "$(GREEN)Color Scheme Generator - Quick Start$(NC)\n"
+	@printf "\n"
+	@printf "$(YELLOW)1. Install dependencies:$(NC)\n"
+	@printf "   make install-dev\n"
+	@printf "\n"
+	@printf "$(YELLOW)2. Run tests:$(NC)\n"
+	@printf "   make test\n"
+	@printf "\n"
+	@printf "$(YELLOW)3. Build Docker images (orchestrator):$(NC)\n"
+	@printf "   make docker-build\n"
+	@printf "\n"
+	@printf "$(YELLOW)4. Use the CLI:$(NC)\n"
+	@printf "   # Direct usage (core):\n"
+	@printf "   cd core && uv run colorscheme-gen generate wallpaper.png\n"
+	@printf "\n"
+	@printf "   # Container orchestration:\n"
+	@printf "   cd orchestrator && uv run color-scheme generate wallpaper.png\n"
+	@printf "\n"
+	@printf "For more information, see docs/README.md\n"
 
 status: ## Show installation status
-	@echo "$(BLUE)Installation Status$(NC)"
-	@echo ""
-	@echo "$(YELLOW)Core:$(NC)"
+	@printf "$(BLUE)Installation Status$(NC)\n"
+	@printf "\n"
+	@printf "$(YELLOW)Core:$(NC)\n"
 	@if [ -d "core/.venv" ]; then \
-		echo "  ✓ Virtual environment exists"; \
+		printf "  ✓ Virtual environment exists\n"; \
 	else \
-		echo "  ✗ Virtual environment not found (run: make core-install)"; \
+		printf "  ✗ Virtual environment not found (run: make core-install)\n"; \
 	fi
 	@if [ -f "core/uv.lock" ]; then \
-		echo "  ✓ Lock file exists"; \
+		printf "  ✓ Lock file exists\n"; \
 	else \
-		echo "  ✗ Lock file not found"; \
+		printf "  ✗ Lock file not found\n"; \
 	fi
-	@echo ""
-	@echo "$(YELLOW)Orchestrator:$(NC)"
+	@printf "\n"
+	@printf "$(YELLOW)Orchestrator:$(NC)\n"
 	@if [ -d "orchestrator/.venv" ]; then \
-		echo "  ✓ Virtual environment exists"; \
+		printf "  ✓ Virtual environment exists\n"; \
 	else \
-		echo "  ✗ Virtual environment not found (run: make orchestrator-install)"; \
+		printf "  ✗ Virtual environment not found (run: make orchestrator-install)\n"; \
 	fi
 	@if [ -f "orchestrator/uv.lock" ]; then \
-		echo "  ✓ Lock file exists"; \
+		printf "  ✓ Lock file exists\n"; \
 	else \
-		echo "  ✗ Lock file not found"; \
+		printf "  ✗ Lock file not found\n"; \
 	fi
 

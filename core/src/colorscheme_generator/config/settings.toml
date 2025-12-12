@@ -1,6 +1,6 @@
 # Output configuration (controlled by OutputManager, not backends)
 [output]
-directory = "$HOME/.cache/colorscheme"
+directory = "$HOME/.config/color-scheme/output"
 formats = ["json", "sh", "css", "gtk.css", "yaml", "sequences", "rasi", "scss"]
 
 # Generation defaults

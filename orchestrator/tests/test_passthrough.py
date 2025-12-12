@@ -38,23 +38,24 @@ class TestParseCoreArguments:
 
 
 class TestBuildPassthroughCommand:
-    """Test passthrough command building."""
+    """Test passthrough command building.
+
+    Note: Container images use ENTRYPOINT, so we only pass subcommand + args.
+    """
 
     def test_build_simple_command(self) -> None:
         """Test building simple command."""
         cmd = build_passthrough_command("install", [])
-        assert cmd == ["colorscheme-generator", "install"]
+        assert cmd == ["install"]
 
     def test_build_command_with_args(self) -> None:
         """Test building command with arguments."""
         cmd = build_passthrough_command(
             "generate",
-            ["-i", "image.jpg", "--backend", "pywal"],
+            ["image.jpg", "--backend", "pywal"],
         )
         assert cmd == [
-            "colorscheme-generator",
             "generate",
-            "-i",
             "image.jpg",
             "--backend",
             "pywal",
@@ -66,7 +67,7 @@ class TestDefaultBackendDetection:
 
     def test_use_defaults_no_backend(self) -> None:
         """Test using defaults when no backend specified."""
-        args = ["-i", "image.jpg", "--saturation", "0.5"]
+        args = ["image.jpg", "--saturation", "0.5"]
         assert should_use_default_backends(args) is True
 
     def test_use_defaults_with_backend_flag(self) -> None:

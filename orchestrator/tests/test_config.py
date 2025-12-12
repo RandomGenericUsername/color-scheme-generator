@@ -89,7 +89,7 @@ class TestOrchestratorConfigEnvironment:
         """Test verbose is case insensitive."""
         with patch.dict(os.environ, {"COLOR_SCHEME_VERBOSE": "TRUE"}):
             config = OrchestratorConfig.from_env()
-            assert config.verbose is False  # Only lowercase "true" works
+            assert config.verbose is True  # .lower() is used, so TRUE works
 
     def test_config_from_env_debug(self) -> None:
         """Test debug from environment."""
@@ -113,7 +113,7 @@ class TestOrchestratorConfigDirectoryCreation:
             output_dir = Path(tmpdir) / "output"
             assert not output_dir.exists()
 
-            config = OrchestratorConfig(output_dir=str(output_dir))
+            _ = OrchestratorConfig(output_dir=str(output_dir))
             assert output_dir.exists()
 
     def test_config_dir_created(self) -> None:
@@ -122,38 +122,5 @@ class TestOrchestratorConfigDirectoryCreation:
             config_dir = Path(tmpdir) / "config"
             assert not config_dir.exists()
 
-            config = OrchestratorConfig(config_dir=str(config_dir))
+            _ = OrchestratorConfig(config_dir=str(config_dir))
             assert config_dir.exists()
-
-    def test_cache_dir_created(self) -> None:
-        """Test cache directory is created."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            cache_dir = Path(tmpdir) / "cache"
-            assert not cache_dir.exists()
-
-            config = OrchestratorConfig(cache_dir=str(cache_dir))
-            assert cache_dir.exists()
-
-
-class TestOrchestratorConfigXDGCache:
-    """Test XDG cache directory handling."""
-
-    def test_xdg_cache_home_used(self) -> None:
-        """Test XDG_CACHE_HOME is used if set."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            xdg_cache = Path(tmpdir) / "xdg-cache"
-            xdg_cache.mkdir()
-
-            with patch.dict(os.environ, {"XDG_CACHE_HOME": str(xdg_cache)}):
-                config = OrchestratorConfig()
-                assert "xdg-cache" in str(config.cache_dir)
-
-    def test_fallback_to_home_cache(self) -> None:
-        """Test fallback to ~/.cache when XDG not set."""
-        with patch.dict(os.environ, {}, clear=True):
-            # Remove XDG_CACHE_HOME if present
-            if "XDG_CACHE_HOME" in os.environ:
-                del os.environ["XDG_CACHE_HOME"]
-
-            config = OrchestratorConfig()
-            assert ".cache" in str(config.cache_dir)

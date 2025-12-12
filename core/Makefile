@@ -11,31 +11,31 @@ RED := \033[0;31m
 NC := \033[0m # No Color
 
 help: ## Show this help message
-	@echo "$(BLUE)Color Scheme Generator - Core$(NC)"
-	@echo ""
-	@echo "$(GREEN)Available targets:$(NC)"
+	@printf "$(BLUE)Color Scheme Generator - Core$(NC)\n"
+	@printf "\n"
+	@printf "$(GREEN)Available targets:$(NC)\n"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(YELLOW)%-20s$(NC) %s\n", $$1, $$2}'
 
 install: ## Install the package with uv
-	@echo "$(BLUE)Installing colorscheme-generator...$(NC)"
+	@printf "$(BLUE)Installing colorscheme-generator...$(NC)\n"
 	uv sync
 
 install-dev: ## Install the package with development dependencies
-	@echo "$(BLUE)Installing colorscheme-generator with dev dependencies...$(NC)"
+	@printf "$(BLUE)Installing colorscheme-generator with dev dependencies...$(NC)\n"
 	uv sync --all-extras --dev
 
 install-pywal: ## Install with pywal backend support
-	@echo "$(BLUE)Installing with pywal backend...$(NC)"
+	@printf "$(BLUE)Installing with pywal backend...$(NC)\n"
 	uv sync --extra pywal
 
 venv: ## Create a new virtual environment
-	@echo "$(BLUE)Creating virtual environment...$(NC)"
+	@printf "$(BLUE)Creating virtual environment...$(NC)\n"
 	uv venv
 
 clean: clean-build clean-pyc clean-test ## Remove all build, test, coverage and Python artifacts
 
 clean-build: ## Remove build artifacts
-	@echo "$(BLUE)Cleaning build artifacts...$(NC)"
+	@printf "$(BLUE)Cleaning build artifacts...$(NC)\n"
 	rm -rf build/
 	rm -rf dist/
 	rm -rf .eggs/
@@ -43,14 +43,14 @@ clean-build: ## Remove build artifacts
 	find . -name '*.egg' -exec rm -f {} +
 
 clean-pyc: ## Remove Python file artifacts
-	@echo "$(BLUE)Cleaning Python artifacts...$(NC)"
+	@printf "$(BLUE)Cleaning Python artifacts...$(NC)\n"
 	find . -name '*.pyc' -exec rm -f {} +
 	find . -name '*.pyo' -exec rm -f {} +
 	find . -name '*~' -exec rm -f {} +
 	find . -name '__pycache__' -exec rm -rf {} +
 
 clean-test: ## Remove test and coverage artifacts
-	@echo "$(BLUE)Cleaning test artifacts...$(NC)"
+	@printf "$(BLUE)Cleaning test artifacts...$(NC)\n"
 	rm -rf .pytest_cache/
 	rm -rf .coverage
 	rm -rf htmlcov/
@@ -58,68 +58,68 @@ clean-test: ## Remove test and coverage artifacts
 	rm -rf .ruff_cache/
 
 lint: ## Check code style with ruff
-	@echo "$(BLUE)Running ruff linter...$(NC)"
+	@printf "$(BLUE)Running ruff linter...$(NC)\n"
 	uv run ruff check src/ tests/
 
 lint-fix: ## Fix code style issues with ruff
-	@echo "$(BLUE)Fixing code style with ruff...$(NC)"
+	@printf "$(BLUE)Fixing code style with ruff...$(NC)\n"
 	uv run ruff check --fix src/ tests/
 
 format: ## Format code with black and isort
-	@echo "$(BLUE)Formatting code with black...$(NC)"
+	@printf "$(BLUE)Formatting code with black...$(NC)\n"
 	uv run black src/ tests/
-	@echo "$(BLUE)Sorting imports with isort...$(NC)"
+	@printf "$(BLUE)Sorting imports with isort...$(NC)\n"
 	uv run isort src/ tests/
 
 format-check: ## Check code formatting without making changes
-	@echo "$(BLUE)Checking code format...$(NC)"
+	@printf "$(BLUE)Checking code format...$(NC)\n"
 	uv run black --check src/ tests/
 	uv run isort --check-only src/ tests/
 
 type-check: ## Run type checking with mypy
-	@echo "$(BLUE)Running mypy type checker...$(NC)"
+	@printf "$(BLUE)Running mypy type checker...$(NC)\n"
 	uv run mypy src/
 
 test: ## Run tests with pytest
-	@echo "$(BLUE)Running tests...$(NC)"
+	@printf "$(BLUE)Running tests...$(NC)\n"
 	uv run pytest
 
 test-verbose: ## Run tests with verbose output
-	@echo "$(BLUE)Running tests (verbose)...$(NC)"
+	@printf "$(BLUE)Running tests (verbose)...$(NC)\n"
 	uv run pytest -vv
 
 coverage: ## Run tests with coverage report
-	@echo "$(BLUE)Running tests with coverage...$(NC)"
+	@printf "$(BLUE)Running tests with coverage...$(NC)\n"
 	uv run pytest --cov=colorscheme_generator --cov-report=html --cov-report=term
 
 coverage-report: ## Open coverage report in browser
-	@echo "$(BLUE)Opening coverage report...$(NC)"
+	@printf "$(BLUE)Opening coverage report...$(NC)\n"
 	xdg-open htmlcov/index.html || open htmlcov/index.html
 
 build: clean ## Build distribution packages
-	@echo "$(BLUE)Building distribution packages...$(NC)"
+	@printf "$(BLUE)Building distribution packages...$(NC)\n"
 	uv build
 
 check: lint type-check test ## Run all checks (lint, type-check, test)
-	@echo "$(GREEN)All checks passed!$(NC)"
+	@printf "$(GREEN)All checks passed!$(NC)\n"
 
 dev: install-dev ## Setup development environment
-	@echo "$(GREEN)Development environment ready!$(NC)"
-	@echo "Run 'source .venv/bin/activate' to activate the virtual environment"
+	@printf "$(GREEN)Development environment ready!$(NC)\n"
+	@printf "Run 'uv run colorscheme-gen' to use the CLI\n"
 
 run: ## Run the CLI (use ARGS="..." to pass arguments)
-	@echo "$(BLUE)Running colorscheme-gen $(ARGS)$(NC)"
+	@printf "$(BLUE)Running colorscheme-gen $(ARGS)$(NC)\n"
 	uv run colorscheme-gen $(ARGS)
 
 shell: ## Open a Python shell with the package loaded
-	@echo "$(BLUE)Opening Python shell...$(NC)"
+	@printf "$(BLUE)Opening Python shell...$(NC)\n"
 	uv run python
 
 update: ## Update dependencies
-	@echo "$(BLUE)Updating dependencies...$(NC)"
+	@printf "$(BLUE)Updating dependencies...$(NC)\n"
 	uv sync --upgrade
 
 lock: ## Update lock file without installing
-	@echo "$(BLUE)Updating lock file...$(NC)"
+	@printf "$(BLUE)Updating lock file...$(NC)\n"
 	uv lock
 

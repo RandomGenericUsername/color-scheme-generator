@@ -6,7 +6,6 @@ from typing import Annotated, Optional
 
 import typer
 from rich.console import Console
-from rich.table import Table
 
 from colorscheme_generator import ColorSchemeGeneratorFactory
 from colorscheme_generator.config.enums import Backend, ColorFormat
@@ -31,8 +30,9 @@ app = typer.Typer(
     add_completion=False,
 )
 
-# Rich console for pretty output
-console = Console()
+# Rich consoles for output
+console = Console()  # stdout for normal output
+err_console = Console(stderr=True)  # stderr for errors
 
 
 def _ansi_color_block(color: Color, width: int = 8) -> str:
@@ -207,7 +207,7 @@ def show(
     if last:
         colors_file = _find_last_colorscheme()
         if not colors_file:
-            console.print(
+            err_console.print(
                 "[red]Error:[/red] No recent colorscheme found. "
                 "Generate one first or specify a file."
             )
@@ -217,14 +217,14 @@ def show(
     else:
         colors_file = file
         if not colors_file:
-            console.print(
+            err_console.print(
                 "[red]Error:[/red] Either --file or --last must be specified"
             )
             raise typer.Exit(1)
 
     # Check file exists
     if not colors_file.exists():
-        console.print(
+        err_console.print(
             f"[red]Error:[/red] File not found: {colors_file}"
         )
         raise typer.Exit(1)
@@ -234,7 +234,7 @@ def show(
         scheme = _load_colorscheme_from_json(colors_file)
         _show_colorscheme(scheme)
     except Exception as e:
-        console.print(
+        err_console.print(
             f"[red]Error:[/red] Failed to load colorscheme: {e}"
         )
         if verbose:
@@ -349,7 +349,7 @@ def generate(
     try:
         settings = Settings.get()
     except Exception as e:
-        console.print(
+        err_console.print(
             f"[red]Error loading settings:[/red] {e}"
         )
         raise typer.Exit(1)
@@ -364,7 +364,7 @@ def generate(
 
     # Require image argument
     if not image:
-        console.print(
+        err_console.print(
             "[red]Error:[/red] image argument is required"
         )
         raise typer.Exit(1)
@@ -376,10 +376,10 @@ def generate(
         try:
             config_kwargs["backend"] = Backend(backend)
         except ValueError:
-            console.print(
+            err_console.print(
                 f"[red]Error:[/red] Invalid backend: {backend}"
             )
-            console.print(
+            err_console.print(
                 "Valid backends: pywal, wallust, custom, auto"
             )
             raise typer.Exit(1)
@@ -394,7 +394,7 @@ def generate(
         try:
             config_kwargs["formats"] = [ColorFormat(f) for f in formats]
         except ValueError as e:
-            console.print(
+            err_console.print(
                 f"[red]Error:[/red] Invalid format: {e}"
             )
             raise typer.Exit(1)
@@ -423,7 +423,7 @@ def generate(
     try:
         config = GeneratorConfig(**config_kwargs)
     except Exception as e:
-        console.print(
+        err_console.print(
             f"[red]Error creating config:[/red] {e}"
         )
         raise typer.Exit(1)
@@ -458,18 +458,18 @@ def generate(
             settings=settings,
         )
     except BackendNotAvailableError as e:
-        console.print(
+        err_console.print(
             f"[red]Error:[/red] Backend not available: {e}"
         )
-        console.print(
+        err_console.print(
             "\nAvailable backends:"
         )
         available = ColorSchemeGeneratorFactory.list_available(settings)
         for backend_name in available:
-            console.print(f"  • {backend_name}")
+            err_console.print(f"  • {backend_name}")
         raise typer.Exit(1)
     except Exception as e:
-        console.print(
+        err_console.print(
             f"[red]Error creating generator:[/red] {e}"
         )
         if verbose:
@@ -488,12 +488,12 @@ def generate(
             console.print("[green]✓[/green] Color extraction successful")
 
     except InvalidImageError as e:
-        console.print(
+        err_console.print(
             f"[red]Error:[/red] Invalid image: {e}"
         )
         raise typer.Exit(1)
     except ColorExtractionError as e:
-        console.print(
+        err_console.print(
             f"[red]Error:[/red] Color extraction failed: {e}"
         )
         if verbose:
@@ -501,7 +501,7 @@ def generate(
             traceback.print_exc()
         raise typer.Exit(1)
     except Exception as e:
-        console.print(
+        err_console.print(
             f"[red]Error:[/red] Unexpected error: {e}"
         )
         if verbose:
@@ -531,12 +531,12 @@ def generate(
             console.print(f"  • {format_name}: {file_path}")
 
     except OutputWriteError as e:
-        console.print(
+        err_console.print(
             f"[red]Error writing output:[/red] {e}"
         )
         raise typer.Exit(1)
     except Exception as e:
-        console.print(
+        err_console.print(
             f"[red]Error:[/red] Unexpected error writing output: {e}"
         )
         if verbose:

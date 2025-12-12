@@ -12,7 +12,6 @@ from color_scheme.config.constants import (
     DEFAULT_BACKENDS,
     DEFAULT_CONFIG_DIR,
     DEFAULT_OUTPUT_DIR,
-    RUNTIME_DETECTION_ORDER,
 )
 
 
@@ -28,9 +27,8 @@ class OrchestratorConfig:
     backends: list[str] = None  # type: ignore
 
     # Directory configuration
-    output_dir: Path = None  # type: ignore
-    config_dir: Path = None  # type: ignore
-    cache_dir: Path = None  # type: ignore
+    output_dir: Path = None  # type: ignore  # Where generated files go
+    config_dir: Path = None  # type: ignore  # For user settings
 
     # Container configuration
     container_timeout: int = CONTAINER_TIMEOUT
@@ -56,20 +54,9 @@ class OrchestratorConfig:
         else:
             self.config_dir = Path(self.config_dir).expanduser()
 
-        if self.cache_dir is None:
-            # Default to XDG cache dir if available
-            xdg_cache = os.getenv("XDG_CACHE_HOME")
-            if xdg_cache:
-                self.cache_dir = Path(xdg_cache) / "color-scheme"
-            else:
-                self.cache_dir = Path.home() / ".cache" / "color-scheme"
-        else:
-            self.cache_dir = Path(self.cache_dir).expanduser()
-
         # Ensure directories exist
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.config_dir.mkdir(parents=True, exist_ok=True)
-        self.cache_dir.mkdir(parents=True, exist_ok=True)
 
     @staticmethod
     def from_env() -> "OrchestratorConfig":
@@ -79,7 +66,6 @@ class OrchestratorConfig:
             runtime_path=os.getenv("COLOR_SCHEME_RUNTIME_PATH"),
             output_dir=os.getenv("COLOR_SCHEME_OUTPUT_DIR"),
             config_dir=os.getenv("COLOR_SCHEME_CONFIG_DIR"),
-            cache_dir=os.getenv("COLOR_SCHEME_CACHE_DIR"),
             container_timeout=int(
                 os.getenv("COLOR_SCHEME_CONTAINER_TIMEOUT",
                          str(CONTAINER_TIMEOUT))

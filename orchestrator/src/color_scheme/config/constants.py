@@ -26,7 +26,7 @@ BACKEND_VERSIONS = {
 
 # Environment defaults
 DEFAULT_BACKENDS = ["pywal", "wallust"]
-DEFAULT_OUTPUT_DIR = "/tmp/color-schemes"
+DEFAULT_OUTPUT_DIR = "~/.config/color-scheme/output"
 DEFAULT_CONFIG_DIR = "~/.config/color-scheme"
 
 # Container settings
@@ -34,12 +34,9 @@ CONTAINER_TIMEOUT = 300  # 5 minutes
 CONTAINER_MEMORY_LIMIT = "512m"
 CONTAINER_CPUSET_CPUS = None  # No limit by default
 
-# Volume mount points
-VOLUME_PATHS = {
-    "output": "/tmp/color-schemes",
-    "cache": "/root/.cache",
-    "config": "/root/.config",
-}
+# Container mount points (fixed paths inside container)
+CONTAINER_OUTPUT_DIR = "/output"
+CONTAINER_CONFIG_DIR = "/config"
 
 # Docker/Podman configuration
 RUNTIME_DETECTION_ORDER = ["docker", "podman"]

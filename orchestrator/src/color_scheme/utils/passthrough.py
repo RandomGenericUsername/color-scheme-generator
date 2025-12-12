@@ -136,8 +136,9 @@ def should_use_default_backends(args: list[str]) -> bool:
             return False
 
     # Check for --custom flag
-    if any(arg in args or arg.startswith("--custom") for arg in ("--custom", "-c")):
-        return False
+    for arg in args:
+        if arg in ("--custom", "-c") or arg.startswith("--custom="):
+            return False
 
     return True
 

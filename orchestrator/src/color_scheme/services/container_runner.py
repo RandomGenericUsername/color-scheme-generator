@@ -3,7 +3,6 @@
 import logging
 import os
 import uuid
-from pathlib import Path
 from typing import Optional
 
 from container_manager import (
@@ -13,6 +12,7 @@ from container_manager import (
 )
 
 from color_scheme.config.config import OrchestratorConfig
+from color_scheme.config.constants import CONTAINER_OUTPUT_DIR
 from color_scheme.utils.passthrough import build_passthrough_command
 
 logger = logging.getLogger(__name__)
@@ -53,7 +53,7 @@ class ContainerRunner:
             image_name: Override default image name
 
         Returns:
-            Container output/logs
+            Container output/logs with container paths translated to host paths
 
         Raises:
             RuntimeError: If container execution fails
@@ -66,7 +66,12 @@ class ContainerRunner:
         # Extract and mount image path if present in args
         translated_args, image_mount = self._extract_and_mount_image(args)
 
-        # Build volume mounts
+        # For generate command, process --output-dir argument BEFORE volume mounts
+        # This updates config.output_dir if user specified a custom path
+        if command == "generate":
+            translated_args = self._process_output_dir_arg(translated_args)
+
+        # Build volume mounts (uses potentially updated config.output_dir)
         volumes = self._prepare_volume_mounts()
         if image_mount:
             volumes.append(image_mount)
@@ -93,20 +98,76 @@ class ContainerRunner:
 
         try:
             # Run container
-            container_id = self.engine.containers.run(run_config)
-            logger.debug(f"Container started: {container_id}")
+            # When detach=False, run() returns the container stdout directly
+            # and the container is already removed (remove=True)
+            output = self.engine.containers.run(run_config)
+            logger.info(f"Container output:\n{output}")
 
-            # Get logs
-            logs = self.engine.containers.logs(container_id)
-            logger.info(f"Container output:\n{logs}")
+            # Translate container paths back to host paths in output
+            output = self._translate_output_paths(output)
 
-            return logs
+            return output
 
         except Exception as e:
             logger.error(f"Failed to run backend container: {e}")
             raise RuntimeError(
                 f"Backend execution failed: {e}"
             ) from e
+
+    def _process_output_dir_arg(self, args: list[str]) -> list[str]:
+        """
+        Process --output-dir argument: extract user-specified path, update config,
+        and replace with container path.
+
+        Args:
+            args: Current argument list
+
+        Returns:
+            Updated argument list with --output-dir pointing to container path
+        """
+        from pathlib import Path
+
+        new_args = []
+        i = 0
+
+        while i < len(args):
+            arg = args[i]
+            if arg in ("--output-dir", "-o"):
+                # Get the value (next arg)
+                if i + 1 < len(args):
+                    user_path = Path(args[i + 1]).expanduser().resolve()
+                    # Update config to mount this directory
+                    self.config.output_dir = user_path
+                    # Skip both the flag and its value
+                    i += 2
+                    continue
+                else:
+                    # Flag without value - skip it
+                    i += 1
+                    continue
+            new_args.append(arg)
+            i += 1
+
+        # Always add --output-dir pointing to container path
+        new_args.extend(["--output-dir", CONTAINER_OUTPUT_DIR])
+
+        return new_args
+
+    def _translate_output_paths(self, output: str) -> str:
+        """
+        Translate container paths in output to host paths.
+
+        Args:
+            output: Container output string
+
+        Returns:
+            Output with container paths replaced by host paths
+        """
+        # Replace container output path with host output path
+        host_output_dir = str(self.config.output_dir)
+        output = output.replace(CONTAINER_OUTPUT_DIR, host_output_dir)
+
+        return output
 
     def install_backends(
         self,
@@ -235,38 +296,13 @@ class ContainerRunner:
         """
         mounts = []
 
-        # Mount output directory
+        # Mount output directory (host output_dir -> container /output)
         if self.config.output_dir:
             self.config.output_dir.mkdir(parents=True, exist_ok=True)
             mounts.append(
                 VolumeMount(
                     source=str(self.config.output_dir),
-                    target="/tmp/color-schemes",
-                    read_only=False,
-                )
-            )
-
-        # Mount cache directory
-        if self.config.cache_dir:
-            self.config.cache_dir.mkdir(parents=True, exist_ok=True)
-            mounts.append(
-                VolumeMount(
-                    source=str(self.config.cache_dir),
-                    target="/home/colorscheme/.cache",
-                    read_only=False,
-                )
-            )
-
-        # Mount config directory - mount entire .config to allow backends to write their own subdirs
-        if self.config.config_dir:
-            # Create parent .config directory
-            config_parent = self.config.config_dir.parent
-            config_parent.mkdir(parents=True, exist_ok=True)
-            self.config.config_dir.mkdir(parents=True, exist_ok=True)
-            mounts.append(
-                VolumeMount(
-                    source=str(config_parent),
-                    target="/home/colorscheme/.config",
+                    target=CONTAINER_OUTPUT_DIR,
                     read_only=False,
                 )
             )

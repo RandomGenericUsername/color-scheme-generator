@@ -11,27 +11,27 @@ RED := \033[0;31m
 NC := \033[0m # No Color
 
 help: ## Show this help message
-	@echo "$(BLUE)Color Scheme Generator - Orchestrator$(NC)"
-	@echo ""
-	@echo "$(GREEN)Available targets:$(NC)"
+	@printf "$(BLUE)Color Scheme Generator - Orchestrator$(NC)\n"
+	@printf "\n"
+	@printf "$(GREEN)Available targets:$(NC)\n"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(YELLOW)%-20s$(NC) %s\n", $$1, $$2}'
 
 install: ## Install the package with uv
-	@echo "$(BLUE)Installing color-scheme orchestrator...$(NC)"
+	@printf "$(BLUE)Installing color-scheme orchestrator...$(NC)\n"
 	uv sync
 
 install-dev: ## Install the package with development dependencies
-	@echo "$(BLUE)Installing color-scheme orchestrator with dev dependencies...$(NC)"
+	@printf "$(BLUE)Installing color-scheme orchestrator with dev dependencies...$(NC)\n"
 	uv sync --all-extras --dev
 
 venv: ## Create a new virtual environment
-	@echo "$(BLUE)Creating virtual environment...$(NC)"
+	@printf "$(BLUE)Creating virtual environment...$(NC)\n"
 	uv venv
 
 clean: clean-build clean-pyc clean-test ## Remove all build, test, coverage and Python artifacts
 
 clean-build: ## Remove build artifacts
-	@echo "$(BLUE)Cleaning build artifacts...$(NC)"
+	@printf "$(BLUE)Cleaning build artifacts...$(NC)\n"
 	rm -rf build/
 	rm -rf dist/
 	rm -rf .eggs/
@@ -39,14 +39,14 @@ clean-build: ## Remove build artifacts
 	find . -name '*.egg' -exec rm -f {} +
 
 clean-pyc: ## Remove Python file artifacts
-	@echo "$(BLUE)Cleaning Python artifacts...$(NC)"
+	@printf "$(BLUE)Cleaning Python artifacts...$(NC)\n"
 	find . -name '*.pyc' -exec rm -f {} +
 	find . -name '*.pyo' -exec rm -f {} +
 	find . -name '*~' -exec rm -f {} +
 	find . -name '__pycache__' -exec rm -rf {} +
 
 clean-test: ## Remove test and coverage artifacts
-	@echo "$(BLUE)Cleaning test artifacts...$(NC)"
+	@printf "$(BLUE)Cleaning test artifacts...$(NC)\n"
 	rm -rf .pytest_cache/
 	rm -rf .coverage
 	rm -rf htmlcov/
@@ -54,99 +54,99 @@ clean-test: ## Remove test and coverage artifacts
 	rm -rf .ruff_cache/
 
 lint: ## Check code style with ruff
-	@echo "$(BLUE)Running ruff linter...$(NC)"
+	@printf "$(BLUE)Running ruff linter...$(NC)\n"
 	uv run ruff check src/ tests/
 
 lint-fix: ## Fix code style issues with ruff
-	@echo "$(BLUE)Fixing code style with ruff...$(NC)"
+	@printf "$(BLUE)Fixing code style with ruff...$(NC)\n"
 	uv run ruff check --fix src/ tests/
 
 format: ## Format code with black and isort
-	@echo "$(BLUE)Formatting code with black...$(NC)"
+	@printf "$(BLUE)Formatting code with black...$(NC)\n"
 	uv run black src/ tests/
-	@echo "$(BLUE)Sorting imports with isort...$(NC)"
+	@printf "$(BLUE)Sorting imports with isort...$(NC)\n"
 	uv run isort src/ tests/
 
 format-check: ## Check code formatting without making changes
-	@echo "$(BLUE)Checking code format...$(NC)"
+	@printf "$(BLUE)Checking code format...$(NC)\n"
 	uv run black --check src/ tests/
 	uv run isort --check-only src/ tests/
 
 type-check: ## Run type checking with mypy
-	@echo "$(BLUE)Running mypy type checker...$(NC)"
+	@printf "$(BLUE)Running mypy type checker...$(NC)\n"
 	uv run mypy src/
 
 test: ## Run tests with pytest
-	@echo "$(BLUE)Running tests...$(NC)"
+	@printf "$(BLUE)Running tests...$(NC)\n"
 	uv run pytest
 
 test-verbose: ## Run tests with verbose output
-	@echo "$(BLUE)Running tests (verbose)...$(NC)"
+	@printf "$(BLUE)Running tests (verbose)...$(NC)\n"
 	uv run pytest -vv
 
 test-parallel: ## Run tests in parallel
-	@echo "$(BLUE)Running tests in parallel...$(NC)"
+	@printf "$(BLUE)Running tests in parallel...$(NC)\n"
 	uv run pytest -n auto
 
 coverage: ## Run tests with coverage report
-	@echo "$(BLUE)Running tests with coverage...$(NC)"
+	@printf "$(BLUE)Running tests with coverage...$(NC)\n"
 	uv run pytest --cov=color_scheme --cov-report=html --cov-report=term
 
 coverage-report: ## Open coverage report in browser
-	@echo "$(BLUE)Opening coverage report...$(NC)"
+	@printf "$(BLUE)Opening coverage report...$(NC)\n"
 	xdg-open htmlcov/index.html || open htmlcov/index.html
 
 build: clean ## Build distribution packages
-	@echo "$(BLUE)Building distribution packages...$(NC)"
+	@printf "$(BLUE)Building distribution packages...$(NC)\n"
 	uv build
 
 check: lint type-check test ## Run all checks (lint, type-check, test)
-	@echo "$(GREEN)All checks passed!$(NC)"
+	@printf "$(GREEN)All checks passed!$(NC)\n"
 
 dev: install-dev ## Setup development environment
-	@echo "$(GREEN)Development environment ready!$(NC)"
-	@echo "Run 'source .venv/bin/activate' to activate the virtual environment"
+	@printf "$(GREEN)Development environment ready!$(NC)\n"
+	@printf "Run 'uv run color-scheme' to use the CLI\n"
 
 run: ## Run the CLI (use ARGS="..." to pass arguments)
-	@echo "$(BLUE)Running color-scheme $(ARGS)$(NC)"
+	@printf "$(BLUE)Running color-scheme $(ARGS)$(NC)\n"
 	uv run color-scheme $(ARGS)
 
 shell: ## Open a Python shell with the package loaded
-	@echo "$(BLUE)Opening Python shell...$(NC)"
+	@printf "$(BLUE)Opening Python shell...$(NC)\n"
 	uv run python
 
 update: ## Update dependencies
-	@echo "$(BLUE)Updating dependencies...$(NC)"
+	@printf "$(BLUE)Updating dependencies...$(NC)\n"
 	uv sync --upgrade
 
 lock: ## Update lock file without installing
-	@echo "$(BLUE)Updating lock file...$(NC)"
+	@printf "$(BLUE)Updating lock file...$(NC)\n"
 	uv lock
 
 # Docker targets
 docker-build: docker-build-pywal docker-build-wallust docker-build-custom ## Build all Docker images
 
 docker-build-pywal: ## Build pywal backend Docker image
-	@echo "$(BLUE)Building pywal Docker image...$(NC)"
+	@printf "$(BLUE)Building pywal Docker image...$(NC)\n"
 	cd .. && docker build -f orchestrator/docker/Dockerfile.pywal -t color-scheme-pywal:latest .
 
 docker-build-wallust: ## Build wallust backend Docker image
-	@echo "$(BLUE)Building wallust Docker image...$(NC)"
+	@printf "$(BLUE)Building wallust Docker image...$(NC)\n"
 	docker build -f docker/Dockerfile.wallust -t color-scheme-wallust:latest .
 
 docker-build-custom: ## Build custom backend Docker image (requires backend.py)
 	@if [ -f backend.py ]; then \
-		echo "$(BLUE)Building custom Docker image...$(NC)"; \
+		printf "$(BLUE)Building custom Docker image...$(NC)\n"; \
 		docker build -f docker/Dockerfile.custom -t color-scheme-custom:latest .; \
 	else \
-		echo "$(YELLOW)Skipping custom backend build (backend.py not found)$(NC)"; \
+		printf "$(YELLOW)Skipping custom backend build (backend.py not found)$(NC)\n"; \
 	fi
 
 docker-clean: ## Remove all Docker images
-	@echo "$(BLUE)Removing Docker images...$(NC)"
+	@printf "$(BLUE)Removing Docker images...$(NC)\n"
 	docker rmi color-scheme-pywal:latest color-scheme-wallust:latest color-scheme-custom:latest || true
 
 docker-test: docker-build ## Build images and run a test
-	@echo "$(BLUE)Testing Docker setup...$(NC)"
+	@printf "$(BLUE)Testing Docker setup...$(NC)\n"
 	uv run color-scheme --list-backends
 
