@@ -163,10 +163,13 @@ class ImageBuilder:
         try:
             all_images = self.engine.images.list()
             # Filter for color-scheme images
-            color_scheme_images = [
-                img for img in all_images
-                if "color-scheme" in img
-            ]
+            color_scheme_images = []
+            for img in all_images:
+                # Check if any tag contains "color-scheme"
+                for tag in img.tags:
+                    if "color-scheme" in tag:
+                        color_scheme_images.append(tag)
+                        break
             return color_scheme_images
         except Exception as e:
             logger.error(f"Failed to list images: {e}")

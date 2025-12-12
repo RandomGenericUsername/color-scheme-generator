@@ -27,7 +27,7 @@ BACKEND_VERSIONS = {
 # Environment defaults
 DEFAULT_BACKENDS = ["pywal", "wallust"]
 DEFAULT_OUTPUT_DIR = "/tmp/color-schemes"
-DEFAULT_CONFIG_DIR = "/root/.config/color-scheme"
+DEFAULT_CONFIG_DIR = "~/.config/color-scheme"
 
 # Container settings
 CONTAINER_TIMEOUT = 300  # 5 minutes
