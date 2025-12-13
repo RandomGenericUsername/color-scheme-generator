@@ -107,6 +107,37 @@ CLI override: `--template-dir`
 
 ---
 
+## Logging Settings
+
+```toml
+[logging]
+level = "INFO"      # DEBUG, INFO, WARNING, ERROR, CRITICAL
+show_time = true    # Show timestamps in log output
+show_path = false   # Show file paths in log output
+```
+
+### `level`
+
+| Property | Value |
+|----------|-------|
+| Type | String |
+| Default | `"INFO"` |
+| Options | `"DEBUG"`, `"INFO"`, `"WARNING"`, `"ERROR"`, `"CRITICAL"` |
+
+CLI override: `--quiet` (sets WARNING), `--debug` (sets DEBUG)
+
+### Logging Levels Explained
+
+| Level | Description |
+|-------|-------------|
+| `DEBUG` | All internal details (for troubleshooting) |
+| `INFO` | Normal progress and results (default) |
+| `WARNING` | Problems that don't prevent operation |
+| `ERROR` | Errors that prevent operation |
+| `CRITICAL` | Fatal errors |
+
+---
+
 ## Environment Variables
 
 Override settings with environment variables:
@@ -154,5 +185,9 @@ formats = ["json", "sh", "css", "yaml", "sequences"]
 
 [templates]
 directory = ""
-```
 
+[logging]
+level = "INFO"
+show_time = true
+show_path = false
+```
