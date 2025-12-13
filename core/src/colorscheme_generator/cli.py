@@ -1,6 +1,8 @@
 """Command-line interface for colorscheme generator using Typer."""
 
 import json
+import logging
+import time
 from pathlib import Path
 from typing import Annotated, Optional
 
@@ -21,6 +23,11 @@ from colorscheme_generator.core.types import (
     Color,
     ColorScheme,
     GeneratorConfig,
+)
+from colorscheme_generator.logging import (
+    ColorSchemeDisplay,
+    LoggingConfig,
+    setup_logging,
 )
 
 # Create Typer app
@@ -329,12 +336,19 @@ def generate(
             help="List available backends and exit",
         ),
     ] = False,
-    verbose: Annotated[
+    quiet: Annotated[
         bool,
         typer.Option(
-            "--verbose",
-            "-v",
-            help="Verbose output",
+            "--quiet",
+            "-q",
+            help="Quiet mode (only show errors)",
+        ),
+    ] = False,
+    debug: Annotated[
+        bool,
+        typer.Option(
+            "--debug",
+            help="Debug mode (show all logging)",
         ),
     ] = False,
 ) -> None:
@@ -353,6 +367,26 @@ def generate(
             f"[red]Error loading settings:[/red] {e}"
         )
         raise typer.Exit(1)
+
+    # Setup logging based on CLI flags
+    if debug:
+        log_level = logging.DEBUG
+    elif quiet:
+        log_level = logging.WARNING
+    else:
+        log_level = settings.logging.get_level_int()
+
+    log_config = LoggingConfig(
+        level=log_level,
+        show_time=settings.logging.show_time,
+        show_path=debug,  # Show path in debug mode
+    )
+    setup_logging(log_config, console)
+
+    logger = logging.getLogger(__name__)
+    logger.debug(
+        "Logging initialized at level %s", logging.getLevelName(log_level)
+    )
 
     # List backends if requested
     if list_backends:
@@ -434,9 +468,11 @@ def generate(
         if "saturation" in overrides:
             settings.generation.saturation_adjustment = overrides["saturation"]
         if "pywal_algorithm" in overrides:
-            settings.backends.pywal.backend_algorithm = overrides["pywal_algorithm"]
+            algo = overrides["pywal_algorithm"]
+            settings.backends.pywal.backend_algorithm = algo
         if "wallust_backend" in overrides:
-            settings.backends.wallust.backend_type = overrides["wallust_backend"]
+            backend_type = overrides["wallust_backend"]
+            settings.backends.wallust.backend_type = backend_type
         if "custom_algorithm" in overrides:
             settings.backends.custom.algorithm = overrides["custom_algorithm"]
         if "custom_clusters" in overrides:
@@ -444,15 +480,17 @@ def generate(
         if "template_dir" in overrides:
             settings.templates.directory = Path(overrides["template_dir"])
 
-    if verbose:
-        console.print(f"[dim]Image:[/dim] {image}")
-        console.print(f"[dim]Backend:[/dim] {config.backend.value}")
-        console.print(f"[dim]Output dir:[/dim] {config.output_dir}")
-        formats_str = [f.value for f in config.formats] if config.formats else "default"
-        console.print(f"[dim]Formats:[/dim] {formats_str}")
+    logger.debug("Image: %s", image)
+    logger.debug("Backend: %s", config.backend.value)
+    logger.debug("Output dir: %s", config.output_dir)
+    if config.formats:
+        logger.debug("Formats: %s", [f.value for f in config.formats])
 
     # Create generator
     try:
+        logger.debug(
+            "Creating generator for backend: %s", config.backend.value
+        )
         generator = ColorSchemeGeneratorFactory.create(
             backend=config.backend,
             settings=settings,
@@ -469,23 +507,19 @@ def generate(
             err_console.print(f"  • {backend_name}")
         raise typer.Exit(1)
     except Exception as e:
+        logger.exception("Error creating generator")
         err_console.print(
             f"[red]Error creating generator:[/red] {e}"
         )
-        if verbose:
-            import traceback
-            traceback.print_exc()
         raise typer.Exit(1)
 
     # Generate color scheme
+    start_time = time.time()
     try:
-        if verbose:
-            console.print(f"\n[dim]Extracting colors from {image}...[/dim]")
-
+        logger.info("Extracting colors from %s...", image)
         scheme = generator.generate(image, config)
-
-        if verbose:
-            console.print("[green]✓[/green] Color extraction successful")
+        elapsed = time.time() - start_time
+        logger.info("Color extraction successful (%.2fs)", elapsed)
 
     except InvalidImageError as e:
         err_console.print(
@@ -496,39 +530,48 @@ def generate(
         err_console.print(
             f"[red]Error:[/red] Color extraction failed: {e}"
         )
-        if verbose:
+        if debug:
             import traceback
             traceback.print_exc()
         raise typer.Exit(1)
     except Exception as e:
+        logger.exception("Unexpected error during color extraction")
         err_console.print(
             f"[red]Error:[/red] Unexpected error: {e}"
         )
-        if verbose:
-            import traceback
-            traceback.print_exc()
         raise typer.Exit(1)
 
     # Write output files
     try:
         # Use default output directory if not specified
-        output_dir = config.output_dir if config.output_dir else settings.output.directory
+        if config.output_dir:
+            final_output_dir = config.output_dir
+        else:
+            final_output_dir = settings.output.directory
         # Use default formats if not specified
-        formats = config.formats if config.formats else [ColorFormat(f) for f in settings.output.formats]
+        final_formats = (
+            config.formats
+            if config.formats
+            else [ColorFormat(f) for f in settings.output.formats]
+        )
 
-        if verbose:
-            console.print(f"\n[dim]Writing output to: {output_dir}[/dim]")
+        logger.debug("Writing output to: %s", final_output_dir)
 
         output_manager = OutputManager(settings)
         output_files = output_manager.write_outputs(
             scheme,
-            output_dir,
-            formats,
+            final_output_dir,
+            final_formats,
         )
 
-        console.print("\n[bold green]✓ Generated files:[/bold green]")
-        for format_name, file_path in output_files.items():
-            console.print(f"  • {format_name}: {file_path}")
+        # Show the color scheme summary (unless quiet mode)
+        if not quiet:
+            display = ColorSchemeDisplay(console)
+            display.show_summary(
+                scheme=scheme,
+                elapsed_time=elapsed,
+                output_files=output_files,
+            )
 
     except OutputWriteError as e:
         err_console.print(
@@ -536,12 +579,10 @@ def generate(
         )
         raise typer.Exit(1)
     except Exception as e:
+        logger.exception("Unexpected error writing output")
         err_console.print(
             f"[red]Error:[/red] Unexpected error writing output: {e}"
         )
-        if verbose:
-            import traceback
-            traceback.print_exc()
         raise typer.Exit(1)
 
 

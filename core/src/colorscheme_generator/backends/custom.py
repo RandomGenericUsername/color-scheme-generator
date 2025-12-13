@@ -5,6 +5,7 @@ cut, octree) to extract colors from images. Pure Python implementation
 with no external dependencies.
 """
 
+import logging
 from pathlib import Path
 
 import numpy as np
@@ -23,6 +24,8 @@ from colorscheme_generator.core.types import (
     ColorScheme,
     GeneratorConfig,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class CustomGenerator(ColorSchemeGenerator):
@@ -48,6 +51,11 @@ class CustomGenerator(ColorSchemeGenerator):
         self.settings = settings
         self.algorithm = ColorAlgorithm(settings.backends.custom.algorithm)
         self.n_clusters = settings.backends.custom.n_clusters
+        logger.debug(
+            "Initialized CustomGenerator with algorithm=%s, n_clusters=%d",
+            self.algorithm.value,
+            self.n_clusters,
+        )
 
     @property
     def backend_name(self) -> str:
@@ -78,18 +86,28 @@ class CustomGenerator(ColorSchemeGenerator):
             InvalidImageError: If image is invalid
             ColorExtractionError: If color extraction fails
         """
+        logger.info(
+            "Generating color scheme with custom backend from %s", image_path
+        )
+
         # Validate image
         image_path = image_path.expanduser().resolve()
+        logger.debug("Resolved image path: %s", image_path)
         if not image_path.exists():
+            logger.error("Image file does not exist: %s", image_path)
             raise InvalidImageError(image_path, "File does not exist")
         if not image_path.is_file():
+            logger.error("Path is not a file: %s", image_path)
             raise InvalidImageError(image_path, "Not a file")
 
         # Load image
         try:
+            logger.debug("Loading image with PIL")
             img = Image.open(image_path)
             img = img.convert("RGB")
+            logger.debug("Image loaded successfully, size: %s", img.size)
         except Exception as e:
+            logger.error("Failed to load image: %s", e)
             raise InvalidImageError(
                 image_path, f"Failed to load image: {e}"
             ) from e
@@ -99,22 +117,35 @@ class CustomGenerator(ColorSchemeGenerator):
             "algorithm", self.algorithm.value
         )
         n_clusters = config.backend_options.get("n_clusters", self.n_clusters)
+        logger.debug(
+            "Using algorithm=%s with n_clusters=%d", algorithm, n_clusters
+        )
 
         # Extract colors using selected algorithm
         try:
             if algorithm == ColorAlgorithm.KMEANS.value:
+                logger.debug("Running K-means clustering")
                 colors = self._extract_kmeans(img, n_clusters)
             elif algorithm == ColorAlgorithm.MEDIAN_CUT.value:
+                logger.debug("Running median cut algorithm")
                 colors = self._extract_median_cut(img, n_clusters)
             elif algorithm == ColorAlgorithm.OCTREE.value:
+                logger.debug("Running octree quantization")
                 colors = self._extract_octree(img, n_clusters)
             else:
+                logger.error("Unknown algorithm: %s", algorithm)
                 raise ColorExtractionError(f"Unknown algorithm: {algorithm}")
+            logger.debug("Extracted %d colors", len(colors))
+        except ColorExtractionError:
+            raise
         except Exception as e:
+            logger.error("Color extraction failed: %s", e)
             raise ColorExtractionError(f"Color extraction failed: {e}") from e
 
         # Convert to ColorScheme
-        return self._create_color_scheme(colors, image_path)
+        scheme = self._create_color_scheme(colors, image_path)
+        logger.info("Successfully generated color scheme with custom backend")
+        return scheme
 
     def _extract_kmeans(
         self, img: Image.Image, n_clusters: int

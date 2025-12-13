@@ -5,6 +5,7 @@ settings.toml file. It uses Pydantic for validation and type safety,
 following the same pattern as the dotfiles installer.
 """
 
+import logging
 from pathlib import Path
 
 from pydantic import BaseModel, Field, field_validator
@@ -13,16 +14,55 @@ from colorscheme_generator.config.defaults import (
     custom_algorithm,
     custom_n_clusters,
     default_backend,
-
     default_formats,
     output_directory,
     pywal_backend_algorithm,
     saturation_adjustment,
     template_directory,
-
     wallust_backend_type,
 )
 from colorscheme_generator.config.enums import Backend, ColorAlgorithm
+
+
+class LoggingSettings(BaseModel):
+    """Logging configuration.
+
+    Uses standard Python logging levels: DEBUG, INFO, WARNING, ERROR, CRITICAL.
+    """
+
+    level: str = Field(
+        default="INFO",
+        description="Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)",
+    )
+    show_time: bool = Field(
+        default=True,
+        description="Show timestamps in log messages",
+    )
+    show_path: bool = Field(
+        default=False,
+        description="Show file path in log messages",
+    )
+
+    @field_validator("level", mode="before")
+    @classmethod
+    def validate_level(cls, v: str) -> str:
+        """Validate logging level is valid."""
+        valid_levels = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
+        v_upper = v.upper()
+        if v_upper not in valid_levels:
+            raise ValueError(
+                f"Invalid logging level: {v}. "
+                f"Must be one of: {', '.join(sorted(valid_levels))}"
+            )
+        return v_upper
+
+    def get_level_int(self) -> int:
+        """Get logging level as integer.
+
+        Returns:
+            Python logging level constant
+        """
+        return getattr(logging, self.level)
 
 
 class OutputSettings(BaseModel):
@@ -169,7 +209,6 @@ class TemplateSettings(BaseModel):
     )
 
 
-
 class AppConfig(BaseModel):
     """Application configuration matching dynaconf structure.
 
@@ -178,12 +217,17 @@ class AppConfig(BaseModel):
     installer's AppConfig.
     """
 
+    logging: LoggingSettings = Field(
+        default_factory=LoggingSettings,
+        description="Logging configuration",
+    )
     output: OutputSettings = Field(
         default_factory=OutputSettings,
         description="Output configuration (OutputManager)",
     )
     generation: GenerationSettings = Field(
-        default_factory=GenerationSettings, description="Generation defaults"
+        default_factory=GenerationSettings,
+        description="Generation defaults",
     )
     backends: BackendSettings = Field(
         default_factory=BackendSettings,

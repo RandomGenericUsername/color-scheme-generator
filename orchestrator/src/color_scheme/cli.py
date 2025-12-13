@@ -12,26 +12,7 @@ from color_scheme.commands import (
     status_command,
 )
 from color_scheme.config.config import OrchestratorConfig
-from color_scheme.utils.passthrough import (
-    filter_orchestrator_args,
-    parse_core_arguments,
-)
-
-
-# Set up logging
-def setup_logging(verbose: bool = False, debug: bool = False) -> None:
-    """Configure logging based on verbosity level."""
-    if debug:
-        level = logging.DEBUG
-    elif verbose:
-        level = logging.INFO
-    else:
-        level = logging.WARNING
-
-    logging.basicConfig(
-        level=level,
-        format="%(levelname)s: %(message)s",
-    )
+from color_scheme.logging import LoggingConfig, setup_logging
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -78,8 +59,10 @@ Environment:
     generate_parser = subparsers.add_parser(
         "generate",
         help="Generate a color scheme",
-        description="Generate a color scheme using the specified backend. "
-                   "All unrecognized arguments are passed to the backend.",
+        description=(
+            "Generate a color scheme using the specified backend. "
+            "All unrecognized arguments are passed to the backend."
+        ),
     )
     # Accept remaining arguments for passthrough
     generate_parser.add_argument(
@@ -108,7 +91,10 @@ Environment:
     )
 
     # Global options (added to all subparsers)
-    for subparser in [install_parser, generate_parser, show_parser, status_parser]:
+    all_subparsers = [
+        install_parser, generate_parser, show_parser, status_parser
+    ]
+    for subparser in all_subparsers:
         subparser.add_argument(
             "--runtime",
             help="Container runtime to use (docker/podman)",
@@ -155,8 +141,8 @@ def main(argv: Optional[list[str]] = None) -> int:
         # Try to parse with all args as-is
         args = parser.parse_args(argv)
     except SystemExit:
-        # If parsing fails, might be due to generate command with passthrough args
-        # Try again with special handling
+        # If parsing fails, might be due to generate command with
+        # passthrough args. Try again with special handling.
         if argv and argv[0] == "generate":
             # Pass through remaining args for generate command
             argv_modified = argv[:2] + [argv[1]] + argv[2:]
@@ -168,11 +154,24 @@ def main(argv: Optional[list[str]] = None) -> int:
         else:
             return 1
 
-    # Set up logging
-    setup_logging(
-        verbose=getattr(args, "verbose", False),
-        debug=getattr(args, "debug", False),
+    # Set up logging with Rich
+    verbose = getattr(args, "verbose", False)
+    debug = getattr(args, "debug", False)
+
+    if debug:
+        level = logging.DEBUG
+    elif verbose:
+        level = logging.INFO
+    else:
+        level = logging.WARNING
+
+    log_config = LoggingConfig(
+        level=level,
+        show_time=True,
+        show_path=debug,
+        rich_tracebacks=True,
     )
+    setup_logging(log_config)
 
     # Create configuration
     config = OrchestratorConfig.default()

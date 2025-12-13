@@ -5,6 +5,7 @@ to files using Jinja2 templates. This is separate from backends - backends
 extract colors, OutputManager writes them to files.
 """
 
+import logging
 from pathlib import Path
 
 from jinja2 import (
@@ -21,6 +22,8 @@ from colorscheme_generator.core.exceptions import (
     TemplateRenderError,
 )
 from colorscheme_generator.core.types import ColorScheme
+
+logger = logging.getLogger(__name__)
 
 
 class OutputManager:
@@ -63,8 +66,10 @@ class OutputManager:
             package_root = Path(__file__).parent.parent.parent
             template_dir = package_root / template_dir
 
+        logger.debug("Template directory: %s", template_dir)
+
         # Import Jinja2 undefined classes
-        from jinja2 import StrictUndefined, Undefined
+        from jinja2 import StrictUndefined
 
         self.template_env = Environment(
             loader=FileSystemLoader(str(template_dir)),
@@ -72,6 +77,7 @@ class OutputManager:
             lstrip_blocks=True,
             undefined=StrictUndefined,
         )
+        logger.debug("Initialized OutputManager with Jinja2 environment")
 
     def write_outputs(
         self,
@@ -105,15 +111,20 @@ class OutputManager:
                 'css': PosixPath('/home/user/.cache/colorscheme/colors.css')
             }
         """
+        logger.info("Writing color scheme outputs to %s", output_dir)
+        logger.debug("Output formats: %s", [f.value for f in formats])
+
         # Ensure output directory exists
         output_dir = output_dir.expanduser().resolve()
         output_dir.mkdir(parents=True, exist_ok=True)
+        logger.debug("Resolved output directory: %s", output_dir)
 
         output_files = {}
 
         for fmt in formats:
             try:
                 # Render template
+                logger.debug("Rendering template for format: %s", fmt.value)
                 content = self._render_template(scheme, fmt)
 
                 # Write to file
@@ -128,17 +139,20 @@ class OutputManager:
                     self._write_file(output_path, content)
 
                 output_files[fmt.value] = output_path
+                logger.debug("Wrote %s", output_path)
 
             except (TemplateRenderError, OutputWriteError):
                 # Re-raise our custom exceptions
                 raise
             except Exception as e:
+                logger.error("Unexpected error writing %s: %s", fmt.value, e)
                 # Wrap unexpected errors
                 raise OutputWriteError(
                     str(output_dir / f"colors.{fmt.value}"),
                     f"Unexpected error: {e}",
                 ) from e
 
+        logger.info("Successfully wrote %d output files", len(output_files))
         return output_files
 
     def _render_template(self, scheme: ColorScheme, fmt: ColorFormat) -> str:
@@ -158,7 +172,13 @@ class OutputManager:
 
         try:
             template = self.template_env.get_template(template_name)
+            logger.debug("Loaded template: %s", template_name)
         except TemplateNotFound:
+            logger.error(
+                "Template not found: %s in %s",
+                template_name,
+                self.settings.templates.directory,
+            )
             raise TemplateRenderError(
                 template_name,
                 f"Template not found in {self.settings.templates.directory}",
@@ -176,12 +196,18 @@ class OutputManager:
         }
 
         try:
-            return template.render(**context)
+            rendered = template.render(**context)
+            logger.debug("Successfully rendered template: %s", template_name)
+            return rendered
         except UndefinedError as e:
+            logger.error(
+                "Undefined variable in template %s: %s", template_name, e
+            )
             raise TemplateRenderError(
                 template_name, f"Undefined variable: {e}"
             ) from e
         except Exception as e:
+            logger.error("Template render error in %s: %s", template_name, e)
             raise TemplateRenderError(template_name, str(e)) from e
 
     def _convert_to_escape_sequences(self, content: str) -> bytes:

@@ -5,6 +5,7 @@ Wallust writes JSON files to a cache directory, which we read from.
 """
 
 import json
+import logging
 import shutil
 import subprocess
 from pathlib import Path
@@ -21,6 +22,8 @@ from colorscheme_generator.core.types import (
     ColorScheme,
     GeneratorConfig,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class WallustGenerator(ColorSchemeGenerator):
@@ -45,6 +48,11 @@ class WallustGenerator(ColorSchemeGenerator):
         self.settings = settings
         self.cache_dir = Path.home() / ".cache" / "wallust"
         self.backend_type = settings.backends.wallust.backend_type
+        logger.debug(
+            "Initialized WallustGenerator with cache_dir=%s, backend_type=%s",
+            self.cache_dir,
+            self.backend_type,
+        )
 
     @property
     def backend_name(self) -> str:
@@ -57,7 +65,9 @@ class WallustGenerator(ColorSchemeGenerator):
         Returns:
             True if wallust binary is in PATH
         """
-        return shutil.which("wallust") is not None
+        available = shutil.which("wallust") is not None
+        logger.debug("Wallust availability check: %s", available)
+        return available
 
     def generate(
         self, image_path: Path, config: GeneratorConfig
@@ -76,20 +86,26 @@ class WallustGenerator(ColorSchemeGenerator):
             InvalidImageError: If image is invalid
             ColorExtractionError: If color extraction fails
         """
+        logger.info("Generating color scheme with wallust from %s", image_path)
+
         # Ensure backend is available
         self.ensure_available()
 
         # Validate image
         image_path = image_path.expanduser().resolve()
+        logger.debug("Resolved image path: %s", image_path)
         if not image_path.exists():
+            logger.error("Image file does not exist: %s", image_path)
             raise InvalidImageError(image_path, "File does not exist")
         if not image_path.is_file():
+            logger.error("Path is not a file: %s", image_path)
             raise InvalidImageError(image_path, "Not a file")
 
         # Run wallust (writes to cache)
         try:
             self._run_wallust(image_path, config)
         except Exception as e:
+            logger.error("Failed to run wallust: %s", e)
             raise ColorExtractionError(
                 f"Failed to run wallust on {image_path}: {e}"
             ) from e
@@ -97,12 +113,15 @@ class WallustGenerator(ColorSchemeGenerator):
         # Find and read the cache file
         try:
             cache_file = self._find_cache_file(image_path, config)
+            logger.debug("Found wallust cache file: %s", cache_file)
         except Exception as e:
+            logger.error("Failed to find wallust cache file: %s", e)
             raise ColorExtractionError(
                 f"Failed to find wallust cache file for {image_path}: {e}"
             ) from e
 
         if not cache_file.exists():
+            logger.error("Wallust cache file not found: %s", cache_file)
             raise ColorExtractionError(
                 f"Wallust cache file not found: {cache_file}"
             )
@@ -111,13 +130,17 @@ class WallustGenerator(ColorSchemeGenerator):
         try:
             with cache_file.open() as f:
                 wallust_colors = json.load(f)
+            logger.debug("Successfully parsed wallust JSON output")
         except Exception as e:
+            logger.error("Failed to read wallust output: %s", e)
             raise ColorExtractionError(
                 f"Failed to read wallust output from {cache_file}: {e}"
             ) from e
 
         # Convert to ColorScheme
-        return self._parse_wallust_output(wallust_colors, image_path)
+        scheme = self._parse_wallust_output(wallust_colors, image_path)
+        logger.info("Successfully generated color scheme with wallust")
+        return scheme
 
     def _run_wallust(
         self,
@@ -155,19 +178,32 @@ class WallustGenerator(ColorSchemeGenerator):
             wallust_saturation = int(saturation_factor * 50)
             wallust_saturation = max(1, min(100, wallust_saturation))
             cmd.extend(["--saturation", str(wallust_saturation)])
+            logger.debug("Using saturation adjustment: %d", wallust_saturation)
+
+        logger.debug("Running wallust command: %s", " ".join(cmd))
 
         try:
-            subprocess.run(
+            result = subprocess.run(
                 cmd,
                 capture_output=True,
                 text=True,
                 check=True,
             )
+            if result.stdout:
+                logger.debug("Wallust stdout: %s", result.stdout)
+            if result.stderr:
+                logger.debug("Wallust stderr: %s", result.stderr)
         except subprocess.CalledProcessError as e:
+            logger.error(
+                "Wallust command failed with code %d: %s",
+                e.returncode,
+                e.stderr,
+            )
             raise ColorExtractionError(
                 f"Wallust command failed: {e.stderr}"
             ) from e
         except FileNotFoundError as e:
+            logger.error("Wallust binary not found in PATH")
             raise BackendNotAvailableError(
                 self.backend_name,
                 "wallust command not found. "

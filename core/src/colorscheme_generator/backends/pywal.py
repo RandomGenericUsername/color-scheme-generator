@@ -5,6 +5,7 @@ Pywal always writes to ~/.cache/wal/, which we read from.
 """
 
 import json
+import logging
 import shutil
 import subprocess
 from pathlib import Path
@@ -21,6 +22,8 @@ from colorscheme_generator.core.types import (
     ColorScheme,
     GeneratorConfig,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class PywalGenerator(ColorSchemeGenerator):
@@ -44,6 +47,11 @@ class PywalGenerator(ColorSchemeGenerator):
         self.settings = settings
         # Pywal hardcodes this location - cannot be configured
         self.cache_dir = Path.home() / ".cache" / "wal"
+        logger.debug(
+            "Initialized PywalGenerator with cache_dir=%s, algorithm=%s",
+            self.cache_dir,
+            settings.backends.pywal.backend_algorithm,
+        )
 
     @property
     def backend_name(self) -> str:
@@ -56,7 +64,9 @@ class PywalGenerator(ColorSchemeGenerator):
         Returns:
             True if pywal CLI is available
         """
-        return shutil.which("wal") is not None
+        available = shutil.which("wal") is not None
+        logger.debug("Pywal availability check: %s", available)
+        return available
 
     def generate(
         self, image_path: Path, config: GeneratorConfig
@@ -75,27 +85,35 @@ class PywalGenerator(ColorSchemeGenerator):
             InvalidImageError: If image is invalid
             ColorExtractionError: If color extraction fails
         """
+        logger.info("Generating color scheme with pywal from %s", image_path)
+
         # Ensure backend is available
         self.ensure_available()
 
         # Validate image
         image_path = image_path.expanduser().resolve()
+        logger.debug("Resolved image path: %s", image_path)
         if not image_path.exists():
+            logger.error("Image file does not exist: %s", image_path)
             raise InvalidImageError(image_path, "File does not exist")
         if not image_path.is_file():
+            logger.error("Path is not a file: %s", image_path)
             raise InvalidImageError(image_path, "Not a file")
 
         # Run pywal CLI
         try:
             self._run_pywal_cli(image_path, config)
         except Exception as e:
+            logger.error("Failed to run pywal: %s", e)
             raise ColorExtractionError(
                 f"Failed to run pywal on {image_path}: {e}"
             ) from e
 
         # Read colors from pywal's output
         colors_file = self.cache_dir / "colors.json"
+        logger.debug("Reading pywal output from %s", colors_file)
         if not colors_file.exists():
+            logger.error("Pywal output file not found: %s", colors_file)
             raise ColorExtractionError(
                 f"Pywal output file not found: {colors_file}"
             )
@@ -103,13 +121,17 @@ class PywalGenerator(ColorSchemeGenerator):
         try:
             with Path(colors_file).open() as f:
                 pywal_colors = json.load(f)
+            logger.debug("Successfully parsed pywal JSON output")
         except Exception as e:
+            logger.error("Failed to read pywal output: %s", e)
             raise ColorExtractionError(
                 f"Failed to read pywal output: {e}"
             ) from e
 
         # Convert to ColorScheme
-        return self._parse_pywal_output(pywal_colors, image_path)
+        scheme = self._parse_pywal_output(pywal_colors, image_path)
+        logger.info("Successfully generated color scheme with pywal")
+        return scheme
 
     def _run_pywal_cli(
         self,
@@ -129,18 +151,27 @@ class PywalGenerator(ColorSchemeGenerator):
         if backend_algorithm != "wal":  # wal is the default
             cmd.extend(["--backend", backend_algorithm])
 
+        logger.debug("Running pywal command: %s", " ".join(cmd))
+
         try:
-            subprocess.run(
+            result = subprocess.run(
                 cmd,
                 capture_output=True,
                 text=True,
                 check=True,
             )
+            logger.debug("Pywal stdout: %s", result.stdout)
+            if result.stderr:
+                logger.debug("Pywal stderr: %s", result.stderr)
         except subprocess.CalledProcessError as e:
+            logger.error(
+                "Pywal command failed with code %d: %s", e.returncode, e.stderr
+            )
             raise ColorExtractionError(
                 f"Pywal command failed: {e.stderr}"
             ) from e
         except FileNotFoundError as e:
+            logger.error("Pywal binary not found in PATH")
             raise BackendNotAvailableError(
                 self.backend_name,
                 "wal command not found. Install pywal.",
