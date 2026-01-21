@@ -29,7 +29,7 @@ dev = [
 ]
 
 [project.scripts]
-color-scheme = "color_scheme_orchestrator.cli.main:app"
+color-scheme = "color_scheme_orchestrator.cli.main:main"
 
 [build-system]
 requires = ["hatchling"]
