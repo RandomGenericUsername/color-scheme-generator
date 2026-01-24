@@ -4,6 +4,9 @@ level = "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
 show_time = true
 show_path = false
 
+[container]
+engine = "docker" # docker | podman
+
 # Output configuration
 [output]
 directory = "$HOME/.config/color-scheme/output"
@@ -26,5 +29,5 @@ algorithm = "kmeans"
 n_clusters = 16
 
 # Template configuration
-[templates]
-directory = "templates"
+# Note: template directory defaults to the package's templates/ directory
+# Override with COLOR_SCHEME_TEMPLATES environment variable if needed

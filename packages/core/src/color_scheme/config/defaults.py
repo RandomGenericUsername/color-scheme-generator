@@ -1,5 +1,6 @@
 """Default configuration values."""
 
+import os
 from pathlib import Path
 
 # Logging defaults
@@ -31,4 +32,11 @@ custom_algorithm = "kmeans"
 custom_n_clusters = 16
 
 # Template defaults
-template_directory = Path("templates")
+# Default to package templates directory, but allow override via env var
+_package_templates = Path(__file__).parent.parent / "templates"
+template_directory = Path(
+    os.getenv(
+        "COLOR_SCHEME_TEMPLATES",
+        str(_package_templates)
+    )
+)

@@ -10,7 +10,7 @@ import os
 from pathlib import Path
 from typing import Any
 
-from dynaconf import Dynaconf
+from dynaconf import Dynaconf  # type: ignore[import-untyped]
 from pydantic import ValidationError
 
 from color_scheme.config.config import AppConfig as PydanticAppConfig
@@ -107,10 +107,11 @@ class SettingsModel:
             else:
                 return data
 
-        return _resolve_string_values(settings_dict)
+        resolved_dict: dict[str, Any] = _resolve_string_values(settings_dict)
+        return resolved_dict
 
     @staticmethod
-    def get_pydantic_config(settings: dict) -> PydanticAppConfig:
+    def get_pydantic_config(settings: dict[str, Any]) -> PydanticAppConfig:
         """Validate settings with Pydantic.
 
         Args:
