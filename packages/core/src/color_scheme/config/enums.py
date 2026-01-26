@@ -16,3 +16,16 @@ class ColorAlgorithm(str, Enum):
 
     KMEANS = "kmeans"
     DOMINANT = "dominant"
+
+
+class ColorFormat(str, Enum):
+    """Output format types."""
+
+    JSON = "json"
+    SH = "sh"
+    CSS = "css"
+    GTK_CSS = "gtk.css"
+    YAML = "yaml"
+    SEQUENCES = "sequences"
+    RASI = "rasi"
+    SCSS = "scss"
