@@ -6,6 +6,8 @@ from color_scheme.core.exceptions import (
     ColorExtractionError,
     ColorSchemeError,
     InvalidImageError,
+    OutputWriteError,
+    TemplateRenderError,
 )
 from color_scheme.core.types import Color, ColorScheme, GeneratorConfig
 
@@ -18,4 +20,6 @@ __all__ = [
     "InvalidImageError",
     "ColorExtractionError",
     "BackendNotAvailableError",
+    "OutputWriteError",
+    "TemplateRenderError",
 ]
