@@ -8,7 +8,6 @@ from color_scheme.backends.wallust import WallustGenerator
 from color_scheme.config.config import AppConfig
 from color_scheme.config.enums import Backend
 from color_scheme.core.base import ColorSchemeGenerator
-from color_scheme.core.exceptions import BackendNotAvailableError
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +33,27 @@ class BackendFactory:
         self.settings = settings
         logger.debug("Initialized BackendFactory")
 
+    def _instantiate_generator(self, backend: Backend) -> ColorSchemeGenerator:
+        """Instantiate a generator for the specified backend.
+
+        Args:
+            backend: Backend to instantiate
+
+        Returns:
+            ColorSchemeGenerator instance
+
+        Raises:
+            ValueError: If backend is unknown
+        """
+        if backend == Backend.CUSTOM:
+            return CustomGenerator(self.settings)
+        elif backend == Backend.PYWAL:
+            return PywalGenerator(self.settings)
+        elif backend == Backend.WALLUST:
+            return WallustGenerator(self.settings)
+        else:
+            raise ValueError(f"Unknown backend: {backend}")
+
     def create(self, backend: Backend) -> ColorSchemeGenerator:
         """Create a generator for the specified backend.
 
@@ -53,14 +73,7 @@ class BackendFactory:
         """
         logger.debug("Creating generator for backend: %s", backend.value)
 
-        if backend == Backend.CUSTOM:
-            generator = CustomGenerator(self.settings)
-        elif backend == Backend.PYWAL:
-            generator = PywalGenerator(self.settings)
-        elif backend == Backend.WALLUST:
-            generator = WallustGenerator(self.settings)
-        else:
-            raise ValueError(f"Unknown backend: {backend}")
+        generator = self._instantiate_generator(backend)
 
         # Ensure backend is available
         generator.ensure_available()
@@ -84,14 +97,7 @@ class BackendFactory:
 
         for backend in Backend:
             try:
-                if backend == Backend.CUSTOM:
-                    generator = CustomGenerator(self.settings)
-                elif backend == Backend.PYWAL:
-                    generator = PywalGenerator(self.settings)
-                elif backend == Backend.WALLUST:
-                    generator = WallustGenerator(self.settings)
-                else:
-                    continue
+                generator = self._instantiate_generator(backend)
 
                 if generator.is_available():
                     available.append(backend)
@@ -125,14 +131,7 @@ class BackendFactory:
         # Check in preference order
         for backend in [Backend.WALLUST, Backend.PYWAL, Backend.CUSTOM]:
             try:
-                if backend == Backend.CUSTOM:
-                    generator = CustomGenerator(self.settings)
-                elif backend == Backend.PYWAL:
-                    generator = PywalGenerator(self.settings)
-                elif backend == Backend.WALLUST:
-                    generator = WallustGenerator(self.settings)
-                else:
-                    continue
+                generator = self._instantiate_generator(backend)
 
                 if generator.is_available():
                     logger.info("Auto-detected backend: %s", backend.value)
