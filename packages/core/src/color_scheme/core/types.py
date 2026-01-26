@@ -5,7 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from color_scheme.config.config import AppConfig
 from color_scheme.config.enums import Backend, ColorFormat
@@ -23,6 +23,23 @@ class Color(BaseModel):
     hex: str = Field(..., pattern=r"^#[0-9a-fA-F]{6}$")
     rgb: tuple[int, int, int]
     hsl: tuple[float, float, float] | None = None
+
+    @field_validator('rgb')
+    @classmethod
+    def validate_rgb(cls, v: tuple[int, int, int]) -> tuple[int, int, int]:
+        """Validate RGB values are in range 0-255."""
+        if not all(0 <= val <= 255 for val in v):
+            raise ValueError(f"RGB values must be in range 0-255, got {v}")
+        return v
+
+    @model_validator(mode='after')
+    def validate_hex_rgb_match(self) -> 'Color':
+        """Validate that hex and RGB values are consistent."""
+        hex_clean = self.hex.lstrip('#')
+        expected_rgb = tuple(int(hex_clean[i:i+2], 16) for i in (0, 2, 4))
+        if self.rgb != expected_rgb:
+            raise ValueError(f"RGB {self.rgb} does not match hex {self.hex}")
+        return self
 
     def adjust_saturation(self, factor: float) -> "Color":
         """Adjust color saturation by a multiplier.
