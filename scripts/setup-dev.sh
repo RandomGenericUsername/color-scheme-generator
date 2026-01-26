@@ -136,6 +136,30 @@ check_git() {
     print_success "Git is installed"
 }
 
+# Function to check Docker or Podman (optional)
+check_container_engine() {
+    print_section "Checking Container Engine (Optional)"
+
+    if command_exists docker; then
+        DOCKER_VERSION=$(docker --version 2>&1 | awk '{print $3}' | tr -d ',')
+        print_info "Found Docker $DOCKER_VERSION"
+        print_success "Docker is available"
+        return 0
+    elif command_exists podman; then
+        PODMAN_VERSION=$(podman --version 2>&1 | awk '{print $3}')
+        print_info "Found Podman $PODMAN_VERSION"
+        print_success "Podman is available"
+        return 0
+    else
+        print_warning "Neither Docker nor Podman found"
+        print_info "Container orchestration features will not be available"
+        print_info "You can still use the core package for local color extraction"
+        print_info "To enable containers later, install Docker: https://docs.docker.com/get-docker/"
+        print_info "Or install Podman: https://podman.io/getting-started/installation"
+        return 0
+    fi
+}
+
 # Function to check and install uv
 check_and_install_uv() {
     print_section "Checking uv Package Manager"
@@ -201,6 +225,31 @@ install_dependencies() {
     else
         print_error "Failed to install dependencies"
         exit 1
+    fi
+}
+
+# Function to create necessary directories
+create_directories() {
+    print_section "Creating Necessary Directories"
+
+    # Create config directory
+    CONFIG_DIR="$HOME/.config/color-scheme"
+    OUTPUT_DIR="$CONFIG_DIR/output"
+
+    if [ ! -d "$CONFIG_DIR" ]; then
+        print_info "Creating config directory: $CONFIG_DIR"
+        mkdir -p "$CONFIG_DIR"
+        print_success "Config directory created"
+    else
+        print_info "Config directory already exists: $CONFIG_DIR"
+    fi
+
+    if [ ! -d "$OUTPUT_DIR" ]; then
+        print_info "Creating output directory: $OUTPUT_DIR"
+        mkdir -p "$OUTPUT_DIR"
+        print_success "Output directory created"
+    else
+        print_info "Output directory already exists: $OUTPUT_DIR"
     fi
 }
 
@@ -328,8 +377,10 @@ main() {
     # Run all setup steps
     check_python_version
     check_git
+    check_container_engine
     check_and_install_uv
     install_dependencies
+    create_directories
     install_precommit_hooks
     verify_installation
 
