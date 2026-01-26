@@ -124,12 +124,12 @@ class WallustGenerator(ColorSchemeGenerator):
                 self.backend_name,
                 f"Wallust failed: {e.stderr}"
             ) from e
-        except subprocess.TimeoutExpired:
+        except subprocess.TimeoutExpired as e:
             logger.error("Wallust command timed out")
             raise ColorExtractionError(
                 self.backend_name,
                 "Wallust timed out after 30 seconds"
-            )
+            ) from e
         except json.JSONDecodeError as e:
             logger.error("Failed to parse wallust output: %s", e)
             raise ColorExtractionError(
