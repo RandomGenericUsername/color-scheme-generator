@@ -119,10 +119,10 @@ class CustomGenerator(ColorSchemeGenerator):
 
         except (OSError, ValueError) as e:
             logger.error("Failed to load image: %s", e)
-            raise InvalidImageError(str(image_path), str(e))
+            raise InvalidImageError(str(image_path), str(e)) from e
         except Exception as e:
             logger.error("Color extraction failed: %s", e)
-            raise ColorExtractionError(self.backend_name, str(e))
+            raise ColorExtractionError(self.backend_name, str(e)) from e
 
     def _extract_colors_kmeans(self, img: Image.Image) -> list[Color]:
         """Extract colors using K-means clustering."""
@@ -144,7 +144,7 @@ class CustomGenerator(ColorSchemeGenerator):
         colors = []
         for rgb in centers:
             r, g, b = int(rgb[0]), int(rgb[1]), int(rgb[2])
-            hex_color = f"#{r:02x}{g:02x}{b:02x}"
+            hex_color = f"#{r:02X}{g:02X}{b:02X}"
             colors.append(Color(hex=hex_color, rgb=(r, g, b)))
 
         # Sort by brightness (sum of RGB values)
