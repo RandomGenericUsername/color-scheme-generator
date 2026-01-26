@@ -50,9 +50,7 @@ class SettingsModel:
         )
         self.settings: PydanticAppConfig = self.get_pydantic_config(
             self._convert_dict_to_lower_case(
-                self._resolve_environment_variables(
-                    self.dynaconf_settings.to_dict()
-                )
+                self._resolve_environment_variables(self.dynaconf_settings.to_dict())
             )
         )
 
@@ -99,8 +97,7 @@ class SettingsModel:
                 return os.path.expandvars(data)
             elif isinstance(data, dict):
                 return {
-                    key: _resolve_string_values(value)
-                    for key, value in data.items()
+                    key: _resolve_string_values(value) for key, value in data.items()
                 }
             elif isinstance(data, list):
                 return [_resolve_string_values(item) for item in data]

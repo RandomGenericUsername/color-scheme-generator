@@ -106,9 +106,7 @@ class BackendFactory:
                     logger.debug("Backend %s is not available", backend.value)
 
             except Exception as e:
-                logger.debug(
-                    "Failed to check backend %s: %s", backend.value, e
-                )
+                logger.debug("Failed to check backend %s: %s", backend.value, e)
 
         logger.info("Available backends: %s", [b.value for b in available])
         return available
@@ -138,9 +136,7 @@ class BackendFactory:
                     return backend
 
             except Exception as e:
-                logger.debug(
-                    "Failed to check backend %s: %s", backend.value, e
-                )
+                logger.debug("Failed to check backend %s: %s", backend.value, e)
 
         # Fallback to custom (always available)
         logger.info("Falling back to custom backend")

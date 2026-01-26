@@ -74,9 +74,7 @@ class TestLoggingSettings:
         assert settings.show_time is True
         assert settings.show_path is False
 
-    @pytest.mark.parametrize(
-        "level", ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
-    )
+    @pytest.mark.parametrize("level", ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"])
     def test_valid_log_levels(self, level: str):
         """Test valid log levels are accepted."""
         settings = LoggingSettings(level=level)
@@ -335,9 +333,7 @@ class TestBackendSettings:
 
     def test_custom_wallust_settings(self):
         """Test custom wallust settings."""
-        settings = BackendSettings(
-            wallust=WallustBackendSettings(backend_type="full")
-        )
+        settings = BackendSettings(wallust=WallustBackendSettings(backend_type="full"))
         assert settings.wallust.backend_type == "full"
 
     def test_custom_custom_backend_settings(self):
@@ -350,9 +346,7 @@ class TestBackendSettings:
 
     def test_partial_backend_settings(self):
         """Test providing only some backend settings."""
-        settings = BackendSettings(
-            pywal=PywalBackendSettings(backend_algorithm="wal")
-        )
+        settings = BackendSettings(pywal=PywalBackendSettings(backend_algorithm="wal"))
         # Others should use defaults
         assert settings.pywal.backend_algorithm == "wal"
         assert settings.wallust.backend_type == wallust_backend_type
@@ -476,9 +470,7 @@ class TestAppConfig:
 
         with pytest.raises(ValidationError):
             AppConfig(
-                backends=BackendSettings(
-                    custom=CustomBackendSettings(n_clusters=300)
-                )
+                backends=BackendSettings(custom=CustomBackendSettings(n_clusters=300))
             )
 
 

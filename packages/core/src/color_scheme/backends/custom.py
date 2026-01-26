@@ -5,7 +5,7 @@ from pathlib import Path
 
 import numpy as np
 from PIL import Image
-from sklearn.cluster import KMeans
+from sklearn.cluster import KMeans  # type: ignore[import-untyped]
 
 from color_scheme.config.config import AppConfig
 from color_scheme.config.enums import ColorAlgorithm
@@ -48,9 +48,7 @@ class CustomGenerator(ColorSchemeGenerator):
         """Check if custom backend is available."""
         return True  # PIL is a required dependency
 
-    def generate(
-        self, image_path: Path, config: GeneratorConfig
-    ) -> ColorScheme:
+    def generate(self, image_path: Path, config: GeneratorConfig) -> ColorScheme:
         """Generate color scheme using K-means clustering.
 
         Args:
@@ -64,9 +62,7 @@ class CustomGenerator(ColorSchemeGenerator):
             InvalidImageError: If image is invalid
             ColorExtractionError: If color extraction fails
         """
-        logger.info(
-            "Generating color scheme with custom backend from %s", image_path
-        )
+        logger.info("Generating color scheme with custom backend from %s", image_path)
 
         # Validate image
         image_path = image_path.expanduser().resolve()

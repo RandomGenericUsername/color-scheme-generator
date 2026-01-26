@@ -137,9 +137,7 @@ class GenerationSettings(BaseModel):
             return v
         except ValueError:
             valid = ", ".join([b.value for b in Backend])
-            raise ValueError(
-                f"Invalid backend '{v}'. Valid options: {valid}"
-            ) from None
+            raise ValueError(f"Invalid backend '{v}'. Valid options: {valid}") from None
 
 
 class PywalBackendSettings(BaseModel):

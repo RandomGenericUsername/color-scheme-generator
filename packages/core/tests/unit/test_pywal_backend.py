@@ -1,7 +1,7 @@
 """Tests for pywal backend."""
 
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -66,13 +66,15 @@ class TestPywalGenerator:
 
     @patch("subprocess.run")
     @patch("shutil.which")
-    def test_generate_success(self, mock_which, mock_run, generator, test_image, config, tmp_path):
+    def test_generate_success(
+        self, mock_which, mock_run, generator, test_image, config, tmp_path
+    ):
         """Test successful color generation."""
         mock_which.return_value = "/usr/bin/wal"
 
         # Mock pywal cache file
         cache_file = tmp_path / "colors.json"
-        cache_file.write_text('''{
+        cache_file.write_text("""{
             "special": {
                 "background": "#1a1a1a",
                 "foreground": "#ffffff",
@@ -96,9 +98,9 @@ class TestPywalGenerator:
                 "color14": "#eeeeee",
                 "color15": "#ffffff"
             }
-        }''')
+        }""")
 
-        with patch.object(generator, '_get_cache_file', return_value=cache_file):
+        with patch.object(generator, "_get_cache_file", return_value=cache_file):
             scheme = generator.generate(test_image, config)
 
         assert scheme.backend == "pywal"
@@ -127,10 +129,13 @@ class TestPywalGenerator:
 
     @patch("subprocess.run")
     @patch("shutil.which")
-    def test_generate_subprocess_error(self, mock_which, mock_run, generator, test_image, config):
+    def test_generate_subprocess_error(
+        self, mock_which, mock_run, generator, test_image, config
+    ):
         """Test generation with subprocess error."""
         mock_which.return_value = "/usr/bin/wal"
         import subprocess
+
         mock_run.side_effect = subprocess.CalledProcessError(
             1, "wal", stderr="pywal error"
         )
@@ -142,10 +147,13 @@ class TestPywalGenerator:
 
     @patch("subprocess.run")
     @patch("shutil.which")
-    def test_generate_timeout(self, mock_which, mock_run, generator, test_image, config):
+    def test_generate_timeout(
+        self, mock_which, mock_run, generator, test_image, config
+    ):
         """Test generation with timeout."""
         mock_which.return_value = "/usr/bin/wal"
         import subprocess
+
         mock_run.side_effect = subprocess.TimeoutExpired("wal", 30)
 
         with pytest.raises(ColorExtractionError) as exc_info:
@@ -155,14 +163,16 @@ class TestPywalGenerator:
 
     @patch("subprocess.run")
     @patch("shutil.which")
-    def test_generate_cache_file_not_found(self, mock_which, mock_run, generator, test_image, config, tmp_path):
+    def test_generate_cache_file_not_found(
+        self, mock_which, mock_run, generator, test_image, config, tmp_path
+    ):
         """Test generation when cache file doesn't exist."""
         mock_which.return_value = "/usr/bin/wal"
 
         # Mock cache file that doesn't exist
         cache_file = tmp_path / "nonexistent.json"
 
-        with patch.object(generator, '_get_cache_file', return_value=cache_file):
+        with patch.object(generator, "_get_cache_file", return_value=cache_file):
             with pytest.raises(ColorExtractionError) as exc_info:
                 generator.generate(test_image, config)
 
@@ -170,7 +180,9 @@ class TestPywalGenerator:
 
     @patch("subprocess.run")
     @patch("shutil.which")
-    def test_generate_invalid_json(self, mock_which, mock_run, generator, test_image, config, tmp_path):
+    def test_generate_invalid_json(
+        self, mock_which, mock_run, generator, test_image, config, tmp_path
+    ):
         """Test generation with invalid JSON in cache."""
         mock_which.return_value = "/usr/bin/wal"
 
@@ -178,7 +190,7 @@ class TestPywalGenerator:
         cache_file = tmp_path / "invalid.json"
         cache_file.write_text("not valid json{")
 
-        with patch.object(generator, '_get_cache_file', return_value=cache_file):
+        with patch.object(generator, "_get_cache_file", return_value=cache_file):
             with pytest.raises(ColorExtractionError) as exc_info:
                 generator.generate(test_image, config)
 
@@ -186,13 +198,15 @@ class TestPywalGenerator:
 
     @patch("subprocess.run")
     @patch("shutil.which")
-    def test_generate_with_saturation(self, mock_which, mock_run, generator, test_image, tmp_path):
+    def test_generate_with_saturation(
+        self, mock_which, mock_run, generator, test_image, tmp_path
+    ):
         """Test generation with saturation adjustment."""
         mock_which.return_value = "/usr/bin/wal"
 
         # Mock pywal cache file
         cache_file = tmp_path / "colors.json"
-        cache_file.write_text('''{
+        cache_file.write_text("""{
             "special": {
                 "background": "#1a1a1a",
                 "foreground": "#ffffff",
@@ -216,11 +230,11 @@ class TestPywalGenerator:
                 "color14": "#eeeeee",
                 "color15": "#ffffff"
             }
-        }''')
+        }""")
 
         config = GeneratorConfig(saturation_adjustment=1.5)
 
-        with patch.object(generator, '_get_cache_file', return_value=cache_file):
+        with patch.object(generator, "_get_cache_file", return_value=cache_file):
             scheme = generator.generate(test_image, config)
 
         assert scheme.backend == "pywal"

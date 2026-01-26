@@ -5,6 +5,7 @@ import logging
 import shutil
 import subprocess
 from pathlib import Path
+from typing import Any
 
 from color_scheme.config.config import AppConfig
 from color_scheme.core.base import ColorSchemeGenerator
@@ -40,9 +41,7 @@ class WallustGenerator(ColorSchemeGenerator):
         """Check if wallust is available."""
         return shutil.which("wallust") is not None
 
-    def generate(
-        self, image_path: Path, config: GeneratorConfig
-    ) -> ColorScheme:
+    def generate(self, image_path: Path, config: GeneratorConfig) -> ColorScheme:
         """Generate color scheme using wallust.
 
         Args:
@@ -59,9 +58,7 @@ class WallustGenerator(ColorSchemeGenerator):
         """
         self.ensure_available()
 
-        logger.info(
-            "Generating color scheme with wallust backend from %s", image_path
-        )
+        logger.info("Generating color scheme with wallust backend from %s", image_path)
 
         # Validate image
         image_path = image_path.expanduser().resolve()
@@ -84,7 +81,8 @@ class WallustGenerator(ColorSchemeGenerator):
                 "wallust",
                 "run",
                 str(image_path),
-                "--backend", backend_type,
+                "--backend",
+                backend_type,
                 "-s",  # Skip generating templates
                 "-j",  # JSON output
             ]
@@ -121,26 +119,23 @@ class WallustGenerator(ColorSchemeGenerator):
         except subprocess.CalledProcessError as e:
             logger.error("Wallust command failed: %s", e.stderr)
             raise ColorExtractionError(
-                self.backend_name,
-                f"Wallust failed: {e.stderr}"
+                self.backend_name, f"Wallust failed: {e.stderr}"
             ) from e
         except subprocess.TimeoutExpired as e:
             logger.error("Wallust command timed out")
             raise ColorExtractionError(
-                self.backend_name,
-                "Wallust timed out after 30 seconds"
+                self.backend_name, "Wallust timed out after 30 seconds"
             ) from e
         except json.JSONDecodeError as e:
             logger.error("Failed to parse wallust output: %s", e)
             raise ColorExtractionError(
-                self.backend_name,
-                f"Invalid JSON output: {e}"
+                self.backend_name, f"Invalid JSON output: {e}"
             ) from e
         except Exception as e:
             logger.error("Color extraction failed: %s", e)
             raise ColorExtractionError(self.backend_name, str(e)) from e
 
-    def _parse_colors(self, data: dict, image_path: Path) -> ColorScheme:
+    def _parse_colors(self, data: dict[str, Any], image_path: Path) -> ColorScheme:
         """Parse colors from wallust JSON output."""
         # Extract special colors (normalize to uppercase)
         bg_hex = data.get("background", "#000000").upper()
@@ -166,4 +161,7 @@ class WallustGenerator(ColorSchemeGenerator):
     def _hex_to_rgb(self, hex_color: str) -> tuple[int, int, int]:
         """Convert hex color to RGB tuple."""
         hex_color = hex_color.lstrip("#")
-        return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+        r = int(hex_color[0:2], 16)
+        g = int(hex_color[2:4], 16)
+        b = int(hex_color[4:6], 16)
+        return (r, g, b)

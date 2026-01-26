@@ -13,9 +13,7 @@ class ColorSchemeGenerator(ABC):
     """
 
     @abstractmethod
-    def generate(
-        self, image_path: Path, config: GeneratorConfig
-    ) -> ColorScheme:
+    def generate(self, image_path: Path, config: GeneratorConfig) -> ColorScheme:
         """Generate color scheme from image.
 
         Args:

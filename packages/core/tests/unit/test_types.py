@@ -4,9 +4,9 @@ from pathlib import Path
 
 import pytest
 
+from color_scheme.config.enums import Backend
 from color_scheme.config.settings import Settings
 from color_scheme.core.types import Color, ColorScheme, GeneratorConfig
-from color_scheme.config.enums import Backend
 
 
 class TestColor:
@@ -118,8 +118,7 @@ class TestColorScheme:
     def test_colorscheme_creation(self):
         """Test creating a ColorScheme."""
         colors = [
-            Color(hex=f"#{i:02x}{i:02x}{i:02x}", rgb=(i, i, i))
-            for i in range(16)
+            Color(hex=f"#{i:02x}{i:02x}{i:02x}", rgb=(i, i, i)) for i in range(16)
         ]
 
         scheme = ColorScheme(
@@ -128,7 +127,7 @@ class TestColorScheme:
             cursor=Color(hex="#ff0000", rgb=(255, 0, 0)),
             colors=colors,
             source_image=Path("/tmp/test.png"),
-            backend="custom"
+            backend="custom",
         )
 
         assert len(scheme.colors) == 16
@@ -145,7 +144,7 @@ class TestColorScheme:
                 cursor=Color(hex="#ff0000", rgb=(255, 0, 0)),
                 colors=colors,  # Only 15 colors, needs 16
                 source_image=Path("/tmp/test.png"),
-                backend="custom"
+                backend="custom",
             )
 
 
@@ -170,7 +169,7 @@ class TestGeneratorConfig:
             settings,
             backend=Backend.WALLUST,
             saturation_adjustment=0.8,
-            backend_options={"test": "value"}
+            backend_options={"test": "value"},
         )
 
         assert config.backend == Backend.WALLUST

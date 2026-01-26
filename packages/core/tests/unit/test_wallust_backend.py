@@ -66,13 +66,15 @@ class TestWallustGenerator:
 
     @patch("subprocess.run")
     @patch("shutil.which")
-    def test_generate_success(self, mock_which, mock_run, generator, test_image, config):
+    def test_generate_success(
+        self, mock_which, mock_run, generator, test_image, config
+    ):
         """Test successful color generation."""
         mock_which.return_value = "/usr/bin/wallust"
 
         # Mock wallust JSON output
         mock_run.return_value = MagicMock()
-        mock_run.return_value.stdout = '''{
+        mock_run.return_value.stdout = """{
             "background": "#1a1a1a",
             "foreground": "#ffffff",
             "cursor": "#ff0000",
@@ -92,7 +94,7 @@ class TestWallustGenerator:
             "color13": "#dddddd",
             "color14": "#eeeeee",
             "color15": "#ffffff"
-        }'''
+        }"""
 
         scheme = generator.generate(test_image, config)
 
@@ -122,10 +124,13 @@ class TestWallustGenerator:
 
     @patch("subprocess.run")
     @patch("shutil.which")
-    def test_generate_subprocess_error(self, mock_which, mock_run, generator, test_image, config):
+    def test_generate_subprocess_error(
+        self, mock_which, mock_run, generator, test_image, config
+    ):
         """Test generation with subprocess error."""
         mock_which.return_value = "/usr/bin/wallust"
         import subprocess
+
         mock_run.side_effect = subprocess.CalledProcessError(
             1, "wallust", stderr="wallust error"
         )
@@ -137,10 +142,13 @@ class TestWallustGenerator:
 
     @patch("subprocess.run")
     @patch("shutil.which")
-    def test_generate_timeout(self, mock_which, mock_run, generator, test_image, config):
+    def test_generate_timeout(
+        self, mock_which, mock_run, generator, test_image, config
+    ):
         """Test generation with timeout."""
         mock_which.return_value = "/usr/bin/wallust"
         import subprocess
+
         mock_run.side_effect = subprocess.TimeoutExpired("wallust", 30)
 
         with pytest.raises(ColorExtractionError) as exc_info:
@@ -150,7 +158,9 @@ class TestWallustGenerator:
 
     @patch("subprocess.run")
     @patch("shutil.which")
-    def test_generate_invalid_json(self, mock_which, mock_run, generator, test_image, config):
+    def test_generate_invalid_json(
+        self, mock_which, mock_run, generator, test_image, config
+    ):
         """Test generation with invalid JSON output."""
         mock_which.return_value = "/usr/bin/wallust"
 
@@ -165,13 +175,15 @@ class TestWallustGenerator:
 
     @patch("subprocess.run")
     @patch("shutil.which")
-    def test_generate_with_saturation(self, mock_which, mock_run, generator, test_image):
+    def test_generate_with_saturation(
+        self, mock_which, mock_run, generator, test_image
+    ):
         """Test generation with saturation adjustment."""
         mock_which.return_value = "/usr/bin/wallust"
 
         # Mock wallust JSON output
         mock_run.return_value = MagicMock()
-        mock_run.return_value.stdout = '''{
+        mock_run.return_value.stdout = """{
             "background": "#1a1a1a",
             "foreground": "#ffffff",
             "cursor": "#ff0000",
@@ -191,7 +203,7 @@ class TestWallustGenerator:
             "color13": "#dddddd",
             "color14": "#eeeeee",
             "color15": "#ffffff"
-        }'''
+        }"""
 
         config = GeneratorConfig(saturation_adjustment=1.5)
         scheme = generator.generate(test_image, config)

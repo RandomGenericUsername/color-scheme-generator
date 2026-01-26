@@ -24,7 +24,7 @@ class Color(BaseModel):
     rgb: tuple[int, int, int]
     hsl: tuple[float, float, float] | None = None
 
-    @field_validator('rgb')
+    @field_validator("rgb")
     @classmethod
     def validate_rgb(cls, v: tuple[int, int, int]) -> tuple[int, int, int]:
         """Validate RGB values are in range 0-255."""
@@ -32,11 +32,11 @@ class Color(BaseModel):
             raise ValueError(f"RGB values must be in range 0-255, got {v}")
         return v
 
-    @model_validator(mode='after')
-    def validate_hex_rgb_match(self) -> 'Color':
+    @model_validator(mode="after")
+    def validate_hex_rgb_match(self) -> "Color":
         """Validate that hex and RGB values are consistent."""
-        hex_clean = self.hex.lstrip('#')
-        expected_rgb = tuple(int(hex_clean[i:i+2], 16) for i in (0, 2, 4))
+        hex_clean = self.hex.lstrip("#")
+        expected_rgb = tuple(int(hex_clean[i : i + 2], 16) for i in (0, 2, 4))
         if self.rgb != expected_rgb:
             raise ValueError(f"RGB {self.rgb} does not match hex {self.hex}")
         return self
@@ -54,13 +54,13 @@ class Color(BaseModel):
         r, g, b = self.rgb[0] / 255.0, self.rgb[1] / 255.0, self.rgb[2] / 255.0
 
         # Convert to HLS (Hue, Lightness, Saturation)
-        h, l, s = colorsys.rgb_to_hls(r, g, b)
+        hue, lightness, saturation = colorsys.rgb_to_hls(r, g, b)
 
         # Adjust saturation
-        s = max(0.0, min(1.0, s * factor))  # Clamp to [0, 1]
+        saturation = max(0.0, min(1.0, saturation * factor))  # Clamp to [0, 1]
 
         # Convert back to RGB
-        r, g, b = colorsys.hls_to_rgb(h, l, s)
+        r, g, b = colorsys.hls_to_rgb(hue, lightness, saturation)
 
         # Convert to 0-255 range
         new_rgb = (
@@ -76,7 +76,7 @@ class Color(BaseModel):
         return Color(
             hex=new_hex,
             rgb=new_rgb,
-            hsl=(h * 360, s, l) if self.hsl else None,
+            hsl=(hue * 360, saturation, lightness) if self.hsl else None,
         )
 
 
@@ -134,9 +134,7 @@ class GeneratorConfig(BaseModel):
     backend_options: dict[str, Any] = Field(default_factory=dict)
 
     @classmethod
-    def from_settings(
-        cls, settings: AppConfig, **overrides: Any
-    ) -> "GeneratorConfig":
+    def from_settings(cls, settings: AppConfig, **overrides: Any) -> "GeneratorConfig":
         """Create config from settings with optional overrides."""
         return cls(
             backend=overrides.get("backend")

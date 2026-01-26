@@ -93,7 +93,9 @@ class TestBackendFactory:
     @patch.object(CustomGenerator, "is_available", side_effect=Exception("Test error"))
     @patch.object(PywalGenerator, "is_available", side_effect=Exception("Test error"))
     @patch.object(WallustGenerator, "is_available", side_effect=Exception("Test error"))
-    def test_detect_available_handles_exceptions(self, mock_wallust, mock_pywal, mock_custom, factory):
+    def test_detect_available_handles_exceptions(
+        self, mock_wallust, mock_pywal, mock_custom, factory
+    ):
         """Test that detect_available handles exceptions gracefully."""
         # Should return empty list when all backends throw exceptions
         available = factory.detect_available()
@@ -102,7 +104,9 @@ class TestBackendFactory:
     @patch.object(CustomGenerator, "is_available", side_effect=Exception("Test error"))
     @patch.object(PywalGenerator, "is_available", side_effect=Exception("Test error"))
     @patch.object(WallustGenerator, "is_available", side_effect=Exception("Test error"))
-    def test_auto_detect_handles_exceptions(self, mock_wallust, mock_pywal, mock_custom, factory):
+    def test_auto_detect_handles_exceptions(
+        self, mock_wallust, mock_pywal, mock_custom, factory
+    ):
         """Test that auto_detect handles exceptions and falls back to custom."""
         # Even if all backends throw exceptions during check, we fall back to custom
         backend = factory.auto_detect()

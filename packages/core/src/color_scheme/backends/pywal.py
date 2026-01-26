@@ -5,6 +5,7 @@ import logging
 import shutil
 import subprocess
 from pathlib import Path
+from typing import Any
 
 from color_scheme.config.config import AppConfig
 from color_scheme.core.base import ColorSchemeGenerator
@@ -43,9 +44,7 @@ class PywalGenerator(ColorSchemeGenerator):
         """Check if pywal is available."""
         return shutil.which("wal") is not None
 
-    def generate(
-        self, image_path: Path, config: GeneratorConfig
-    ) -> ColorScheme:
+    def generate(self, image_path: Path, config: GeneratorConfig) -> ColorScheme:
         """Generate color scheme using pywal.
 
         Args:
@@ -62,9 +61,7 @@ class PywalGenerator(ColorSchemeGenerator):
         """
         self.ensure_available()
 
-        logger.info(
-            "Generating color scheme with pywal backend from %s", image_path
-        )
+        logger.info("Generating color scheme with pywal backend from %s", image_path)
 
         # Validate image
         image_path = image_path.expanduser().resolve()
@@ -84,14 +81,16 @@ class PywalGenerator(ColorSchemeGenerator):
 
             cmd = [
                 "wal",
-                "-i", str(image_path),
+                "-i",
+                str(image_path),
                 "-n",  # Skip setting wallpaper
                 "-q",  # Quiet mode
-                "--backend", backend_arg,
+                "--backend",
+                backend_arg,
             ]
 
             logger.debug("Running pywal command: %s", " ".join(cmd))
-            result = subprocess.run(
+            subprocess.run(
                 cmd,
                 capture_output=True,
                 text=True,
@@ -123,14 +122,12 @@ class PywalGenerator(ColorSchemeGenerator):
         except subprocess.CalledProcessError as e:
             logger.error("Pywal command failed: %s", e.stderr)
             raise ColorExtractionError(
-                self.backend_name,
-                f"Pywal failed: {e.stderr}"
+                self.backend_name, f"Pywal failed: {e.stderr}"
             ) from e
         except subprocess.TimeoutExpired as e:
             logger.error("Pywal command timed out")
             raise ColorExtractionError(
-                self.backend_name,
-                "Pywal timed out after 30 seconds"
+                self.backend_name, "Pywal timed out after 30 seconds"
             ) from e
         except Exception as e:
             logger.error("Color extraction failed: %s", e)
@@ -140,24 +137,23 @@ class PywalGenerator(ColorSchemeGenerator):
         """Get path to pywal cache file."""
         return self.cache_dir / "colors.json"
 
-    def _read_cache_file(self, cache_file: Path) -> dict:
+    def _read_cache_file(self, cache_file: Path) -> dict[str, Any]:
         """Read pywal cache file."""
         if not cache_file.exists():
             raise ColorExtractionError(
-                self.backend_name,
-                f"Cache file not found: {cache_file}"
+                self.backend_name, f"Cache file not found: {cache_file}"
             )
 
         try:
-            with open(cache_file, "r") as f:
-                return json.load(f)
+            with Path(cache_file).open() as f:
+                data: dict[str, Any] = json.load(f)
+                return data
         except json.JSONDecodeError as e:
             raise ColorExtractionError(
-                self.backend_name,
-                f"Invalid JSON in cache file: {e}"
+                self.backend_name, f"Invalid JSON in cache file: {e}"
             ) from e
 
-    def _parse_colors(self, data: dict, image_path: Path) -> ColorScheme:
+    def _parse_colors(self, data: dict[str, Any], image_path: Path) -> ColorScheme:
         """Parse colors from pywal cache data."""
         special = data.get("special", {})
         colors_dict = data.get("colors", {})
@@ -186,4 +182,7 @@ class PywalGenerator(ColorSchemeGenerator):
     def _hex_to_rgb(self, hex_color: str) -> tuple[int, int, int]:
         """Convert hex color to RGB tuple."""
         hex_color = hex_color.lstrip("#")
-        return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+        r = int(hex_color[0:2], 16)
+        g = int(hex_color[2:4], 16)
+        b = int(hex_color[4:6], 16)
+        return (r, g, b)
