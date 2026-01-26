@@ -7,6 +7,9 @@ import pytest
 def sample_settings_dict():
     """Sample settings dictionary for testing."""
     return {
+        "container": {
+            "engine": "docker",
+        },
         "logging": {
             "level": "DEBUG",
             "show_time": True,
