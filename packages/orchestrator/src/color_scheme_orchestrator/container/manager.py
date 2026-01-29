@@ -1,5 +1,6 @@
 """Container manager for orchestrating color extraction in containers."""
 
+import subprocess
 from pathlib import Path
 
 from color_scheme.config.config import AppConfig  # type: ignore[import-untyped]
@@ -74,3 +75,59 @@ class ContainerManager:
         mounts.append(f"{template_dir.as_posix()}:/templates:ro")
 
         return mounts
+
+    def run_generate(
+        self,
+        backend: Backend,
+        image_path: Path,
+        output_dir: Path,
+        cli_args: list[str] | None = None,
+    ) -> None:
+        """Execute generate command in container.
+
+        Args:
+            backend: Backend to use
+            image_path: Path to source image
+            output_dir: Directory for output files
+            cli_args: Additional CLI arguments to pass
+
+        Raises:
+            RuntimeError: If container execution fails
+        """
+        if cli_args is None:
+            cli_args = []
+
+        # Get image name
+        image = self.get_image_name(backend)
+
+        # Build volume mounts
+        mounts = self.build_volume_mounts(image_path, output_dir)
+
+        # Construct docker/podman command
+        cmd = [self.engine, "run", "--rm"]
+
+        # Add volume mounts
+        for mount in mounts:
+            cmd.extend(["-v", mount])
+
+        # Add image
+        cmd.append(image)
+
+        # Add container command: color-scheme generate /input/image.png [args]
+        cmd.extend(["color-scheme", "generate", "/input/image.png"])
+
+        # Add CLI arguments
+        cmd.extend(cli_args)
+
+        # Execute container
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+        )
+
+        if result.returncode != 0:
+            raise RuntimeError(
+                f"Container execution failed with exit code {result.returncode}: "
+                f"{result.stderr}"
+            )
