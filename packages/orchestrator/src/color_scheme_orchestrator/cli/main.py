@@ -142,6 +142,57 @@ def generate(
         raise typer.Exit(1) from None
 
 
+@app.command()
+def show(
+    image_path: Path = typer.Argument(  # noqa: B008
+        ...,
+        help="Path to source image",
+    ),
+    backend: Backend | None = typer.Option(  # noqa: B008
+        None,
+        "--backend",
+        "-b",
+        help="Backend to use for color extraction (auto-detects if not specified)",
+    ),
+    saturation: float | None = typer.Option(  # noqa: B008
+        None,
+        "--saturation",
+        "-s",
+        min=0.0,
+        max=2.0,
+        help="Saturation adjustment factor (0.0-2.0)",
+    ),
+) -> None:
+    """Display color scheme in terminal (delegates to core).
+
+    This command runs directly on the host without containers.
+
+    Example usage:
+
+        # Show colors from image
+        color-scheme show wallpaper.jpg
+
+        # Show with specific backend
+        color-scheme show wallpaper.jpg -b pywal
+    """
+    # Import core's show implementation
+    from color_scheme.cli.main import show as core_show_colors
+
+    # Delegate to core - it runs on host, no container needed
+    try:
+        # Call core's show function with the same arguments
+        # Use callback to call the Typer command programmatically
+        core_show_colors.callback(
+            image_path=image_path,
+            backend=backend,
+            saturation=saturation,
+        )
+
+    except Exception as e:
+        console.print(f"[red]Error:[/red] {str(e)}")
+        raise typer.Exit(1) from None
+
+
 def main():
     """Entry point for console script."""
     app()
