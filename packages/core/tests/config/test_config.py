@@ -39,6 +39,11 @@ class TestContainerSettings:
         settings = ContainerSettings()
         assert settings.engine == "docker"
 
+    def test_default_image_registry(self):
+        """Test default image registry is None."""
+        settings = ContainerSettings()
+        assert settings.image_registry is None
+
     @pytest.mark.parametrize("engine", ["docker", "podman", "DOCKER", "PODMAN"])
     def test_valid_engines(self, engine: str):
         """Test valid container engines are accepted."""
@@ -62,6 +67,19 @@ class TestContainerSettings:
         assert settings1.engine == "docker"
         assert settings2.engine == "docker"
         assert settings3.engine == "docker"
+
+    def test_custom_image_registry(self):
+        """Test custom image registry can be set."""
+        settings = ContainerSettings(image_registry="ghcr.io/myorg")
+        assert settings.image_registry == "ghcr.io/myorg"
+
+    def test_image_registry_with_engine(self):
+        """Test image registry works with custom engine."""
+        settings = ContainerSettings(
+            engine="podman", image_registry="docker.io/username"
+        )
+        assert settings.engine == "podman"
+        assert settings.image_registry == "docker.io/username"
 
 
 class TestLoggingSettings:

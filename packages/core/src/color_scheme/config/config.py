@@ -35,6 +35,10 @@ class ContainerSettings(BaseModel):
         default="docker",
         description="Container engine to use (docker or podman)",
     )
+    image_registry: str | None = Field(
+        default=None,
+        description="Optional registry prefix for container images (e.g., 'ghcr.io/myorg')",
+    )
 
     @field_validator("engine", mode="before")
     @classmethod
