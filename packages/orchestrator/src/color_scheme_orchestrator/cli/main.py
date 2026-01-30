@@ -5,8 +5,10 @@ from pathlib import Path
 import typer
 from rich.console import Console
 
+from color_scheme_settings import get_config
+
 from color_scheme.config.enums import Backend, ColorFormat
-from color_scheme.config.settings import Settings  # type: ignore[import-untyped]
+from color_scheme_orchestrator.config.unified import UnifiedConfig
 from color_scheme_orchestrator.container.manager import ContainerManager
 
 app = typer.Typer(
@@ -77,7 +79,7 @@ def generate(
     """
     try:
         # Load settings
-        settings = Settings.get()
+        config = get_config()
 
         # Validate image path
         if not image_path.exists():
@@ -90,11 +92,11 @@ def generate(
 
         # Use default backend if not specified
         if backend is None:
-            backend = Backend(settings.generation.default_backend)
+            backend = Backend(config.core.generation.default_backend)
 
         # Use default output dir if not specified
         if output_dir is None:
-            output_dir = settings.output.directory
+            output_dir = config.core.output.directory
 
         # Ensure output directory exists
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -118,7 +120,7 @@ def generate(
             cli_args.extend(["--saturation", str(saturation)])
 
         # Create container manager
-        manager = ContainerManager(settings)
+        manager = ContainerManager(config)
 
         # Execute in container
         console.print(f"[cyan]Running in container:[/cyan] {backend.value}")
