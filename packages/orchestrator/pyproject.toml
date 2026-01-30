@@ -11,6 +11,7 @@ authors = [
 
 dependencies = [
     "color-scheme-core>=0.1.0",
+    "color-scheme-settings>=0.1.0",
     "typer>=0.21.1",
     "rich>=13.0.0",
 ]
@@ -76,3 +77,4 @@ addopts = "-v --strict-markers --tb=short"
 # Development: use local core package
 [tool.uv.sources]
 color-scheme-core = { path = "../core", editable = true }
+color-scheme-settings = { path = "../settings", editable = true }

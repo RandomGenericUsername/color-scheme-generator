@@ -24,36 +24,6 @@ from color_scheme.config.defaults import (
 from color_scheme.config.enums import Backend, ColorAlgorithm
 
 
-class ContainerSettings(BaseModel):
-    """Container engine configuration.
-
-    Configures which container engine (Docker or Podman) to use for
-    running containerized backends.
-    """
-
-    engine: str = Field(
-        default="docker",
-        description="Container engine to use (docker or podman)",
-    )
-    image_registry: str | None = Field(
-        default=None,
-        description="Optional registry prefix for container images (e.g., 'ghcr.io/myorg')",
-    )
-
-    @field_validator("engine", mode="before")
-    @classmethod
-    def validate_engine(cls, v: str) -> str:
-        """Validate container engine is valid."""
-        valid_engines = {"docker", "podman"}
-        v_lower = v.lower()
-        if v_lower not in valid_engines:
-            raise ValueError(
-                f"Invalid container engine: {v}. "
-                f"Must be one of: {', '.join(sorted(valid_engines))}"
-            )
-        return v_lower
-
-
 class LoggingSettings(BaseModel):
     """Logging configuration.
 
