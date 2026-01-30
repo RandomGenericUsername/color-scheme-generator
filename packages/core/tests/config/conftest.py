@@ -22,9 +22,6 @@ level = "DEBUG"
 show_time = true
 show_path = true
 
-[container]
-engine = "docker"
-
 [output]
 directory = "$HOME/.config/color-scheme/output"
 formats = ["json", "sh", "css"]
@@ -100,9 +97,6 @@ def sample_config_dict() -> dict[str, Any]:
             "level": "INFO",
             "show_time": True,
             "show_path": False,
-        },
-        "container": {
-            "engine": "docker",
         },
         "output": {
             "directory": Path.home() / ".config" / "color-scheme" / "output",
