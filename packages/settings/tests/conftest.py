@@ -69,7 +69,9 @@ formats = ["json", "css", "yaml"]
 [orchestrator.container]
 engine = "podman"
 """
-    file_path = tmp_settings_dir / "project_settings.toml"
+    project_dir = tmp_settings_dir / "project"
+    project_dir.mkdir()
+    file_path = project_dir / "settings.toml"
     file_path.write_text(content)
     return file_path
 
