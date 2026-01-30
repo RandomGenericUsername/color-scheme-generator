@@ -5,12 +5,14 @@ import sys
 from pathlib import Path
 
 import typer
+from pydantic import BaseModel, ConfigDict, Field
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-from color_scheme_settings import get_config
+from color_scheme_settings import configure, get_config
 
+from color_scheme.config.config import AppConfig
 from color_scheme.config.enums import Backend, ColorFormat
 from color_scheme.core.exceptions import (
     BackendNotAvailableError,
@@ -23,6 +25,17 @@ from color_scheme.core.exceptions import (
 from color_scheme.core.types import GeneratorConfig
 from color_scheme.factory import BackendFactory
 from color_scheme.output.manager import OutputManager
+
+
+class CoreOnlyConfig(BaseModel):
+    """Configuration for standalone core usage (without orchestrator)."""
+
+    model_config = ConfigDict(frozen=True)
+    core: AppConfig = Field(default_factory=AppConfig)
+
+
+# Bootstrap settings for standalone core usage
+configure(CoreOnlyConfig)
 
 app = typer.Typer(
     name="color-scheme",
