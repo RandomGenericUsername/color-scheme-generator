@@ -9,8 +9,9 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
+from color_scheme_settings import get_config
+
 from color_scheme.config.enums import Backend, ColorFormat
-from color_scheme.config.settings import Settings
 from color_scheme.core.exceptions import (
     BackendNotAvailableError,
     ColorExtractionError,
@@ -95,7 +96,7 @@ def generate(
     """
     try:
         # Load settings
-        settings = Settings.get()
+        config = get_config()
 
         # Validate image path
         if not image_path.exists():
@@ -107,7 +108,7 @@ def generate(
             raise typer.Exit(1)
 
         # Create backend factory
-        factory = BackendFactory(settings)
+        factory = BackendFactory(config.core)
 
         # Auto-detect backend if not specified
         if backend is None:
@@ -125,7 +126,7 @@ def generate(
         if formats is not None:
             overrides["formats"] = formats
 
-        config = GeneratorConfig.from_settings(settings, **overrides)
+        generator_config = GeneratorConfig.from_settings(config.core, **overrides)
 
         # Create generator
         console.print("[cyan]Creating generator...[/cyan]")
@@ -133,35 +134,35 @@ def generate(
 
         # Generate color scheme
         console.print(f"[cyan]Extracting colors from:[/cyan] {image_path}")
-        color_scheme = generator.generate(image_path, config)
+        color_scheme = generator.generate(image_path, generator_config)
 
         # Apply saturation adjustment if specified
-        if config.saturation_adjustment is not None and config.saturation_adjustment != 1.0:
+        if generator_config.saturation_adjustment is not None and generator_config.saturation_adjustment != 1.0:
             console.print(
-                f"[cyan]Adjusting saturation:[/cyan] {config.saturation_adjustment}"
+                f"[cyan]Adjusting saturation:[/cyan] {generator_config.saturation_adjustment}"
             )
             # Adjust all colors
             color_scheme.background = color_scheme.background.adjust_saturation(
-                config.saturation_adjustment
+                generator_config.saturation_adjustment
             )
             color_scheme.foreground = color_scheme.foreground.adjust_saturation(
-                config.saturation_adjustment
+                generator_config.saturation_adjustment
             )
             color_scheme.cursor = color_scheme.cursor.adjust_saturation(
-                config.saturation_adjustment
+                generator_config.saturation_adjustment
             )
             color_scheme.colors = [
-                c.adjust_saturation(config.saturation_adjustment)
+                c.adjust_saturation(generator_config.saturation_adjustment)
                 for c in color_scheme.colors
             ]
 
         # Write output files
-        output_manager = OutputManager(settings)
-        console.print(f"[cyan]Writing output files to:[/cyan] {config.output_dir}")
+        output_manager = OutputManager(config.core)
+        console.print(f"[cyan]Writing output files to:[/cyan] {generator_config.output_dir}")
         output_manager.write_outputs(
             color_scheme,
-            config.output_dir,
-            config.formats,
+            generator_config.output_dir,
+            generator_config.formats,
         )
 
         # Display success message with file list
@@ -172,8 +173,8 @@ def generate(
         table.add_column("Format", style="cyan")
         table.add_column("File Path", style="green")
 
-        for fmt in config.formats:
-            file_path = config.output_dir / f"colors.{fmt.value}"
+        for fmt in generator_config.formats:
+            file_path = generator_config.output_dir / f"colors.{fmt.value}"
             table.add_row(fmt.value, str(file_path))
 
         console.print(table)
@@ -260,7 +261,7 @@ def show(
     """
     try:
         # Load settings
-        settings = Settings.get()
+        config = get_config()
 
         # Validate image path
         if not image_path.exists():
@@ -272,7 +273,7 @@ def show(
             raise typer.Exit(1)
 
         # Create backend factory
-        factory = BackendFactory(settings)
+        factory = BackendFactory(config.core)
 
         # Auto-detect backend if not specified
         if backend is None:
@@ -286,32 +287,32 @@ def show(
         if saturation is not None:
             overrides["saturation_adjustment"] = saturation
 
-        config = GeneratorConfig.from_settings(settings, **overrides)
+        generator_config = GeneratorConfig.from_settings(config.core, **overrides)
 
         # Create generator
         generator = factory.create(backend)
 
         # Generate color scheme
         console.print(f"[cyan]Extracting colors from:[/cyan] {image_path}")
-        color_scheme = generator.generate(image_path, config)
+        color_scheme = generator.generate(image_path, generator_config)
 
         # Apply saturation adjustment if specified
-        if config.saturation_adjustment is not None and config.saturation_adjustment != 1.0:
+        if generator_config.saturation_adjustment is not None and generator_config.saturation_adjustment != 1.0:
             console.print(
-                f"[cyan]Adjusting saturation:[/cyan] {config.saturation_adjustment}"
+                f"[cyan]Adjusting saturation:[/cyan] {generator_config.saturation_adjustment}"
             )
             # Adjust all colors
             color_scheme.background = color_scheme.background.adjust_saturation(
-                config.saturation_adjustment
+                generator_config.saturation_adjustment
             )
             color_scheme.foreground = color_scheme.foreground.adjust_saturation(
-                config.saturation_adjustment
+                generator_config.saturation_adjustment
             )
             color_scheme.cursor = color_scheme.cursor.adjust_saturation(
-                config.saturation_adjustment
+                generator_config.saturation_adjustment
             )
             color_scheme.colors = [
-                c.adjust_saturation(config.saturation_adjustment)
+                c.adjust_saturation(generator_config.saturation_adjustment)
                 for c in color_scheme.colors
             ]
 
@@ -323,8 +324,8 @@ def show(
             f"[cyan]Source Image:[/cyan] {image_path}",
             f"[cyan]Backend:[/cyan] {backend.value}",
         ]
-        if config.saturation_adjustment is not None and config.saturation_adjustment != 1.0:
-            info_lines.append(f"[cyan]Saturation:[/cyan] {config.saturation_adjustment}")
+        if generator_config.saturation_adjustment is not None and generator_config.saturation_adjustment != 1.0:
+            info_lines.append(f"[cyan]Saturation:[/cyan] {generator_config.saturation_adjustment}")
 
         info_panel = Panel(
             "\n".join(info_lines),
