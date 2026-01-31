@@ -2,8 +2,8 @@
 
 import pytest
 
-from color_scheme.config.config import AppConfig, ContainerSettings
 from color_scheme.config.enums import Backend
+from color_scheme_orchestrator.config.settings import ContainerSettings, OrchestratorConfig
 from color_scheme_orchestrator.container.manager import ContainerManager
 
 
@@ -12,7 +12,7 @@ class TestImageNameResolution:
 
     def test_pywal_backend_image_name(self):
         """Test pywal backend resolves to correct image."""
-        settings = AppConfig(container=ContainerSettings(engine="docker"))
+        settings = OrchestratorConfig(container=ContainerSettings(engine="docker"))
         manager = ContainerManager(settings)
 
         image = manager.get_image_name(Backend.PYWAL)
@@ -21,7 +21,7 @@ class TestImageNameResolution:
 
     def test_wallust_backend_image_name(self):
         """Test wallust backend resolves to correct image."""
-        settings = AppConfig(container=ContainerSettings(engine="docker"))
+        settings = OrchestratorConfig(container=ContainerSettings(engine="docker"))
         manager = ContainerManager(settings)
 
         image = manager.get_image_name(Backend.WALLUST)
@@ -30,7 +30,7 @@ class TestImageNameResolution:
 
     def test_custom_backend_image_name(self):
         """Test custom backend resolves to correct image."""
-        settings = AppConfig(container=ContainerSettings(engine="docker"))
+        settings = OrchestratorConfig(container=ContainerSettings(engine="docker"))
         manager = ContainerManager(settings)
 
         image = manager.get_image_name(Backend.CUSTOM)
@@ -39,7 +39,7 @@ class TestImageNameResolution:
 
     def test_image_name_with_registry(self):
         """Test image name includes registry if configured."""
-        settings = AppConfig(
+        settings = OrchestratorConfig(
             container=ContainerSettings(
                 engine="docker", image_registry="ghcr.io/myorg"
             )
@@ -49,3 +49,18 @@ class TestImageNameResolution:
         image = manager.get_image_name(Backend.PYWAL)
 
         assert image == "ghcr.io/myorg/color-scheme-pywal:latest"
+
+    def test_image_name_with_trailing_slash_registry(self):
+        """Test registry with trailing slash is normalized (no double slash)."""
+        settings = OrchestratorConfig(
+            container=ContainerSettings(
+                engine="docker", image_registry="ghcr.io/myorg/"
+            )
+        )
+        manager = ContainerManager(settings)
+
+        image = manager.get_image_name(Backend.PYWAL)
+
+        # Should be normalized without double slash
+        assert image == "ghcr.io/myorg/color-scheme-pywal:latest"
+        assert "//" not in image  # Ensure no double slashes

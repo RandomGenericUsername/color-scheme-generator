@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from color_scheme.config.config import AppConfig
+from color_scheme_orchestrator.config.settings import OrchestratorConfig
 from color_scheme_orchestrator.container.manager import ContainerManager
 
 
@@ -11,7 +11,7 @@ class TestVolumeMounts:
 
     def test_image_mount_readonly(self):
         """Test image file is mounted read-only."""
-        settings = AppConfig()
+        settings = OrchestratorConfig()
         manager = ContainerManager(settings)
         image_path = Path("/home/user/wallpaper.png")
         output_dir = Path("/tmp/output")
@@ -25,7 +25,7 @@ class TestVolumeMounts:
 
     def test_output_mount_readwrite(self):
         """Test output directory is mounted read-write."""
-        settings = AppConfig()
+        settings = OrchestratorConfig()
         manager = ContainerManager(settings)
         image_path = Path("/home/user/wallpaper.png")
         output_dir = Path("/tmp/output")
@@ -39,7 +39,7 @@ class TestVolumeMounts:
 
     def test_templates_mount_readonly(self):
         """Test templates directory is mounted read-only."""
-        settings = AppConfig()
+        settings = OrchestratorConfig()
         manager = ContainerManager(settings)
         image_path = Path("/home/user/wallpaper.png")
         output_dir = Path("/tmp/output")
@@ -53,7 +53,7 @@ class TestVolumeMounts:
 
     def test_mount_format_docker_style(self):
         """Test mounts are in Docker -v format."""
-        settings = AppConfig()
+        settings = OrchestratorConfig()
         manager = ContainerManager(settings)
         image_path = Path("/home/user/wallpaper.png")
         output_dir = Path("/tmp/output")

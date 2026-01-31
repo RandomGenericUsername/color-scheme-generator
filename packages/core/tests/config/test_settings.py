@@ -183,7 +183,6 @@ class TestGetPydanticConfig:
 
         assert isinstance(config, AppConfig)
         assert config.logging.level == "INFO"
-        assert config.container.engine == "docker"
 
 
 class TestSettingsLoading:
@@ -207,7 +206,6 @@ class TestSettingsLoading:
         # Should all be defaults
         assert config.logging.level == "INFO"
         assert config.generation.default_backend == "pywal"
-        assert config.container.engine == "docker"
 
     def test_load_invalid_settings(self, invalid_settings_file: Path):
         """Test loading invalid settings raises ValidationError."""

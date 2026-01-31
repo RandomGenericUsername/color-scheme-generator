@@ -1,0 +1,46 @@
+# Wallust backend image with Rust-based wallust tool
+FROM python:3.12-alpine
+
+# Install system dependencies
+RUN apk add --no-cache \
+    gcc \
+    g++ \
+    gfortran \
+    musl-dev \
+    python3-dev \
+    libffi-dev \
+    openblas-dev \
+    lapack-dev \
+    cargo \
+    rust
+
+# Install wallust from cargo
+RUN cargo install wallust && \
+    cp ~/.cargo/bin/wallust /usr/local/bin/ && \
+    rm -rf ~/.cargo
+
+# Create non-root user
+RUN adduser -D -u 1000 colorscheme
+
+# Set working directory
+WORKDIR /app
+
+# Install uv for package management
+RUN pip install --no-cache-dir uv
+
+# Copy color-scheme-core package
+COPY --chown=colorscheme:colorscheme packages/core /app/color-scheme-core
+
+# Install color-scheme-core
+RUN cd /app/color-scheme-core && \
+    uv pip install --system --no-cache .
+
+# Create mount points
+RUN mkdir -p /input /output /templates && \
+    chown -R colorscheme:colorscheme /input /output /templates
+
+# Switch to non-root user
+USER colorscheme
+
+# Set entrypoint to color-scheme CLI
+ENTRYPOINT ["color-scheme"]

@@ -1,6 +1,6 @@
 """Tests for container manager."""
 
-from color_scheme.config.config import AppConfig, ContainerSettings
+from color_scheme_orchestrator.config.settings import ContainerSettings, OrchestratorConfig
 from color_scheme_orchestrator.container.manager import ContainerManager
 
 
@@ -9,7 +9,7 @@ class TestContainerManagerInit:
 
     def test_init_with_settings(self):
         """Test initialization with settings."""
-        settings = AppConfig(container=ContainerSettings(engine="docker"))
+        settings = OrchestratorConfig(container=ContainerSettings(engine="docker"))
         manager = ContainerManager(settings)
 
         assert manager.settings == settings
@@ -17,14 +17,14 @@ class TestContainerManagerInit:
 
     def test_init_detects_docker_engine(self):
         """Test that it detects docker engine from settings."""
-        settings = AppConfig(container=ContainerSettings(engine="docker"))
+        settings = OrchestratorConfig(container=ContainerSettings(engine="docker"))
         manager = ContainerManager(settings)
 
         assert manager.engine == "docker"
 
     def test_init_detects_podman_engine(self):
         """Test that it detects podman engine from settings."""
-        settings = AppConfig(container=ContainerSettings(engine="podman"))
+        settings = OrchestratorConfig(container=ContainerSettings(engine="podman"))
         manager = ContainerManager(settings)
 
         assert manager.engine == "podman"

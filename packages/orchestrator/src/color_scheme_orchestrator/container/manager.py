@@ -113,8 +113,9 @@ class ContainerManager:
         # Add image
         cmd.append(image)
 
-        # Add container command: color-scheme generate /input/image.png [args]
-        cmd.extend(["color-scheme", "generate", "/input/image.png"])
+        # Add container command: generate /input/image.png [args]
+        # (ENTRYPOINT already has "color-scheme")
+        cmd.extend(["generate", "/input/image.png"])
 
         # Add CLI arguments
         cmd.extend(cli_args)

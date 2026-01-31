@@ -2,7 +2,6 @@
 
 from datetime import datetime
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 
@@ -204,8 +203,6 @@ class TestErrorHandling:
 
     def test_template_not_found(self, manager, color_scheme, tmp_path):
         """Test error when template is not found."""
-        output_dir = tmp_path / "output"
-
         # Create a fake format enum value
         # We'll patch the ColorFormat to include a non-existent format
         from unittest.mock import Mock
@@ -264,7 +261,7 @@ class TestErrorHandling:
 
     def test_oserror_write_file(self, manager, color_scheme, tmp_path):
         """Test OSError handling in _write_file."""
-        from unittest.mock import Mock, PropertyMock
+        from unittest.mock import Mock
 
         # Mock file path that raises OSError
         mock_path = Mock(spec=Path)
@@ -280,7 +277,7 @@ class TestErrorHandling:
 
     def test_oserror_write_binary_file(self, manager, color_scheme, tmp_path):
         """Test OSError handling in _write_binary_file."""
-        from unittest.mock import Mock, PropertyMock
+        from unittest.mock import Mock
 
         # Mock file path that raises OSError
         mock_path = Mock(spec=Path)
@@ -307,7 +304,6 @@ class TestErrorHandling:
 
         def mock_get_template(name):
             template = original_get_template(name)
-            original_render = template.render
             template.render = Mock(side_effect=RuntimeError("Template error"))
             return template
 

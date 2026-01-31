@@ -1,0 +1,27 @@
+# Exclude everything by default
+**/*
+
+# Include only what we need
+!packages/core/
+!packages/core/src/
+!packages/core/pyproject.toml
+!packages/core/README.md
+!templates/
+
+# Exclude common development files
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/.Python
+**/pip-log.txt
+**/pip-delete-this-directory.txt
+**/.tox/
+**/.coverage
+**/.pytest_cache/
+**/*.egg-info/
+**/.venv/
+**/.git/
+**/.gitignore
+**/*.md
+!packages/core/README.md

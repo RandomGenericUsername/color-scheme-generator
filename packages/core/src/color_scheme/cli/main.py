@@ -1,7 +1,6 @@
 """CLI entry point for color-scheme."""
 
 import logging
-import sys
 from pathlib import Path
 
 import typer
@@ -44,37 +43,37 @@ def version():
 
 @app.command()
 def generate(
-    image_path: Path = typer.Argument(
+    image_path: Path = typer.Argument(  # noqa: B008
         ...,
         help="Path to source image",
     ),
-    output_dir: Path = typer.Option(
+    output_dir: Path | None = typer.Option(  # noqa: B008
         None,
         "--output-dir",
         "-o",
         help="Output directory for color scheme files",
     ),
-    backend: Backend = typer.Option(
+    backend: Backend | None = typer.Option(  # noqa: B008
         None,
         "--backend",
         "-b",
-        help="Backend to use for color extraction (auto-detects if not specified)",
+        help="Backend to use for color extraction (auto-detects if not specified)",  # noqa: E501
     ),
-    formats: list[ColorFormat] = typer.Option(
+    formats: list[ColorFormat] | None = typer.Option(  # noqa: B008
         None,
         "--format",
         "-f",
-        help="Output format(s) to generate (can be specified multiple times)",
+        help="Output format(s) to generate (can be specified multiple times)",  # noqa: E501
     ),
-    saturation: float = typer.Option(
+    saturation: float | None = typer.Option(  # noqa: B008
         None,
         "--saturation",
         "-s",
         min=0.0,
         max=2.0,
-        help="Saturation adjustment factor (0.0-2.0, default from settings)",
+        help="Saturation adjustment factor (0.0-2.0, default from settings)",  # noqa: E501
     ),
-):
+) -> None:
     """Generate color scheme from an image.
 
     Extracts colors from an image and generates color scheme files in various formats.
@@ -117,7 +116,7 @@ def generate(
             console.print(f"[cyan]Using backend:[/cyan] {backend.value}")
 
         # Build GeneratorConfig with overrides
-        overrides = {}
+        overrides: dict[str, object] = {}
         if output_dir is not None:
             overrides["output_dir"] = output_dir
         if saturation is not None:
@@ -126,6 +125,10 @@ def generate(
             overrides["formats"] = formats
 
         config = GeneratorConfig.from_settings(settings, **overrides)
+
+        # GeneratorConfig.from_settings ensures these are not None
+        assert config.output_dir is not None
+        assert config.formats is not None
 
         # Create generator
         console.print("[cyan]Creating generator...[/cyan]")
@@ -136,7 +139,10 @@ def generate(
         color_scheme = generator.generate(image_path, config)
 
         # Apply saturation adjustment if specified
-        if config.saturation_adjustment is not None and config.saturation_adjustment != 1.0:
+        if (
+            config.saturation_adjustment is not None
+            and config.saturation_adjustment != 1.0
+        ):
             console.print(
                 f"[cyan]Adjusting saturation:[/cyan] {config.saturation_adjustment}"
             )
@@ -181,35 +187,45 @@ def generate(
     except InvalidImageError as e:
         console.print(f"[red]Error:[/red] Invalid image: {e.reason}")
         logger.error("Invalid image: %s", e)
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
     except BackendNotAvailableError as e:
-        console.print(f"[red]Error:[/red] Backend '{e.backend}' not available: {e.reason}")
-        console.print("\n[yellow]Tip:[/yellow] Try auto-detection or use a different backend")
+        console.print(
+            f"[red]Error:[/red] Backend '{e.backend}' not available: "
+            f"{e.reason}"
+        )
+        console.print(
+            "\n[yellow]Tip:[/yellow] Try auto-detection or use a different "
+            "backend"
+        )
         logger.error("Backend not available: %s", e)
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
     except ColorExtractionError as e:
         console.print(f"[red]Error:[/red] Color extraction failed: {e.reason}")
         logger.error("Color extraction failed: %s", e)
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
     except TemplateRenderError as e:
-        console.print(f"[red]Error:[/red] Template rendering failed: {e.reason}")
+        console.print(
+            f"[red]Error:[/red] Template rendering failed: {e.reason}"
+        )
         console.print(f"Template: {e.template_name}")
         logger.error("Template rendering failed: %s", e)
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
     except OutputWriteError as e:
-        console.print(f"[red]Error:[/red] Failed to write output file: {e.reason}")
+        console.print(
+            f"[red]Error:[/red] Failed to write output file: {e.reason}"
+        )
         console.print(f"File: {e.file_path}")
         logger.error("Output write failed: %s", e)
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
     except ColorSchemeError as e:
         console.print(f"[red]Error:[/red] {str(e)}")
         logger.error("Color scheme error: %s", e)
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
     except typer.Exit:
         # Re-raise typer.Exit to avoid catching it in Exception handler
@@ -218,30 +234,30 @@ def generate(
     except Exception as e:
         console.print(f"[red]Unexpected error:[/red] {str(e)}")
         logger.exception("Unexpected error in generate command")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
 
 @app.command()
 def show(
-    image_path: Path = typer.Argument(
+    image_path: Path = typer.Argument(  # noqa: B008
         ...,
         help="Path to source image",
     ),
-    backend: Backend = typer.Option(
+    backend: Backend | None = typer.Option(  # noqa: B008
         None,
         "--backend",
         "-b",
-        help="Backend to use for color extraction (auto-detects if not specified)",
+        help="Backend to use for color extraction (auto-detects if not specified)",  # noqa: E501
     ),
-    saturation: float = typer.Option(
+    saturation: float | None = typer.Option(  # noqa: B008
         None,
         "--saturation",
         "-s",
         min=0.0,
         max=2.0,
-        help="Saturation adjustment factor (0.0-2.0, default from settings)",
+        help="Saturation adjustment factor (0.0-2.0, default from settings)",  # noqa: E501
     ),
-):
+) -> None:
     """Display color scheme from an image in the terminal.
 
     Extracts colors from an image and displays them in a formatted table
@@ -282,7 +298,7 @@ def show(
             console.print(f"[cyan]Using backend:[/cyan] {backend.value}")
 
         # Build GeneratorConfig with overrides
-        overrides = {}
+        overrides: dict[str, object] = {}
         if saturation is not None:
             overrides["saturation_adjustment"] = saturation
 
@@ -296,7 +312,10 @@ def show(
         color_scheme = generator.generate(image_path, config)
 
         # Apply saturation adjustment if specified
-        if config.saturation_adjustment is not None and config.saturation_adjustment != 1.0:
+        if (
+            config.saturation_adjustment is not None
+            and config.saturation_adjustment != 1.0
+        ):
             console.print(
                 f"[cyan]Adjusting saturation:[/cyan] {config.saturation_adjustment}"
             )
@@ -323,8 +342,13 @@ def show(
             f"[cyan]Source Image:[/cyan] {image_path}",
             f"[cyan]Backend:[/cyan] {backend.value}",
         ]
-        if config.saturation_adjustment is not None and config.saturation_adjustment != 1.0:
-            info_lines.append(f"[cyan]Saturation:[/cyan] {config.saturation_adjustment}")
+        if (
+            config.saturation_adjustment is not None
+            and config.saturation_adjustment != 1.0
+        ):
+            info_lines.append(
+                f"[cyan]Saturation:[/cyan] {config.saturation_adjustment}"
+            )
 
         info_panel = Panel(
             "\n".join(info_lines),
@@ -385,7 +409,9 @@ def show(
         ]
 
         # Add terminal colors
-        for idx, (name, color) in enumerate(zip(color_names, color_scheme.colors)):
+        for idx, (name, color) in enumerate(
+            zip(color_names, color_scheme.colors, strict=False)
+        ):
             preview = f"[on {color.hex}]          [/]"
             rgb_str = f"rgb({color.rgb[0]}, {color.rgb[1]}, {color.rgb[2]})"
             terminal_table.add_row(str(idx), name, preview, color.hex, rgb_str)
@@ -395,23 +421,29 @@ def show(
     except InvalidImageError as e:
         console.print(f"[red]Error:[/red] Invalid image: {e.reason}")
         logger.error("Invalid image: %s", e)
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
     except BackendNotAvailableError as e:
-        console.print(f"[red]Error:[/red] Backend '{e.backend}' not available: {e.reason}")
-        console.print("\n[yellow]Tip:[/yellow] Try auto-detection or use a different backend")
+        console.print(
+            f"[red]Error:[/red] Backend '{e.backend}' not available: "
+            f"{e.reason}"
+        )
+        console.print(
+            "\n[yellow]Tip:[/yellow] Try auto-detection or use a different "
+            "backend"
+        )
         logger.error("Backend not available: %s", e)
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
     except ColorExtractionError as e:
         console.print(f"[red]Error:[/red] Color extraction failed: {e.reason}")
         logger.error("Color extraction failed: %s", e)
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
     except ColorSchemeError as e:
         console.print(f"[red]Error:[/red] {str(e)}")
         logger.error("Color scheme error: %s", e)
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
     except typer.Exit:
         # Re-raise typer.Exit to avoid catching it in Exception handler
@@ -420,7 +452,7 @@ def show(
     except Exception as e:
         console.print(f"[red]Unexpected error:[/red] {str(e)}")
         logger.exception("Unexpected error in show command")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
 
 def main():

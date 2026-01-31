@@ -1,0 +1,39 @@
+[project]
+name = "color-scheme"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Juan David", email = "jdavidth.01@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "typer>=0.21.1",
+    "rich-logging",
+    "task-pipeline",
+    "container-manager"
+]
+
+[dependency-groups]
+dev = [
+    "black>=24.0.0",
+    "isort>=5.13.0",
+    "ruff>=0.6.0",
+    "mypy>=1.11.0",
+    "pre-commit>=3.8.0",
+    "pytest>=8.4.2",
+    "pytest-xdist>=3.8.0",
+    "bandit>=1.8.6",
+]
+
+[tool.uv.sources]
+task-pipeline = { git = "https://github.com/RandomGenericUsername/utils", subdirectory = "pipeline" }
+rich-logging = { git = "https://github.com/RandomGenericUsername/utils", subdirectory = "logging" }
+container-manager = { git = "https://github.com/RandomGenericUsername/container-manager"}
+
+[project.scripts]
+color-scheme = "color_scheme:main"
+
+[build-system]
+requires = ["uv_build>=0.9.22,<0.10.0"]
+build-backend = "uv_build"

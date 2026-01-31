@@ -32,6 +32,20 @@ custom_algorithm = "kmeans"
 custom_n_clusters = 16
 
 # Template defaults
-# Default to package templates directory, but allow override via env var
-_package_templates = Path(__file__).parent.parent / "templates"
-template_directory = Path(os.getenv("COLOR_SCHEME_TEMPLATES", str(_package_templates)))
+# Priority:
+# 1. Environment variable COLOR_SCHEME_TEMPLATES
+# 2. /templates (for containers)
+# 3. Project root templates/ directory
+_container_templates = Path("/templates")
+_package_root = Path(__file__).parent.parent  # color_scheme/
+_project_root = _package_root.parent.parent.parent.parent  # Go up to project root
+_project_templates = _project_root / "templates"
+
+if os.getenv("COLOR_SCHEME_TEMPLATES"):
+    template_directory = Path(os.getenv("COLOR_SCHEME_TEMPLATES"))
+elif _container_templates.exists():
+    # Running in container
+    template_directory = _container_templates
+else:
+    # Running on host
+    template_directory = _project_templates

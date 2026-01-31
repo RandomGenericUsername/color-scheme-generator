@@ -7,6 +7,8 @@ from rich.console import Console
 
 from color_scheme.config.enums import Backend, ColorFormat
 from color_scheme.config.settings import Settings  # type: ignore[import-untyped]
+from color_scheme_orchestrator.cli.commands import install, uninstall
+from color_scheme_orchestrator.config.settings import ContainerSettings, OrchestratorConfig
 from color_scheme_orchestrator.container.manager import ContainerManager
 
 app = typer.Typer(
@@ -15,6 +17,10 @@ app = typer.Typer(
     add_completion=False,
     no_args_is_help=True,
 )
+
+# Register commands
+app.command()(install)
+app.command()(uninstall)
 
 console = Console()
 
@@ -76,8 +82,12 @@ def generate(
         color-scheme generate wallpaper.jpg -o ~/colors -f json -f css
     """
     try:
-        # Load settings
-        settings = Settings.get()
+        # Load core settings and wrap with orchestrator config
+        core_settings = Settings.get()
+        settings = OrchestratorConfig(
+            **core_settings.model_dump(),
+            container=ContainerSettings(),  # Use default container settings
+        )
 
         # Validate image path
         if not image_path.exists():

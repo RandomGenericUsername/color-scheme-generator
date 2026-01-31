@@ -4,8 +4,8 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
-from color_scheme.config.config import AppConfig, ContainerSettings
 from color_scheme.config.enums import Backend
+from color_scheme_orchestrator.config.settings import ContainerSettings, OrchestratorConfig
 from color_scheme_orchestrator.container.manager import ContainerManager
 
 
@@ -15,7 +15,7 @@ class TestContainerExecution:
     @patch("subprocess.run")
     def test_run_generate_builds_docker_command(self, mock_run):
         """Test that run_generate constructs correct docker command."""
-        settings = AppConfig(container=ContainerSettings(engine="docker"))
+        settings = OrchestratorConfig(container=ContainerSettings(engine="docker"))
         manager = ContainerManager(settings)
 
         image_path = Path("/tmp/test.png")
@@ -43,7 +43,7 @@ class TestContainerExecution:
     @patch("subprocess.run")
     def test_run_generate_includes_volume_mounts(self, mock_run):
         """Test that volume mounts are included in docker command."""
-        settings = AppConfig()
+        settings = OrchestratorConfig()
         manager = ContainerManager(settings)
 
         image_path = Path("/tmp/test.png")
@@ -67,7 +67,7 @@ class TestContainerExecution:
     @patch("subprocess.run")
     def test_run_generate_passes_cli_args(self, mock_run):
         """Test that CLI arguments are passed to container."""
-        settings = AppConfig()
+        settings = OrchestratorConfig()
         manager = ContainerManager(settings)
 
         image_path = Path("/tmp/test.png")
@@ -86,8 +86,8 @@ class TestContainerExecution:
 
         call_args = mock_run.call_args[0][0]
 
-        # Container command should include: color-scheme generate /input/image.png ...
-        assert "color-scheme" in call_args
+        # Container command should include: generate /input/image.png ...
+        # (ENTRYPOINT already has "color-scheme", so we don't pass it again)
         assert "generate" in call_args
         assert "/input/image.png" in call_args
         assert "--saturation" in call_args
@@ -96,7 +96,7 @@ class TestContainerExecution:
     @patch("subprocess.run")
     def test_run_generate_raises_on_failure(self, mock_run):
         """Test that non-zero exit code raises exception."""
-        settings = AppConfig()
+        settings = OrchestratorConfig()
         manager = ContainerManager(settings)
 
         image_path = Path("/tmp/test.png")
