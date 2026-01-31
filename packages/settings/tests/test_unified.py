@@ -1,8 +1,5 @@
 """Tests for UnifiedConfig construction and transforms."""
 
-import os
-from typing import Any
-
 import pytest
 
 from color_scheme_settings.transforms import (
@@ -19,7 +16,9 @@ class TestConvertKeysToLowercase:
         assert result == {"level": "INFO"}
 
     def test_nested_dict(self):
-        result = convert_keys_to_lowercase({"BACKENDS": {"PYWAL": {"ALGO": "haishoku"}}})
+        result = convert_keys_to_lowercase(
+            {"BACKENDS": {"PYWAL": {"ALGO": "haishoku"}}}
+        )
         assert result == {"backends": {"pywal": {"algo": "haishoku"}}}
 
     def test_values_unchanged(self):
@@ -53,9 +52,7 @@ class TestResolveEnvironmentVariables:
 
     def test_resolve_in_list(self, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.setenv("HOME", "/home/testuser")
-        result = resolve_environment_variables(
-            {"paths": ["$HOME/a", "$HOME/b"]}
-        )
+        result = resolve_environment_variables({"paths": ["$HOME/a", "$HOME/b"]})
         assert result["paths"] == ["/home/testuser/a", "/home/testuser/b"]
 
     def test_non_string_values_unchanged(self):

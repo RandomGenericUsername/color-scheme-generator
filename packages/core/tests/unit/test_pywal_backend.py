@@ -6,7 +6,6 @@ from unittest.mock import patch
 import pytest
 
 from color_scheme.backends.pywal import PywalGenerator
-from color_scheme.config.settings import Settings
 from color_scheme.core.exceptions import (
     BackendNotAvailableError,
     ColorExtractionError,
@@ -19,14 +18,9 @@ class TestPywalGenerator:
     """Tests for PywalGenerator."""
 
     @pytest.fixture
-    def settings(self):
-        """Get settings."""
-        return Settings.get()
-
-    @pytest.fixture
-    def generator(self, settings):
+    def generator(self, app_config):
         """Create PywalGenerator."""
-        return PywalGenerator(settings)
+        return PywalGenerator(app_config)
 
     @pytest.fixture
     def test_image(self):

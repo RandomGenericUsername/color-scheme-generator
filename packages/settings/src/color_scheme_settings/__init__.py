@@ -65,9 +65,7 @@ def load_config() -> BaseModel:
         return _config
 
     if _unified_model is None:
-        raise SettingsError(
-            "Settings system not configured. Call configure() first."
-        )
+        raise SettingsError("Settings system not configured. Call configure() first.")
 
     loader = SettingsLoader(**_loader_kwargs)
     layers = loader.discover_layers()

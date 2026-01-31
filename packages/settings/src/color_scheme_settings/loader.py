@@ -32,7 +32,7 @@ def load_toml(file_path: Path) -> dict[str, Any]:
         SettingsFileError: If file cannot be read or parsed
     """
     try:
-        with open(file_path, "rb") as f:
+        with file_path.open("rb") as f:
             return tomllib.load(f)
     except tomllib.TOMLDecodeError as e:
         raise SettingsFileError(file_path=file_path, reason=str(e)) from e
@@ -93,28 +93,32 @@ class SettingsLoader:
             project_file = self.project_root / "settings.toml"
             if project_file.exists():
                 data = load_toml(project_file)
+                # Normalize top-level keys to lowercase for case-insensitive matching
+                data_lower = {k.lower(): v for k, v in data.items()}
                 for ns in SchemaRegistry.all_namespaces():
-                    if ns in data:
+                    if ns in data_lower:
                         layers.append(
                             LayerSource(
                                 layer="project",
                                 namespace=ns,
                                 file_path=project_file,
-                                data=data[ns],
+                                data=data_lower[ns],
                             )
                         )
 
         # Layer 3: User config (namespaced sections)
         if self.user_config_path is not None and self.user_config_path.exists():
             data = load_toml(self.user_config_path)
+            # Normalize top-level keys to lowercase for case-insensitive matching
+            data_lower = {k.lower(): v for k, v in data.items()}
             for ns in SchemaRegistry.all_namespaces():
-                if ns in data:
+                if ns in data_lower:
                     layers.append(
                         LayerSource(
                             layer="user",
                             namespace=ns,
                             file_path=self.user_config_path,
-                            data=data[ns],
+                            data=data_lower[ns],
                         )
                     )
 

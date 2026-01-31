@@ -58,7 +58,9 @@ class TestSchemaRegistryRegister:
 
     def test_register_multiple_namespaces(self, tmp_path: Path):
         SchemaRegistry.register("core", MockCoreConfig, tmp_path / "core.toml")
-        SchemaRegistry.register("orchestrator", MockOrchestratorConfig, tmp_path / "orch.toml")
+        SchemaRegistry.register(
+            "orchestrator", MockOrchestratorConfig, tmp_path / "orch.toml"
+        )
         assert SchemaRegistry.get("core").model is MockCoreConfig
         assert SchemaRegistry.get("orchestrator").model is MockOrchestratorConfig
 
@@ -89,7 +91,9 @@ class TestSchemaRegistryListings:
 
     def test_all_namespaces(self, tmp_path: Path):
         SchemaRegistry.register("core", MockCoreConfig, tmp_path / "core.toml")
-        SchemaRegistry.register("orchestrator", MockOrchestratorConfig, tmp_path / "orch.toml")
+        SchemaRegistry.register(
+            "orchestrator", MockOrchestratorConfig, tmp_path / "orch.toml"
+        )
         namespaces = SchemaRegistry.all_namespaces()
         assert "core" in namespaces
         assert "orchestrator" in namespaces

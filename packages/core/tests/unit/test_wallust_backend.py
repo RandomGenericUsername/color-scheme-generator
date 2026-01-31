@@ -6,7 +6,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from color_scheme.backends.wallust import WallustGenerator
-from color_scheme.config.settings import Settings
 from color_scheme.core.exceptions import (
     BackendNotAvailableError,
     ColorExtractionError,
@@ -19,14 +18,9 @@ class TestWallustGenerator:
     """Tests for WallustGenerator."""
 
     @pytest.fixture
-    def settings(self):
-        """Get settings."""
-        return Settings.get()
-
-    @pytest.fixture
-    def generator(self, settings):
+    def generator(self, app_config):
         """Create WallustGenerator."""
-        return WallustGenerator(settings)
+        return WallustGenerator(app_config)
 
     @pytest.fixture
     def test_image(self):

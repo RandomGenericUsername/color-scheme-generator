@@ -6,7 +6,7 @@ import pytest
 from pydantic import BaseModel, Field
 
 from color_scheme_settings.errors import SettingsFileError
-from color_scheme_settings.loader import LayerSource, SettingsLoader, load_toml
+from color_scheme_settings.loader import SettingsLoader, load_toml
 from color_scheme_settings.registry import SchemaRegistry
 
 
@@ -57,7 +57,7 @@ class TestSettingsLoaderPackageLayer:
         SchemaRegistry.register("core", MockCoreConfig, core_defaults_toml)
         loader = SettingsLoader(project_root=None, user_config_path=None)
         layers = loader.discover_layers()
-        core_layers = [l for l in layers if l.namespace == "core"]
+        core_layers = [layer for layer in layers if layer.namespace == "core"]
         assert len(core_layers) == 1
         assert core_layers[0].layer == "package"
         assert "logging" in core_layers[0].data
@@ -76,20 +76,22 @@ class TestSettingsLoaderProjectLayer:
         self, core_defaults_toml: Path, project_root_toml: Path
     ):
         SchemaRegistry.register("core", MockCoreConfig, core_defaults_toml)
-        SchemaRegistry.register("orchestrator", MockOrchestratorConfig, core_defaults_toml)
+        SchemaRegistry.register(
+            "orchestrator", MockOrchestratorConfig, core_defaults_toml
+        )
         loader = SettingsLoader(
             project_root=project_root_toml.parent,
             user_config_path=None,
         )
         layers = loader.discover_layers()
-        project_layers = [l for l in layers if l.layer == "project"]
+        project_layers = [layer for layer in layers if layer.layer == "project"]
         assert len(project_layers) >= 1
 
     def test_no_project_root_no_project_layers(self, core_defaults_toml: Path):
         SchemaRegistry.register("core", MockCoreConfig, core_defaults_toml)
         loader = SettingsLoader(project_root=None, user_config_path=None)
         layers = loader.discover_layers()
-        project_layers = [l for l in layers if l.layer == "project"]
+        project_layers = [layer for layer in layers if layer.layer == "project"]
         assert len(project_layers) == 0
 
 
@@ -105,17 +107,19 @@ class TestSettingsLoaderUserLayer:
             user_config_path=user_config_toml,
         )
         layers = loader.discover_layers()
-        user_layers = [l for l in layers if l.layer == "user"]
+        user_layers = [layer for layer in layers if layer.layer == "user"]
         assert len(user_layers) >= 1
 
-    def test_missing_user_config_skipped(self, core_defaults_toml: Path, tmp_path: Path):
+    def test_missing_user_config_skipped(
+        self, core_defaults_toml: Path, tmp_path: Path
+    ):
         SchemaRegistry.register("core", MockCoreConfig, core_defaults_toml)
         loader = SettingsLoader(
             project_root=None,
             user_config_path=tmp_path / "nonexistent.toml",
         )
         layers = loader.discover_layers()
-        user_layers = [l for l in layers if l.layer == "user"]
+        user_layers = [layer for layer in layers if layer.layer == "user"]
         assert len(user_layers) == 0
 
 
@@ -134,6 +138,6 @@ class TestSettingsLoaderLayerOrdering:
             user_config_path=user_config_toml,
         )
         layers = loader.discover_layers()
-        core_layers = [l for l in layers if l.namespace == "core"]
-        layer_names = [l.layer for l in core_layers]
+        core_layers = [layer for layer in layers if layer.namespace == "core"]
+        layer_names = [layer.layer for layer in core_layers]
         assert layer_names == ["package", "project", "user"]

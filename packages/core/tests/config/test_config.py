@@ -9,7 +9,6 @@ from pydantic import ValidationError
 from color_scheme.config.config import (
     AppConfig,
     BackendSettings,
-    ContainerSettings,
     CustomBackendSettings,
     GenerationSettings,
     LoggingSettings,
@@ -29,57 +28,6 @@ from color_scheme.config.defaults import (
     template_directory,
     wallust_backend_type,
 )
-
-
-class TestContainerSettings:
-    """Tests for ContainerSettings model."""
-
-    def test_default_engine(self):
-        """Test default container engine is docker."""
-        settings = ContainerSettings()
-        assert settings.engine == "docker"
-
-    def test_default_image_registry(self):
-        """Test default image registry is None."""
-        settings = ContainerSettings()
-        assert settings.image_registry is None
-
-    @pytest.mark.parametrize("engine", ["docker", "podman", "DOCKER", "PODMAN"])
-    def test_valid_engines(self, engine: str):
-        """Test valid container engines are accepted."""
-        settings = ContainerSettings(engine=engine)
-        assert settings.engine == engine.lower()
-
-    def test_invalid_engine(self):
-        """Test invalid container engine raises ValidationError."""
-        with pytest.raises(ValidationError) as exc_info:
-            ContainerSettings(engine="kubernetes")
-
-        error = exc_info.value.errors()[0]
-        assert "Invalid container engine" in str(error["ctx"]["error"])
-
-    def test_engine_case_insensitive(self):
-        """Test engine validation is case-insensitive."""
-        settings1 = ContainerSettings(engine="Docker")
-        settings2 = ContainerSettings(engine="DOCKER")
-        settings3 = ContainerSettings(engine="docker")
-
-        assert settings1.engine == "docker"
-        assert settings2.engine == "docker"
-        assert settings3.engine == "docker"
-
-    def test_custom_image_registry(self):
-        """Test custom image registry can be set."""
-        settings = ContainerSettings(image_registry="ghcr.io/myorg")
-        assert settings.image_registry == "ghcr.io/myorg"
-
-    def test_image_registry_with_engine(self):
-        """Test image registry works with custom engine."""
-        settings = ContainerSettings(
-            engine="podman", image_registry="docker.io/username"
-        )
-        assert settings.engine == "podman"
-        assert settings.image_registry == "docker.io/username"
 
 
 class TestLoggingSettings:
@@ -397,7 +345,6 @@ class TestAppConfig:
     def test_default_values(self):
         """Test default app configuration."""
         config = AppConfig()
-        assert isinstance(config.container, ContainerSettings)
         assert isinstance(config.logging, LoggingSettings)
         assert isinstance(config.output, OutputSettings)
         assert isinstance(config.generation, GenerationSettings)
@@ -444,7 +391,6 @@ class TestAppConfig:
     def test_full_custom_config(self):
         """Test fully customized configuration."""
         config = AppConfig(
-            container=ContainerSettings(engine="podman"),
             logging=LoggingSettings(level="DEBUG", show_time=False, show_path=True),
             output=OutputSettings(
                 directory=Path("/custom/output"), formats=["json", "css"]
@@ -460,7 +406,6 @@ class TestAppConfig:
             templates=TemplateSettings(directory=Path("/custom/templates")),
         )
 
-        assert config.container.engine == "podman"
         assert config.logging.level == "DEBUG"
         assert config.output.directory == Path("/custom/output")
         assert config.generation.default_backend == "custom"
@@ -494,16 +439,6 @@ class TestAppConfig:
 
 class TestFieldValidators:
     """Tests for field validators across all models."""
-
-    def test_container_engine_validator(self):
-        """Test container engine validator."""
-        # Valid
-        ContainerSettings(engine="docker")
-        ContainerSettings(engine="podman")
-
-        # Invalid
-        with pytest.raises(ValidationError):
-            ContainerSettings(engine="invalid")
 
     def test_logging_level_validator(self):
         """Test logging level validator."""

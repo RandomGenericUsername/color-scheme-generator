@@ -6,7 +6,6 @@ from unittest.mock import patch
 import pytest
 
 from color_scheme.backends.custom import CustomGenerator
-from color_scheme.config.settings import Settings
 from color_scheme.core.exceptions import ColorExtractionError, InvalidImageError
 from color_scheme.core.types import GeneratorConfig
 
@@ -15,14 +14,9 @@ class TestCustomGenerator:
     """Tests for CustomGenerator."""
 
     @pytest.fixture
-    def settings(self):
-        """Get settings."""
-        return Settings.get()
-
-    @pytest.fixture
-    def generator(self, settings):
+    def generator(self, app_config):
         """Create CustomGenerator."""
-        return CustomGenerator(settings)
+        return CustomGenerator(app_config)
 
     @pytest.fixture
     def test_image(self):

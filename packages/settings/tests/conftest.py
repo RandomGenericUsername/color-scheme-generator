@@ -1,7 +1,6 @@
 """Shared fixtures for settings tests."""
 
 from pathlib import Path
-from typing import Any
 
 import pytest
 

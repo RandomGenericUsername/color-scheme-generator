@@ -5,7 +5,6 @@ from pathlib import Path
 import pytest
 from pydantic import BaseModel, ConfigDict, Field
 
-import color_scheme_settings
 from color_scheme_settings import (
     SchemaRegistry,
     configure,
@@ -168,11 +167,13 @@ class TestFullPipeline:
             user_config_path=user_config_file,
         )
 
-        config = get_config({
-            "core.generation.saturation_adjustment": 0.5,
-            "core.output.formats": ["scss"],
-            "orchestrator.engine": "docker",
-        })
+        config = get_config(
+            {
+                "core.generation.saturation_adjustment": 0.5,
+                "core.output.formats": ["scss"],
+                "orchestrator.engine": "docker",
+            }
+        )
         assert config.core.generation.saturation_adjustment == 0.5
         assert config.core.output.formats == ["scss"]
         assert config.orchestrator.engine == "docker"

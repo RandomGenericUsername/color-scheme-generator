@@ -1,8 +1,8 @@
 """Project-level UnifiedConfig composing core + orchestrator schemas."""
 
+from color_scheme.config.config import AppConfig
 from pydantic import BaseModel, ConfigDict, Field
 
-from color_scheme.config.config import AppConfig
 from color_scheme_orchestrator.config.settings import ContainerSettings
 
 

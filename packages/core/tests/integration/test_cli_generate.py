@@ -1,13 +1,11 @@
 """Integration tests for CLI generate command."""
 
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 from typer.testing import CliRunner
 
 from color_scheme.cli.main import app
-from color_scheme.config.enums import Backend, ColorFormat
 
 
 class TestCLIGenerate:

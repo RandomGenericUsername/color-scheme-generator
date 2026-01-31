@@ -15,7 +15,6 @@ from color_scheme.config.config import (
     PywalBackendSettings,
 )
 from color_scheme.config.enums import Backend, ColorAlgorithm
-from color_scheme.config.settings import Settings, SettingsModel
 
 
 class TestEnums:
@@ -182,36 +181,3 @@ class TestAppConfig:
         assert config.logging.level == "DEBUG"
         assert config.generation.default_backend == "custom"
         assert config.generation.saturation_adjustment == 1.5
-
-
-class TestSettingsModel:
-    """Test SettingsModel loader."""
-
-    def test_global_settings_loads(self):
-        """Test that global Settings instance loads successfully."""
-        config = Settings.get()
-        assert isinstance(config, AppConfig)
-        assert config.logging.level in [
-            "DEBUG",
-            "INFO",
-            "WARNING",
-            "ERROR",
-            "CRITICAL",
-        ]
-
-    def test_convert_to_lowercase(self):
-        """Test key conversion to lowercase."""
-        input_dict = {"LOGGING": {"LEVEL": "INFO"}, "OUTPUT": {"DIRECTORY": "/tmp"}}
-        result = SettingsModel._convert_dict_to_lower_case(input_dict)
-        assert "logging" in result
-        assert "LOGGING" not in result
-        assert result["logging"]["level"] == "INFO"
-
-    def test_resolve_environment_variables(self):
-        """Test environment variable resolution."""
-        import os
-
-        os.environ["TEST_VAR"] = "test_value"
-        input_dict = {"path": "$TEST_VAR/subdir"}
-        result = SettingsModel._resolve_environment_variables(input_dict)
-        assert result["path"] == "test_value/subdir"

@@ -3,20 +3,44 @@
 from pathlib import Path
 
 import pytest
-from pydantic import ValidationError
-
-from color_scheme.config.config import AppConfig
 from color_scheme_settings import SchemaRegistry, configure, get_config, reset
 
+from color_scheme.config.config import AppConfig
 
-@pytest.fixture(autouse=True)
+
+@pytest.fixture
 def clean_settings():
     """Reset settings system before and after each test."""
+    from pydantic import BaseModel, ConfigDict, Field
+
+    class CoreTestConfig(BaseModel):
+        """Test config with just core namespace."""
+        model_config = ConfigDict(frozen=True)
+        core: AppConfig = Field(default_factory=AppConfig)
+
     reset()
+    # Re-register core schema after reset (reset() clears the registry)
+    if "core" not in SchemaRegistry.all_namespaces():
+        SchemaRegistry.register(
+            namespace="core",
+            model=AppConfig,
+            defaults_file=Path(__file__).parent.parent.parent / "src" / "color_scheme" / "config" / "settings.toml",
+        )
+    # Re-configure with core-only config
+    configure(CoreTestConfig)
     yield
+    # Clean up and restore default configuration for other tests
     reset()
+    if "core" not in SchemaRegistry.all_namespaces():
+        SchemaRegistry.register(
+            namespace="core",
+            model=AppConfig,
+            defaults_file=Path(__file__).parent.parent.parent / "src" / "color_scheme" / "config" / "settings.toml",
+        )
+    configure(CoreTestConfig)
 
 
+@pytest.mark.usefixtures("clean_settings")
 class TestCoreSchemaRegistration:
     """Tests for core schema registration."""
 
@@ -36,6 +60,7 @@ class TestCoreSchemaRegistration:
         assert entry.model is AppConfig
 
 
+@pytest.mark.usefixtures("clean_settings")
 class TestSettingsLoading:
     """Tests for loading settings through the new system."""
 
@@ -157,8 +182,8 @@ directory = "/tmp/test/templates"
 
     def test_validation_error_on_invalid_data(self, tmp_path: Path):
         """Test that invalid config raises ValidationError."""
-        from pydantic import BaseModel, ConfigDict, Field
         from color_scheme_settings.errors import SettingsValidationError
+        from pydantic import BaseModel, ConfigDict, Field
 
         class TestConfig(BaseModel):
             model_config = ConfigDict(frozen=True)
@@ -179,6 +204,7 @@ saturation_adjustment = 5.0
             get_config()
 
 
+@pytest.mark.usefixtures("clean_settings")
 class TestLayerMerging:
     """Tests for layer merging behavior."""
 

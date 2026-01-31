@@ -216,10 +216,6 @@ class AppConfig(BaseModel):
     installer's AppConfig.
     """
 
-    container: ContainerSettings = Field(
-        default_factory=ContainerSettings,
-        description="Container engine configuration",
-    )
     logging: LoggingSettings = Field(
         default_factory=LoggingSettings,
         description="Logging configuration",

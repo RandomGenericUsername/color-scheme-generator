@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from color_scheme.config.config import AppConfig
+
 from color_scheme_orchestrator.config.settings import ContainerSettings
 from color_scheme_orchestrator.config.unified import UnifiedConfig
 from color_scheme_orchestrator.container.manager import ContainerManager

@@ -1,7 +1,7 @@
 """Tests for the deep merge algorithm."""
 
-from color_scheme_settings.merger import deep_merge, merge_layers
 from color_scheme_settings.loader import LayerSource
+from color_scheme_settings.merger import deep_merge, merge_layers
 
 
 class TestDeepMerge:
@@ -105,7 +105,12 @@ class TestMergeLayers:
                 layer="package",
                 namespace="core",
                 file_path=None,
-                data={"generation": {"default_backend": "pywal", "saturation_adjustment": 1.0}},
+                data={
+                    "generation": {
+                        "default_backend": "pywal",
+                        "saturation_adjustment": 1.0,
+                    }
+                },
             ),
             LayerSource(
                 layer="project",
@@ -120,8 +125,18 @@ class TestMergeLayers:
 
     def test_multiple_namespaces(self):
         layers = [
-            LayerSource(layer="package", namespace="core", file_path=None, data={"logging": {"level": "INFO"}}),
-            LayerSource(layer="package", namespace="orchestrator", file_path=None, data={"container": {"engine": "docker"}}),
+            LayerSource(
+                layer="package",
+                namespace="core",
+                file_path=None,
+                data={"logging": {"level": "INFO"}},
+            ),
+            LayerSource(
+                layer="package",
+                namespace="orchestrator",
+                file_path=None,
+                data={"container": {"engine": "docker"}},
+            ),
         ]
         result = merge_layers(layers)
         assert "core" in result
@@ -137,7 +152,10 @@ class TestMergeLayers:
                 namespace="core",
                 file_path=None,
                 data={
-                    "generation": {"default_backend": "pywal", "saturation_adjustment": 1.0},
+                    "generation": {
+                        "default_backend": "pywal",
+                        "saturation_adjustment": 1.0,
+                    },
                     "output": {"formats": ["json", "css", "yaml"]},
                 },
             ),

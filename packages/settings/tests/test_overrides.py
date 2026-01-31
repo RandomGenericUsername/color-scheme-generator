@@ -109,4 +109,7 @@ class TestApplyOverrides:
 
     def test_empty_overrides_returns_equivalent(self, base_config: MockUnifiedConfig):
         result = apply_overrides(base_config, {})
-        assert result.core.generation.saturation_adjustment == base_config.core.generation.saturation_adjustment
+        assert (
+            result.core.generation.saturation_adjustment
+            == base_config.core.generation.saturation_adjustment
+        )

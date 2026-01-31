@@ -1,16 +1,14 @@
 """CLI entry point for color-scheme."""
 
 import logging
-import sys
 from pathlib import Path
 
 import typer
+from color_scheme_settings import configure, get_config
 from pydantic import BaseModel, ConfigDict, Field
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
-
-from color_scheme_settings import configure, get_config
 
 from color_scheme.config.config import AppConfig
 from color_scheme.config.enums import Backend, ColorFormat

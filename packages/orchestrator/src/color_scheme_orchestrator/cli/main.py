@@ -3,11 +3,10 @@
 from pathlib import Path
 
 import typer
+from color_scheme.config.enums import Backend, ColorFormat
+from color_scheme_settings import configure, get_config
 from rich.console import Console
 
-from color_scheme_settings import configure, get_config
-
-from color_scheme.config.enums import Backend, ColorFormat
 from color_scheme_orchestrator.config.unified import UnifiedConfig
 from color_scheme_orchestrator.container.manager import ContainerManager
 
