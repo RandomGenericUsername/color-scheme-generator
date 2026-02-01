@@ -21,10 +21,17 @@ def clean_settings():
     reset()
     # Re-register core schema after reset (reset() clears the registry)
     if "core" not in SchemaRegistry.all_namespaces():
+        defaults_path = (
+            Path(__file__).parent.parent.parent
+            / "src"
+            / "color_scheme"
+            / "config"
+            / "settings.toml"
+        )
         SchemaRegistry.register(
             namespace="core",
             model=AppConfig,
-            defaults_file=Path(__file__).parent.parent.parent / "src" / "color_scheme" / "config" / "settings.toml",
+            defaults_file=defaults_path,
         )
     # Re-configure with core-only config
     configure(CoreTestConfig)
@@ -32,10 +39,17 @@ def clean_settings():
     # Clean up and restore default configuration for other tests
     reset()
     if "core" not in SchemaRegistry.all_namespaces():
+        defaults_path = (
+            Path(__file__).parent.parent.parent
+            / "src"
+            / "color_scheme"
+            / "config"
+            / "settings.toml"
+        )
         SchemaRegistry.register(
             namespace="core",
             model=AppConfig,
-            defaults_file=Path(__file__).parent.parent.parent / "src" / "color_scheme" / "config" / "settings.toml",
+            defaults_file=defaults_path,
         )
     configure(CoreTestConfig)
 
@@ -102,7 +116,8 @@ directory = "$HOME/.config/color-scheme/output"
         configure(TestConfig, project_root=project_dir)
         config = get_config()
 
-        assert str(config.core.output.directory) == "/home/testuser/.config/color-scheme/output"
+        expected = "/home/testuser/.config/color-scheme/output"
+        assert str(config.core.output.directory) == expected
 
     def test_case_insensitive_keys(self, tmp_path: Path):
         """Test that TOML keys are converted to lowercase."""

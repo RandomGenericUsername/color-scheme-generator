@@ -187,8 +187,6 @@ class TestErrorHandling:
 
     def test_template_not_found(self, manager, color_scheme, tmp_path):
         """Test error when template is not found."""
-        output_dir = tmp_path / "output"
-
         # Create a fake format enum value
         # We'll patch the ColorFormat to include a non-existent format
         from unittest.mock import Mock
@@ -290,7 +288,6 @@ class TestErrorHandling:
 
         def mock_get_template(name):
             template = original_get_template(name)
-            original_render = template.render
             template.render = Mock(side_effect=RuntimeError("Template error"))
             return template
 

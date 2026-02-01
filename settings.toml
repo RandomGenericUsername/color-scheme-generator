@@ -1,0 +1,19 @@
+# Color Scheme Settings
+# This file is the project-level configuration.
+# Keys are namespaced: [core.*] for core settings, [orchestrator.*] for container settings.
+# See docs/plans/2026-01-30-settings-layered-architecture.md for full reference.
+
+# Override core defaults here:
+# [core.generation]
+# default_backend = "wallust"
+# saturation_adjustment = 1.0
+
+# [core.output]
+# directory = "$HOME/.config/color-scheme/output"
+# formats = ["json", "sh", "css", "gtk.css", "yaml", "sequences", "rasi", "scss"]
+
+# [core.logging]
+# level = "INFO"
+
+# [orchestrator.container]
+# engine = "docker"
