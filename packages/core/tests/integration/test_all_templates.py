@@ -8,7 +8,6 @@ import pytest
 import yaml
 
 from color_scheme.config.enums import ColorFormat
-from color_scheme.config.settings import Settings
 from color_scheme.core.types import Color, ColorScheme
 from color_scheme.output.manager import OutputManager
 
@@ -33,10 +32,9 @@ def sample_scheme():
 
 
 @pytest.fixture
-def manager():
+def manager(app_config):
     """Create OutputManager instance."""
-    settings = Settings.get()
-    return OutputManager(settings)
+    return OutputManager(app_config)
 
 
 def test_json_template(manager, sample_scheme, tmp_path):

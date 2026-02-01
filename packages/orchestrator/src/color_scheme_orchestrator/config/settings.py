@@ -2,14 +2,6 @@
 
 from pydantic import BaseModel, Field, field_validator
 
-from color_scheme.config.config import (
-    AppConfig,
-    GenerationSettings,
-    LoggingSettings,
-    OutputSettings,
-    TemplateSettings,
-)
-
 
 class ContainerSettings(BaseModel):
     """Container engine configuration.
@@ -47,19 +39,3 @@ class ContainerSettings(BaseModel):
         if v:
             return v.rstrip("/")
         return v
-
-
-class OrchestratorConfig(AppConfig):
-    """Orchestrator configuration extending core AppConfig.
-
-    Includes all core settings plus container orchestration configuration.
-    """
-
-    container: ContainerSettings = Field(
-        default_factory=ContainerSettings,
-        description="Container engine configuration",
-    )
-
-
-# Alias for backwards compatibility
-OrchestratorSettings = OrchestratorConfig

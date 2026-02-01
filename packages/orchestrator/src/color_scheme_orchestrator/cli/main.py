@@ -3,13 +3,15 @@
 from pathlib import Path
 
 import typer
+from color_scheme.config.enums import Backend, ColorFormat
+from color_scheme_settings import configure, get_config
 from rich.console import Console
 
-from color_scheme.config.enums import Backend, ColorFormat
-from color_scheme.config.settings import Settings  # type: ignore[import-untyped]
-from color_scheme_orchestrator.cli.commands import install, uninstall
-from color_scheme_orchestrator.config.settings import ContainerSettings, OrchestratorConfig
+from color_scheme_orchestrator.config.unified import UnifiedConfig
 from color_scheme_orchestrator.container.manager import ContainerManager
+
+# Bootstrap settings for orchestrator (includes core + orchestrator namespaces)
+configure(UnifiedConfig)
 
 app = typer.Typer(
     name="color-scheme",
@@ -17,10 +19,6 @@ app = typer.Typer(
     add_completion=False,
     no_args_is_help=True,
 )
-
-# Register commands
-app.command()(install)
-app.command()(uninstall)
 
 console = Console()
 
@@ -82,12 +80,8 @@ def generate(
         color-scheme generate wallpaper.jpg -o ~/colors -f json -f css
     """
     try:
-        # Load core settings and wrap with orchestrator config
-        core_settings = Settings.get()
-        settings = OrchestratorConfig(
-            **core_settings.model_dump(),
-            container=ContainerSettings(),  # Use default container settings
-        )
+        # Load settings
+        config = get_config()
 
         # Validate image path
         if not image_path.exists():
@@ -100,11 +94,11 @@ def generate(
 
         # Use default backend if not specified
         if backend is None:
-            backend = Backend(settings.generation.default_backend)
+            backend = Backend(config.core.generation.default_backend)
 
         # Use default output dir if not specified
         if output_dir is None:
-            output_dir = settings.output.directory
+            output_dir = config.core.output.directory
 
         # Ensure output directory exists
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -128,7 +122,7 @@ def generate(
             cli_args.extend(["--saturation", str(saturation)])
 
         # Create container manager
-        manager = ContainerManager(settings)
+        manager = ContainerManager(config)
 
         # Execute in container
         console.print(f"[cyan]Running in container:[/cyan] {backend.value}")

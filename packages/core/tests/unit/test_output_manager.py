@@ -6,7 +6,6 @@ from pathlib import Path
 import pytest
 
 from color_scheme.config.enums import Backend, ColorFormat
-from color_scheme.config.settings import Settings
 from color_scheme.core.exceptions import (
     OutputWriteError,
     TemplateRenderError,
@@ -18,16 +17,11 @@ from color_scheme.output.manager import OutputManager
 class TestOutputManagerInit:
     """Test OutputManager initialization."""
 
-    @pytest.fixture
-    def settings(self):
-        """Get settings."""
-        return Settings.get()
-
-    def test_init_with_settings(self, settings):
+    def test_init_with_settings(self, app_config):
         """Test initialization with settings."""
-        manager = OutputManager(settings)
+        manager = OutputManager(app_config)
 
-        assert manager.settings == settings
+        assert manager.settings == app_config
         assert manager.template_env is not None
         assert manager.template_env.loader is not None
 
@@ -58,14 +52,9 @@ class TestWriteOutputs:
     """Test OutputManager.write_outputs method."""
 
     @pytest.fixture
-    def settings(self):
-        """Get settings."""
-        return Settings.get()
-
-    @pytest.fixture
-    def manager(self, settings):
+    def manager(self, app_config):
         """Create OutputManager instance."""
-        return OutputManager(settings)
+        return OutputManager(app_config)
 
     @pytest.fixture
     def color_scheme(self, tmp_path):
@@ -162,14 +151,9 @@ class TestErrorHandling:
     """Test error handling in OutputManager."""
 
     @pytest.fixture
-    def settings(self):
-        """Get settings."""
-        return Settings.get()
-
-    @pytest.fixture
-    def manager(self, settings):
+    def manager(self, app_config):
         """Create OutputManager instance."""
-        return OutputManager(settings)
+        return OutputManager(app_config)
 
     @pytest.fixture
     def color_scheme(self, tmp_path):

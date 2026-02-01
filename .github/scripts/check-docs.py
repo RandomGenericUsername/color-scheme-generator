@@ -7,7 +7,6 @@ Maps code changes to documentation requirements per design document.
 """
 
 import sys
-from pathlib import Path
 from typing import List, Tuple
 
 # Mapping of file patterns to required documentation

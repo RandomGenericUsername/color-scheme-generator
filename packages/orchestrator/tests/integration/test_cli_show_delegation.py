@@ -1,7 +1,5 @@
 """Integration tests for show command delegation."""
 
-import tempfile
-from pathlib import Path
 from unittest.mock import Mock, patch
 
 from typer.testing import CliRunner

@@ -1,398 +1,251 @@
-"""Tests for settings loading with dynaconf + Pydantic."""
+"""Tests for settings integration with color_scheme_settings package."""
 
 from pathlib import Path
 
 import pytest
-from pydantic import ValidationError
+from color_scheme_settings import SchemaRegistry, configure, get_config, reset
 
 from color_scheme.config.config import AppConfig
-from color_scheme.config.settings import SettingsModel
 
 
-class TestSettingsModelBasics:
-    """Basic tests for SettingsModel class."""
+@pytest.fixture
+def clean_settings():
+    """Reset settings system before and after each test."""
+    from pydantic import BaseModel, ConfigDict, Field
 
-    def test_init_with_default_settings_file(self):
-        """Test SettingsModel initializes with default settings file."""
-        settings = SettingsModel()
-        assert settings.settings is not None
-        assert isinstance(settings.settings, AppConfig)
+    class CoreTestConfig(BaseModel):
+        """Test config with just core namespace."""
+        model_config = ConfigDict(frozen=True)
+        core: AppConfig = Field(default_factory=AppConfig)
 
-    def test_init_with_custom_settings_file(self, temp_settings_file: Path):
-        """Test SettingsModel with custom settings file."""
-        settings = SettingsModel(settings_files=[str(temp_settings_file)])
-        assert settings.settings is not None
-        assert settings.settings.logging.level == "DEBUG"
-
-    def test_get_returns_pydantic_config(self, temp_settings_file: Path):
-        """Test get() method returns AppConfig instance."""
-        settings = SettingsModel(settings_files=[str(temp_settings_file)])
-        config = settings.get()
-        assert isinstance(config, AppConfig)
-
-
-class TestConvertDictToLowerCase:
-    """Tests for _convert_dict_to_lower_case method."""
-
-    def test_simple_dict(self):
-        """Test converting simple dictionary keys to lowercase."""
-        input_dict = {"LOGGING": {"LEVEL": "INFO"}, "OUTPUT": {"FORMATS": ["json"]}}
-        result = SettingsModel._convert_dict_to_lower_case(input_dict)
-
-        assert "logging" in result
-        assert "output" in result
-        assert result["logging"]["level"] == "INFO"
-        assert result["output"]["formats"] == ["json"]
-
-    def test_nested_dict(self):
-        """Test converting nested dictionary keys to lowercase."""
-        input_dict = {
-            "BACKENDS": {
-                "PYWAL": {"BACKEND_ALGORITHM": "haishoku"},
-                "CUSTOM": {"ALGORITHM": "kmeans"},
-            }
-        }
-        result = SettingsModel._convert_dict_to_lower_case(input_dict)
-
-        assert "backends" in result
-        assert "pywal" in result["backends"]
-        assert "custom" in result["backends"]
-        assert result["backends"]["pywal"]["backend_algorithm"] == "haishoku"
-
-    def test_mixed_case_keys(self):
-        """Test converting mixed case keys."""
-        input_dict = {"MixedCase": {"AnotherKey": "value"}}
-        result = SettingsModel._convert_dict_to_lower_case(input_dict)
-
-        assert "mixedcase" in result
-        assert "anotherkey" in result["mixedcase"]
-
-    def test_values_unchanged(self):
-        """Test that values are not modified, only keys."""
-        input_dict = {"KEY": "VALUE_UNCHANGED"}
-        result = SettingsModel._convert_dict_to_lower_case(input_dict)
-
-        assert result["key"] == "VALUE_UNCHANGED"
-
-    def test_empty_dict(self):
-        """Test empty dictionary."""
-        result = SettingsModel._convert_dict_to_lower_case({})
-        assert result == {}
+    reset()
+    # Re-register core schema after reset (reset() clears the registry)
+    if "core" not in SchemaRegistry.all_namespaces():
+        defaults_path = (
+            Path(__file__).parent.parent.parent
+            / "src"
+            / "color_scheme"
+            / "config"
+            / "settings.toml"
+        )
+        SchemaRegistry.register(
+            namespace="core",
+            model=AppConfig,
+            defaults_file=defaults_path,
+        )
+    # Re-configure with core-only config
+    configure(CoreTestConfig)
+    yield
+    # Clean up and restore default configuration for other tests
+    reset()
+    if "core" not in SchemaRegistry.all_namespaces():
+        defaults_path = (
+            Path(__file__).parent.parent.parent
+            / "src"
+            / "color_scheme"
+            / "config"
+            / "settings.toml"
+        )
+        SchemaRegistry.register(
+            namespace="core",
+            model=AppConfig,
+            defaults_file=defaults_path,
+        )
+    configure(CoreTestConfig)
 
 
-class TestResolveEnvironmentVariables:
-    """Tests for _resolve_environment_variables method."""
+@pytest.mark.usefixtures("clean_settings")
+class TestCoreSchemaRegistration:
+    """Tests for core schema registration."""
 
-    def test_resolve_home_variable(self, monkeypatch: pytest.MonkeyPatch):
-        """Test resolving $HOME environment variable."""
-        monkeypatch.setenv("HOME", "/home/testuser")
-        input_dict = {"output": {"directory": "$HOME/.config/color-scheme"}}
-        result = SettingsModel._resolve_environment_variables(input_dict)
+    def test_core_schema_registered(self):
+        """Test that core schema is registered on import."""
+        # Import triggers registration
+        from color_scheme.config import AppConfig  # noqa: F401
 
-        assert result["output"]["directory"] == "/home/testuser/.config/color-scheme"
+        namespaces = SchemaRegistry.all_namespaces()
+        assert "core" in namespaces
 
-    def test_resolve_multiple_variables(self, monkeypatch: pytest.MonkeyPatch):
-        """Test resolving multiple environment variables."""
-        monkeypatch.setenv("HOME", "/home/testuser")
-        monkeypatch.setenv("USER", "testuser")
+    def test_core_schema_has_correct_model(self):
+        """Test that core schema uses AppConfig model."""
+        from color_scheme.config import AppConfig  # noqa: F401
 
-        input_dict = {"path1": "$HOME/dir", "path2": "$USER/dir"}
-        result = SettingsModel._resolve_environment_variables(input_dict)
-
-        assert result["path1"] == "/home/testuser/dir"
-        assert result["path2"] == "testuser/dir"
-
-    def test_resolve_in_nested_dict(self, monkeypatch: pytest.MonkeyPatch):
-        """Test resolving environment variables in nested structures."""
-        monkeypatch.setenv("HOME", "/home/testuser")
-
-        input_dict = {
-            "output": {"directory": "$HOME/.config"},
-            "templates": {"directory": "$HOME/.templates"},
-        }
-        result = SettingsModel._resolve_environment_variables(input_dict)
-
-        assert result["output"]["directory"] == "/home/testuser/.config"
-        assert result["templates"]["directory"] == "/home/testuser/.templates"
-
-    def test_resolve_in_list(self, monkeypatch: pytest.MonkeyPatch):
-        """Test resolving environment variables in lists."""
-        monkeypatch.setenv("HOME", "/home/testuser")
-
-        input_dict = {"paths": ["$HOME/dir1", "$HOME/dir2"]}
-        result = SettingsModel._resolve_environment_variables(input_dict)
-
-        assert result["paths"] == ["/home/testuser/dir1", "/home/testuser/dir2"]
-
-    def test_non_string_values_unchanged(self):
-        """Test that non-string values are not affected."""
-        input_dict = {
-            "string": "$HOME",
-            "number": 42,
-            "boolean": True,
-            "none": None,
-            "list": [1, 2, 3],
-        }
-        # Don't set HOME to see if non-strings pass through
-        result = SettingsModel._resolve_environment_variables(input_dict)
-
-        assert isinstance(result["number"], int)
-        assert result["number"] == 42
-        assert result["boolean"] is True
-        assert result["none"] is None
-        assert result["list"] == [1, 2, 3]
-
-    def test_undefined_variable(self):
-        """Test undefined environment variables remain as-is or expand to empty."""
-        input_dict = {"path": "$UNDEFINED_VAR/dir"}
-        result = SettingsModel._resolve_environment_variables(input_dict)
-
-        # os.path.expandvars leaves undefined vars as-is on Unix
-        # or expands to empty string depending on the shell
-        # We just check it doesn't crash
-        assert "path" in result
+        entry = SchemaRegistry.get("core")
+        assert entry.model is AppConfig
 
 
-class TestGetPydanticConfig:
-    """Tests for get_pydantic_config static method."""
-
-    def test_valid_config(self):
-        """Test creating Pydantic config from valid dictionary."""
-        config_dict = {
-            "logging": {"level": "INFO"},
-            "output": {"formats": ["json"]},
-        }
-        config = SettingsModel.get_pydantic_config(config_dict)
-
-        assert isinstance(config, AppConfig)
-        assert config.logging.level == "INFO"
-        assert config.output.formats == ["json"]
-
-    def test_invalid_config_raises_validation_error(self):
-        """Test invalid config raises ValidationError."""
-        config_dict = {
-            "logging": {"level": "INVALID_LEVEL"},
-        }
-
-        with pytest.raises(ValidationError):
-            SettingsModel.get_pydantic_config(config_dict)
-
-    def test_empty_config_uses_defaults(self):
-        """Test empty config dictionary uses defaults."""
-        config = SettingsModel.get_pydantic_config({})
-
-        assert isinstance(config, AppConfig)
-        assert config.logging.level == "INFO"
-
-
+@pytest.mark.usefixtures("clean_settings")
 class TestSettingsLoading:
-    """Integration tests for loading settings from files."""
+    """Tests for loading settings through the new system."""
 
-    def test_load_from_toml_file(self, temp_settings_file: Path):
-        """Test loading settings from TOML file."""
-        settings = SettingsModel(settings_files=[str(temp_settings_file)])
-        config = settings.get()
+    def test_load_default_settings(self, tmp_path: Path):
+        """Test loading with package defaults only."""
+        # Create a minimal UnifiedConfig for testing
+        from pydantic import BaseModel, ConfigDict, Field
 
-        assert config.logging.level == "DEBUG"
-        assert config.logging.show_path is True
-        assert config.generation.saturation_adjustment == 1.5
-        assert config.backends.custom.n_clusters == 32
+        class TestConfig(BaseModel):
+            model_config = ConfigDict(frozen=True)
+            core: AppConfig = Field(default_factory=AppConfig)
 
-    def test_load_minimal_settings(self, minimal_settings_file: Path):
-        """Test loading minimal settings file (uses defaults)."""
-        settings = SettingsModel(settings_files=[str(minimal_settings_file)])
-        config = settings.get()
+        # Register and configure
+        configure(TestConfig)
+        config = get_config()
 
-        # Should all be defaults
-        assert config.logging.level == "INFO"
-        assert config.generation.default_backend == "pywal"
+        assert config.core.logging.level == "INFO"
+        assert config.core.generation.default_backend == "pywal"
 
-    def test_load_invalid_settings(self, invalid_settings_file: Path):
-        """Test loading invalid settings raises ValidationError."""
-        with pytest.raises(ValidationError):
-            SettingsModel(settings_files=[str(invalid_settings_file)])
+    def test_environment_variable_resolution(self, tmp_path: Path, monkeypatch):
+        """Test that environment variables are resolved."""
+        from pydantic import BaseModel, ConfigDict, Field
 
-    def test_environment_variable_resolution(
-        self, settings_with_env_vars: Path, monkeypatch: pytest.MonkeyPatch
-    ):
-        """Test environment variables are resolved when loading."""
+        class TestConfig(BaseModel):
+            model_config = ConfigDict(frozen=True)
+            core: AppConfig = Field(default_factory=AppConfig)
+
+        # Create project root with env vars
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+        settings_file = project_dir / "settings.toml"
+        settings_file.write_text("""\
+[core.output]
+directory = "$HOME/.config/color-scheme/output"
+""")
+
         monkeypatch.setenv("HOME", "/home/testuser")
 
-        settings = SettingsModel(settings_files=[str(settings_with_env_vars)])
-        config = settings.get()
+        configure(TestConfig, project_root=project_dir)
+        config = get_config()
 
-        # $HOME should be expanded
-        expected_path = Path("/home/testuser/.config/color-scheme/output")
-        assert config.output.directory == expected_path
+        expected = "/home/testuser/.config/color-scheme/output"
+        assert str(config.core.output.directory) == expected
 
-    def test_nonexistent_file(self, tmp_path: Path):
-        """Test loading from nonexistent file."""
-        nonexistent = tmp_path / "does_not_exist.toml"
-        # Dynaconf will create an empty config if file doesn't exist
-        settings = SettingsModel(settings_files=[str(nonexistent)])
-        config = settings.get()
+    def test_case_insensitive_keys(self, tmp_path: Path):
+        """Test that TOML keys are converted to lowercase."""
+        from pydantic import BaseModel, ConfigDict, Field
 
-        # Should use all defaults
-        assert isinstance(config, AppConfig)
+        class TestConfig(BaseModel):
+            model_config = ConfigDict(frozen=True)
+            core: AppConfig = Field(default_factory=AppConfig)
 
+        # Create project root with uppercase keys
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+        settings_file = project_dir / "settings.toml"
+        settings_file.write_text("""\
+[CORE.LOGGING]
+LEVEL = "DEBUG"
+""")
 
-class TestComplexSettings:
-    """Tests for complex settings scenarios."""
+        configure(TestConfig, project_root=project_dir)
+        config = get_config()
+
+        assert config.core.logging.level == "DEBUG"
 
     def test_nested_backend_settings(self, tmp_path: Path):
         """Test loading nested backend settings."""
-        settings_content = """
-[backends.pywal]
+        from pydantic import BaseModel, ConfigDict, Field
+
+        class TestConfig(BaseModel):
+            model_config = ConfigDict(frozen=True)
+            core: AppConfig = Field(default_factory=AppConfig)
+
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+        settings_file = project_dir / "settings.toml"
+        settings_file.write_text("""\
+[core.backends.pywal]
 backend_algorithm = "colorz"
 
-[backends.wallust]
-backend_type = "full"
-
-[backends.custom]
+[core.backends.custom]
 algorithm = "dominant"
 n_clusters = 64
-"""
-        settings_file = tmp_path / "backends.toml"
-        settings_file.write_text(settings_content)
+""")
 
-        settings = SettingsModel(settings_files=[str(settings_file)])
-        config = settings.get()
+        configure(TestConfig, project_root=project_dir)
+        config = get_config()
 
-        assert config.backends.pywal.backend_algorithm == "colorz"
-        assert config.backends.wallust.backend_type == "full"
-        assert config.backends.custom.algorithm == "dominant"
-        assert config.backends.custom.n_clusters == 64
-
-    def test_output_formats_list(self, tmp_path: Path):
-        """Test loading output formats as list."""
-        settings_content = """
-[output]
-formats = ["json", "yaml", "css"]
-"""
-        settings_file = tmp_path / "output.toml"
-        settings_file.write_text(settings_content)
-
-        settings = SettingsModel(settings_files=[str(settings_file)])
-        config = settings.get()
-
-        assert config.output.formats == ["json", "yaml", "css"]
-
-    def test_all_logging_options(self, tmp_path: Path):
-        """Test loading all logging options."""
-        settings_content = """
-[logging]
-level = "WARNING"
-show_time = false
-show_path = true
-"""
-        settings_file = tmp_path / "logging.toml"
-        settings_file.write_text(settings_content)
-
-        settings = SettingsModel(settings_files=[str(settings_file)])
-        config = settings.get()
-
-        assert config.logging.level == "WARNING"
-        assert config.logging.show_time is False
-        assert config.logging.show_path is True
-
-    def test_saturation_boundaries(self, tmp_path: Path):
-        """Test saturation adjustment at boundaries."""
-        # Minimum
-        settings_min = """
-[generation]
-saturation_adjustment = 0.0
-"""
-        file_min = tmp_path / "sat_min.toml"
-        file_min.write_text(settings_min)
-        config_min = SettingsModel(settings_files=[str(file_min)]).get()
-        assert config_min.generation.saturation_adjustment == 0.0
-
-        # Maximum
-        settings_max = """
-[generation]
-saturation_adjustment = 2.0
-"""
-        file_max = tmp_path / "sat_max.toml"
-        file_max.write_text(settings_max)
-        config_max = SettingsModel(settings_files=[str(file_max)]).get()
-        assert config_max.generation.saturation_adjustment == 2.0
-
-
-class TestGlobalSettings:
-    """Tests for the global Settings instance."""
-
-    def test_global_settings_exists(self):
-        """Test that global Settings instance exists."""
-        from color_scheme.config.settings import Settings
-
-        assert Settings is not None
-        assert isinstance(Settings, SettingsModel)
-
-    def test_global_settings_get(self):
-        """Test global Settings.get() method."""
-        from color_scheme.config.settings import Settings
-
-        config = Settings.get()
-        assert isinstance(config, AppConfig)
-
-
-class TestSettingsEdgeCases:
-    """Tests for edge cases and error conditions."""
-
-    def test_malformed_toml(self, tmp_path: Path):
-        """Test handling of malformed TOML file."""
-        malformed = tmp_path / "malformed.toml"
-        malformed.write_text("this is not [[ valid toml")
-
-        # Dynaconf should handle the parsing error
-        # Testing malformed TOML - exception type varies by parser
-        with pytest.raises(Exception):  # noqa: B017
-            SettingsModel(settings_files=[str(malformed)])
-
-    def test_validation_error_on_init(self, invalid_settings_file: Path):
-        """Test that ValidationError is raised during initialization."""
-        with pytest.raises(ValidationError) as exc_info:
-            SettingsModel(settings_files=[str(invalid_settings_file)])
-
-        # Check that error contains information about the validation failure
-        errors = exc_info.value.errors()
-        assert len(errors) > 0
-
-    def test_case_insensitive_sections(self, tmp_path: Path):
-        """Test that TOML sections are case-insensitive after processing."""
-        settings_content = """
-[LOGGING]
-LEVEL = "DEBUG"
-
-[OUTPUT]
-FORMATS = ["json"]
-"""
-        settings_file = tmp_path / "uppercase.toml"
-        settings_file.write_text(settings_content)
-
-        settings = SettingsModel(settings_files=[str(settings_file)])
-        config = settings.get()
-
-        # Keys should be lowercased
-        assert config.logging.level == "DEBUG"
-        assert config.output.formats == ["json"]
+        assert config.core.backends.pywal.backend_algorithm == "colorz"
+        assert config.core.backends.custom.algorithm == "dominant"
+        assert config.core.backends.custom.n_clusters == 64
 
     def test_path_conversion(self, tmp_path: Path):
         """Test that string paths are converted to Path objects."""
-        settings_content = """
-[output]
+        from pydantic import BaseModel, ConfigDict, Field
+
+        class TestConfig(BaseModel):
+            model_config = ConfigDict(frozen=True)
+            core: AppConfig = Field(default_factory=AppConfig)
+
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+        settings_file = project_dir / "settings.toml"
+        settings_file.write_text("""\
+[core.output]
 directory = "/tmp/test/output"
 
-[templates]
+[core.templates]
 directory = "/tmp/test/templates"
-"""
-        settings_file = tmp_path / "paths.toml"
-        settings_file.write_text(settings_content)
+""")
 
-        settings = SettingsModel(settings_files=[str(settings_file)])
-        config = settings.get()
+        configure(TestConfig, project_root=project_dir)
+        config = get_config()
 
-        assert isinstance(config.output.directory, Path)
-        assert isinstance(config.templates.directory, Path)
-        assert config.output.directory == Path("/tmp/test/output")
-        assert config.templates.directory == Path("/tmp/test/templates")
+        assert isinstance(config.core.output.directory, Path)
+        assert isinstance(config.core.templates.directory, Path)
+        assert config.core.output.directory == Path("/tmp/test/output")
+        assert config.core.templates.directory == Path("/tmp/test/templates")
+
+    def test_validation_error_on_invalid_data(self, tmp_path: Path):
+        """Test that invalid config raises ValidationError."""
+        from color_scheme_settings.errors import SettingsValidationError
+        from pydantic import BaseModel, ConfigDict, Field
+
+        class TestConfig(BaseModel):
+            model_config = ConfigDict(frozen=True)
+            core: AppConfig = Field(default_factory=AppConfig)
+
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+        settings_file = project_dir / "settings.toml"
+        # Invalid: saturation_adjustment outside range
+        settings_file.write_text("""\
+[core.generation]
+saturation_adjustment = 5.0
+""")
+
+        configure(TestConfig, project_root=project_dir)
+
+        with pytest.raises(SettingsValidationError):
+            get_config()
+
+
+@pytest.mark.usefixtures("clean_settings")
+class TestLayerMerging:
+    """Tests for layer merging behavior."""
+
+    def test_project_overrides_package_defaults(self, tmp_path: Path):
+        """Test that project settings override package defaults."""
+        from pydantic import BaseModel, ConfigDict, Field
+
+        class TestConfig(BaseModel):
+            model_config = ConfigDict(frozen=True)
+            core: AppConfig = Field(default_factory=AppConfig)
+
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+        settings_file = project_dir / "settings.toml"
+        settings_file.write_text("""\
+[core.generation]
+default_backend = "wallust"
+saturation_adjustment = 1.5
+""")
+
+        configure(TestConfig, project_root=project_dir)
+        config = get_config()
+
+        # Overridden values
+        assert config.core.generation.default_backend == "wallust"
+        assert config.core.generation.saturation_adjustment == 1.5
+
+        # Default values preserved
+        assert config.core.logging.level == "INFO"

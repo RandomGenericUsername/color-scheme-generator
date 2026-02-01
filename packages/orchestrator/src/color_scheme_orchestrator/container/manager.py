@@ -3,8 +3,9 @@
 import subprocess
 from pathlib import Path
 
-from color_scheme.config.config import AppConfig  # type: ignore[import-untyped]
 from color_scheme.config.enums import Backend
+
+from color_scheme_orchestrator.config.unified import UnifiedConfig
 
 
 class ContainerManager:
@@ -17,14 +18,14 @@ class ContainerManager:
     - Volume mount configuration
     """
 
-    def __init__(self, settings: AppConfig):
+    def __init__(self, config: UnifiedConfig):
         """Initialize container manager.
 
         Args:
-            settings: Application configuration
+            config: Unified application configuration
         """
-        self.settings: AppConfig = settings
-        self.engine: str = settings.container.engine
+        self.config: UnifiedConfig = config
+        self.engine: str = config.orchestrator.engine
 
     def get_image_name(self, backend: Backend) -> str:
         """Get full image name for a backend.
@@ -39,8 +40,8 @@ class ContainerManager:
         image_name = f"color-scheme-{backend.value}:latest"
 
         # Add registry prefix if configured
-        if self.settings.container.image_registry:
-            image_name = f"{self.settings.container.image_registry}/{image_name}"
+        if self.config.orchestrator.image_registry:
+            image_name = f"{self.config.orchestrator.image_registry}/{image_name}"
 
         return image_name
 
@@ -68,7 +69,7 @@ class ContainerManager:
 
         # Templates directory (read-only)
         # Resolve template directory to absolute path
-        template_dir = self.settings.templates.directory
+        template_dir = self.config.core.templates.directory
         if not template_dir.is_absolute():
             # Relative to current working directory
             template_dir = Path.cwd() / template_dir

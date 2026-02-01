@@ -5,7 +5,6 @@ from pathlib import Path
 import pytest
 
 from color_scheme.config.enums import Backend
-from color_scheme.config.settings import Settings
 from color_scheme.core.types import Color, ColorScheme, GeneratorConfig
 
 
@@ -151,10 +150,9 @@ class TestColorScheme:
 class TestGeneratorConfig:
     """Tests for GeneratorConfig type."""
 
-    def test_from_settings(self):
+    def test_from_settings(self, app_config):
         """Test creating config from settings."""
-        settings = Settings.get()
-        config = GeneratorConfig.from_settings(settings)
+        config = GeneratorConfig.from_settings(app_config)
 
         assert config.backend is not None
         assert config.color_count == 16
@@ -162,11 +160,10 @@ class TestGeneratorConfig:
         assert config.formats is not None
         assert isinstance(config.backend_options, dict)
 
-    def test_from_settings_with_overrides(self):
+    def test_from_settings_with_overrides(self, app_config):
         """Test creating config with overrides."""
-        settings = Settings.get()
         config = GeneratorConfig.from_settings(
-            settings,
+            app_config,
             backend=Backend.WALLUST,
             saturation_adjustment=0.8,
             backend_options={"test": "value"},
@@ -176,12 +173,10 @@ class TestGeneratorConfig:
         assert config.saturation_adjustment == 0.8
         assert config.backend_options == {"test": "value"}
 
-    def test_get_backend_settings(self):
+    def test_get_backend_settings(self, app_config):
         """Test getting backend-specific settings."""
-        settings = Settings.get()
-
         # Test for each backend
         for backend in [Backend.PYWAL, Backend.WALLUST, Backend.CUSTOM]:
             config = GeneratorConfig(backend=backend)
-            backend_settings = config.get_backend_settings(settings)
+            backend_settings = config.get_backend_settings(app_config)
             assert isinstance(backend_settings, dict)
