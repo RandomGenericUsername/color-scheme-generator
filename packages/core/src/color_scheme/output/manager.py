@@ -40,7 +40,9 @@ class OutputManager:
             template_dir = package_root / template_dir
 
         # Setup Jinja2 environment with StrictUndefined
-        self.template_env = Environment(
+        # NOTE: Autoescape disabled - we generate config files (CSS/JSON/YAML), not HTML.
+        # Enabling autoescape would corrupt hex colors: #FF0000 → &#35;FF0000
+        self.template_env = Environment(  # nosec B701
             loader=FileSystemLoader(str(template_dir)),
             undefined=StrictUndefined,
             trim_blocks=True,

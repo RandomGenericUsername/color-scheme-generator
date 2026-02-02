@@ -3,16 +3,13 @@
 import json
 import logging
 import shutil
-import subprocess
+import subprocess  # nosec B404 - Required for external tool invocation
 from pathlib import Path
 from typing import Any
 
 from color_scheme.config.config import AppConfig
 from color_scheme.core.base import ColorSchemeGenerator
-from color_scheme.core.exceptions import (
-    ColorExtractionError,
-    InvalidImageError,
-)
+from color_scheme.core.exceptions import ColorExtractionError, InvalidImageError
 from color_scheme.core.types import Color, ColorScheme, GeneratorConfig
 
 logger = logging.getLogger(__name__)
@@ -90,7 +87,8 @@ class PywalGenerator(ColorSchemeGenerator):
             ]
 
             logger.debug("Running pywal command: %s", " ".join(cmd))
-            subprocess.run(
+            # Security: command hardcoded, image_path validated, shell=False, timeout set
+            subprocess.run(  # nosec B603
                 cmd,
                 capture_output=True,
                 text=True,
