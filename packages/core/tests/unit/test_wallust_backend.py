@@ -224,3 +224,52 @@ class TestWallustGenerator:
 
         assert scheme.backend == "wallust"
         assert len(scheme.colors) == 16
+
+    @patch("subprocess.run")
+    @patch("shutil.which")
+    def test_generate_cache_dir_not_found(
+        self, mock_which, mock_run, generator, test_image, config, tmp_path
+    ):
+        """Test error when cache directory doesn't exist."""
+        mock_which.return_value = "/usr/bin/wallust"
+
+        with patch("pathlib.Path.home", return_value=tmp_path):
+            with pytest.raises(ColorExtractionError) as exc_info:
+                generator.generate(test_image, config)
+
+            assert "cache directory not found" in str(exc_info.value.reason).lower()
+
+    @patch("subprocess.run")
+    @patch("shutil.which")
+    def test_generate_no_cache_subdirectory(
+        self, mock_which, mock_run, generator, test_image, config, tmp_path
+    ):
+        """Test error when no subdirectory in cache."""
+        mock_which.return_value = "/usr/bin/wallust"
+
+        cache_dir = tmp_path / ".cache" / "wallust"
+        cache_dir.mkdir(parents=True)
+
+        with patch("pathlib.Path.home", return_value=tmp_path):
+            with pytest.raises(ColorExtractionError) as exc_info:
+                generator.generate(test_image, config)
+
+            assert "subdirectory" in str(exc_info.value.reason).lower()
+
+    @patch("subprocess.run")
+    @patch("shutil.which")
+    def test_generate_no_palette_file(
+        self, mock_which, mock_run, generator, test_image, config, tmp_path
+    ):
+        """Test error when no palette file in cache."""
+        mock_which.return_value = "/usr/bin/wallust"
+
+        subdir = tmp_path / ".cache" / "wallust" / "abc123"
+        subdir.mkdir(parents=True)
+        (subdir / "large.bin").write_bytes(b"x" * 15000)
+
+        with patch("pathlib.Path.home", return_value=tmp_path):
+            with pytest.raises(ColorExtractionError) as exc_info:
+                generator.generate(test_image, config)
+
+            assert "palette file" in str(exc_info.value.reason).lower()
