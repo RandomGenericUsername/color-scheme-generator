@@ -8,7 +8,6 @@ from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from color_scheme.config.enums import Backend
-from color_scheme.config.settings import Settings
 
 console = Console()
 
@@ -49,9 +48,6 @@ def install(
         color-scheme install --engine podman
     """
     try:
-        # Load settings
-        settings = Settings.get()
-
         # Determine container engine
         if engine is None:
             # Get from settings, but since we removed container settings from core,

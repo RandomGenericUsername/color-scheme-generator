@@ -41,7 +41,7 @@ dev = [
 color-scheme-settings = { path = "../settings", editable = true }
 
 [project.scripts]
-color-scheme = "color_scheme.cli.main:main"
+color-scheme-core = "color_scheme.cli.main:main"
 
 [build-system]
 requires = ["hatchling"]

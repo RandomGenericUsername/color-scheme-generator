@@ -27,12 +27,17 @@ WORKDIR /app
 # Install uv for package management
 RUN pip install --no-cache-dir uv
 
+# Copy settings package (dependency of core)
+COPY --chown=colorscheme:colorscheme packages/settings /app/color-scheme-settings
+
 # Copy color-scheme-core package
 COPY --chown=colorscheme:colorscheme packages/core /app/color-scheme-core
 
-# Install color-scheme-core
-RUN cd /app/color-scheme-core && \
-    uv pip install --system --no-cache .
+# Install settings first, then core (use pip to avoid uv.sources relative path issues)
+RUN cd /app/color-scheme-settings && \
+    pip install --no-cache-dir . && \
+    cd /app/color-scheme-core && \
+    pip install --no-cache-dir .
 
 # Create mount points
 RUN mkdir -p /input /output /templates && \
@@ -41,5 +46,5 @@ RUN mkdir -p /input /output /templates && \
 # Switch to non-root user
 USER colorscheme
 
-# Set entrypoint to color-scheme CLI
-ENTRYPOINT ["color-scheme"]
+# Set entrypoint to color-scheme-core CLI
+ENTRYPOINT ["color-scheme-core"]

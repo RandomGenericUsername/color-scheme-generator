@@ -6,7 +6,6 @@ import typer
 from rich.console import Console
 
 from color_scheme.config.enums import Backend
-from color_scheme.config.settings import Settings
 
 console = Console()
 
@@ -46,9 +45,6 @@ def uninstall(
         color-scheme uninstall --engine podman
     """
     try:
-        # Load settings
-        settings = Settings.get()
-
         # Determine container engine
         if engine is None:
             # Default to docker since we removed container settings from core
