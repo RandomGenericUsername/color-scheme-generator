@@ -54,7 +54,12 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "W", "F", "I", "B", "C4", "UP", "ARG", "SIM", "PTH", "N"]
-ignore = []
+ignore = [
+    "B008",   # function calls in argument defaults (typer pattern)
+    "B904",   # raise from in except (typer.Exit pattern)
+    "B905",   # zip without strict (acceptable in most cases)
+    "SIM108", # ternary operator (readability preference)
+]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]

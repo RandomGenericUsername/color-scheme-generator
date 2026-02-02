@@ -148,28 +148,25 @@ def generate(
         color_scheme = generator.generate(image_path, generator_config)
 
         # Apply saturation adjustment if specified
-        if generator_config.saturation_adjustment is not None and generator_config.saturation_adjustment != 1.0:
-            console.print(
-                f"[cyan]Adjusting saturation:[/cyan] {generator_config.saturation_adjustment}"
-            )
+        if (
+            generator_config.saturation_adjustment is not None
+            and generator_config.saturation_adjustment != 1.0
+        ):
+            sat = generator_config.saturation_adjustment
+            console.print(f"[cyan]Adjusting saturation:[/cyan] {sat}")
             # Adjust all colors
-            color_scheme.background = color_scheme.background.adjust_saturation(
-                generator_config.saturation_adjustment
-            )
-            color_scheme.foreground = color_scheme.foreground.adjust_saturation(
-                generator_config.saturation_adjustment
-            )
-            color_scheme.cursor = color_scheme.cursor.adjust_saturation(
-                generator_config.saturation_adjustment
-            )
+            color_scheme.background = color_scheme.background.adjust_saturation(sat)
+            color_scheme.foreground = color_scheme.foreground.adjust_saturation(sat)
+            color_scheme.cursor = color_scheme.cursor.adjust_saturation(sat)
             color_scheme.colors = [
-                c.adjust_saturation(generator_config.saturation_adjustment)
-                for c in color_scheme.colors
+                c.adjust_saturation(sat) for c in color_scheme.colors
             ]
 
         # Write output files
         output_manager = OutputManager(config.core)
-        console.print(f"[cyan]Writing output files to:[/cyan] {generator_config.output_dir}")
+        console.print(
+            f"[cyan]Writing output files to:[/cyan] {generator_config.output_dir}"
+        )
         output_manager.write_outputs(
             color_scheme,
             generator_config.output_dir,
@@ -196,8 +193,12 @@ def generate(
         raise typer.Exit(1)
 
     except BackendNotAvailableError as e:
-        console.print(f"[red]Error:[/red] Backend '{e.backend}' not available: {e.reason}")
-        console.print("\n[yellow]Tip:[/yellow] Try auto-detection or use a different backend")
+        console.print(
+            f"[red]Error:[/red] Backend '{e.backend}' not available: {e.reason}"
+        )
+        console.print(
+            "\n[yellow]Tip:[/yellow] Try auto-detection or use a different backend"
+        )
         logger.error("Backend not available: %s", e)
         raise typer.Exit(1)
 
@@ -308,23 +309,18 @@ def show(
         color_scheme = generator.generate(image_path, generator_config)
 
         # Apply saturation adjustment if specified
-        if generator_config.saturation_adjustment is not None and generator_config.saturation_adjustment != 1.0:
-            console.print(
-                f"[cyan]Adjusting saturation:[/cyan] {generator_config.saturation_adjustment}"
-            )
+        if (
+            generator_config.saturation_adjustment is not None
+            and generator_config.saturation_adjustment != 1.0
+        ):
+            sat = generator_config.saturation_adjustment
+            console.print(f"[cyan]Adjusting saturation:[/cyan] {sat}")
             # Adjust all colors
-            color_scheme.background = color_scheme.background.adjust_saturation(
-                generator_config.saturation_adjustment
-            )
-            color_scheme.foreground = color_scheme.foreground.adjust_saturation(
-                generator_config.saturation_adjustment
-            )
-            color_scheme.cursor = color_scheme.cursor.adjust_saturation(
-                generator_config.saturation_adjustment
-            )
+            color_scheme.background = color_scheme.background.adjust_saturation(sat)
+            color_scheme.foreground = color_scheme.foreground.adjust_saturation(sat)
+            color_scheme.cursor = color_scheme.cursor.adjust_saturation(sat)
             color_scheme.colors = [
-                c.adjust_saturation(generator_config.saturation_adjustment)
-                for c in color_scheme.colors
+                c.adjust_saturation(sat) for c in color_scheme.colors
             ]
 
         # Display color scheme information
@@ -335,8 +331,13 @@ def show(
             f"[cyan]Source Image:[/cyan] {image_path}",
             f"[cyan]Backend:[/cyan] {backend.value}",
         ]
-        if generator_config.saturation_adjustment is not None and generator_config.saturation_adjustment != 1.0:
-            info_lines.append(f"[cyan]Saturation:[/cyan] {generator_config.saturation_adjustment}")
+        if (
+            generator_config.saturation_adjustment is not None
+            and generator_config.saturation_adjustment != 1.0
+        ):
+            info_lines.append(
+                f"[cyan]Saturation:[/cyan] {generator_config.saturation_adjustment}"
+            )
 
         info_panel = Panel(
             "\n".join(info_lines),
@@ -410,8 +411,12 @@ def show(
         raise typer.Exit(1)
 
     except BackendNotAvailableError as e:
-        console.print(f"[red]Error:[/red] Backend '{e.backend}' not available: {e.reason}")
-        console.print("\n[yellow]Tip:[/yellow] Try auto-detection or use a different backend")
+        console.print(
+            f"[red]Error:[/red] Backend '{e.backend}' not available: {e.reason}"
+        )
+        console.print(
+            "\n[yellow]Tip:[/yellow] Try auto-detection or use a different backend"
+        )
         logger.error("Backend not available: %s", e)
         raise typer.Exit(1)
 

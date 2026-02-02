@@ -15,6 +15,7 @@ def clean_settings():
 
     class CoreTestConfig(BaseModel):
         """Test config with just core namespace."""
+
         model_config = ConfigDict(frozen=True)
         core: AppConfig = Field(default_factory=AppConfig)
 

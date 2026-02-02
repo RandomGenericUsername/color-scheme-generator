@@ -92,7 +92,13 @@ select = [
     "PTH",  # flake8-use-pathlib
     "N",    # pep8-naming
 ]
-ignore = []
+ignore = [
+    "B008",   # function calls in argument defaults (typer pattern)
+    "B904",   # raise from in except (typer.Exit pattern)
+    "B905",   # zip without strict (acceptable in most cases)
+    "SIM108", # ternary operator (readability preference)
+    "SIM117", # nested with statements (readability preference)
+]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]

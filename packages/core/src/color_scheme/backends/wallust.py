@@ -77,7 +77,8 @@ class WallustGenerator(ColorSchemeGenerator):
             backend_type = backend_settings.get("backend_type", "resized")
 
             # Run wallust
-            # Note: wallust doesn't output JSON to stdout, it writes to ~/.cache/wallust/
+            # Note: wallust doesn't output JSON to stdout,
+            # it writes to ~/.cache/wallust/
             cmd = [
                 "wallust",
                 "run",
@@ -90,7 +91,7 @@ class WallustGenerator(ColorSchemeGenerator):
             ]
 
             logger.debug("Running wallust command: %s", " ".join(cmd))
-            result = subprocess.run(
+            subprocess.run(
                 cmd,
                 capture_output=True,
                 text=True,
@@ -118,7 +119,9 @@ class WallustGenerator(ColorSchemeGenerator):
             subdir = max(subdirs, key=lambda d: d.stat().st_mtime)
 
             # Find the palette file (usually the one with the longest name)
-            palette_files = [f for f in subdir.iterdir() if f.is_file() and f.stat().st_size < 10000]
+            palette_files = [
+                f for f in subdir.iterdir() if f.is_file() and f.stat().st_size < 10000
+            ]
             if not palette_files:
                 raise ColorExtractionError(
                     self.backend_name, "No palette file found in cache"
@@ -128,7 +131,7 @@ class WallustGenerator(ColorSchemeGenerator):
             palette_file = max(palette_files, key=lambda f: len(f.name))
 
             logger.debug("Reading palette from: %s", palette_file)
-            with open(palette_file) as f:
+            with palette_file.open() as f:
                 colors_data = json.load(f)
 
             # Parse colors

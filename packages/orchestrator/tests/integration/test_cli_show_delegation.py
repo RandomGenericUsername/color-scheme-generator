@@ -30,4 +30,6 @@ class TestShowDelegation:
         result = runner.invoke(app, ["show"])
 
         assert result.exit_code != 0
-        assert "Missing argument" in result.output or "required" in result.output.lower()
+        assert (
+            "Missing argument" in result.output or "required" in result.output.lower()
+        )

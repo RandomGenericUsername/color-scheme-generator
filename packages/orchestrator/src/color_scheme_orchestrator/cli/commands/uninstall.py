@@ -3,9 +3,8 @@
 import subprocess
 
 import typer
-from rich.console import Console
-
 from color_scheme.config.enums import Backend
+from rich.console import Console
 
 console = Console()
 
@@ -13,7 +12,8 @@ console = Console()
 def uninstall(
     backend: Backend | None = typer.Argument(  # noqa: B008
         None,
-        help="Backend to uninstall (pywal, wallust, or custom). If not specified, removes all backends.",
+        help="Backend to uninstall (pywal, wallust, or custom). "
+        "If not specified, removes all backends.",
     ),
     yes: bool = typer.Option(  # noqa: B008
         False,
@@ -25,7 +25,8 @@ def uninstall(
         None,
         "--engine",
         "-e",
-        help="Container engine to use (docker or podman). Uses config default if not specified.",
+        help="Container engine to use (docker or podman). "
+        "Uses config default if not specified.",
     ),
 ) -> None:
     """Remove container images for color extraction backends.
@@ -69,7 +70,9 @@ def uninstall(
 
         # Confirm deletion
         if not yes:
-            console.print("[yellow]Warning:[/yellow] This will remove the following images:")
+            console.print(
+                "[yellow]Warning:[/yellow] This will remove the following images:"
+            )
             for image in image_names:
                 console.print(f"  - {image}")
             console.print()
@@ -97,15 +100,25 @@ def uninstall(
                 )
 
                 if result.returncode == 0:
-                    console.print(f"[green]✓[/green] {backend_enum.value}: Removed {image_name}")
+                    console.print(
+                        f"[green]✓[/green] {backend_enum.value}: Removed {image_name}"
+                    )
                     success_count += 1
                 else:
                     # Image might not exist, which is fine
-                    if "no such image" in result.stderr.lower() or "not found" in result.stderr.lower():
-                        console.print(f"[dim]○[/dim] {backend_enum.value}: Image not found (already removed)")
+                    if (
+                        "no such image" in result.stderr.lower()
+                        or "not found" in result.stderr.lower()
+                    ):
+                        console.print(
+                            f"[dim]○[/dim] {backend_enum.value}: "
+                            "Image not found (already removed)"
+                        )
                         success_count += 1
                     else:
-                        console.print(f"[red]✗[/red] {backend_enum.value}: Failed to remove")
+                        console.print(
+                            f"[red]✗[/red] {backend_enum.value}: Failed to remove"
+                        )
                         console.print(f"[dim]{result.stderr}[/dim]")
                         failed_images.append(image_name)
 
@@ -114,7 +127,7 @@ def uninstall(
                 failed_images.append(image_name)
 
         # Print summary
-        console.print(f"\n[bold]Removal Summary:[/bold]")
+        console.print("\n[bold]Removal Summary:[/bold]")
         console.print(f"  [green]Success:[/green] {success_count}/{len(image_names)}")
 
         if failed_images:

@@ -15,10 +15,7 @@ from color_scheme.output.manager import OutputManager
 @pytest.fixture
 def sample_scheme():
     """Create sample color scheme for testing."""
-    colors = [
-        Color(hex=f"#{i:02X}{i:02X}{i:02X}", rgb=(i, i, i))
-        for i in range(16)
-    ]
+    colors = [Color(hex=f"#{i:02X}{i:02X}{i:02X}", rgb=(i, i, i)) for i in range(16)]
 
     return ColorScheme(
         background=Color(hex="#1A1B26", rgb=(26, 27, 38)),

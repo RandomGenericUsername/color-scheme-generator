@@ -37,9 +37,7 @@ class TestOutputManagerInit:
         (template_dir / "colors.json.j2").write_text('{"test": "{{ backend }}"}')
 
         # Create settings with absolute path
-        settings = AppConfig(
-            templates=TemplateSettings(directory=template_dir)
-        )
+        settings = AppConfig(templates=TemplateSettings(directory=template_dir))
 
         manager = OutputManager(settings)
 

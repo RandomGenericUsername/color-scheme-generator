@@ -4,10 +4,9 @@ import subprocess
 from pathlib import Path
 
 import typer
+from color_scheme.config.enums import Backend
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
-
-from color_scheme.config.enums import Backend
 
 console = Console()
 
@@ -22,13 +21,15 @@ DOCKERFILE_MAP = {
 def install(
     backend: Backend | None = typer.Argument(  # noqa: B008
         None,
-        help="Backend to install (pywal, wallust, or custom). If not specified, installs all backends.",
+        help="Backend to install (pywal, wallust, or custom). "
+        "If not specified, installs all backends.",
     ),
     engine: str | None = typer.Option(  # noqa: B008
         None,
         "--engine",
         "-e",
-        help="Container engine to use (docker or podman). Uses config default if not specified.",
+        help="Container engine to use (docker or podman). "
+        "Uses config default if not specified.",
     ),
 ) -> None:
     """Build container images for color extraction backends.
@@ -69,21 +70,21 @@ def install(
             backends_to_install = [backend]
 
         # Find project root (where packages/ directory is)
-        # This file is at: packages/orchestrator/src/color_scheme_orchestrator/cli/commands/install.py
+        # This file is at:
+        # packages/orchestrator/src/color_scheme_orchestrator/cli/commands/install.py
         # Project root is: ../../../../../../../
         current_file = Path(__file__)
         project_root = current_file.parent.parent.parent.parent.parent.parent.parent
         docker_dir = project_root / "packages" / "orchestrator" / "docker"
 
         if not docker_dir.exists():
-            console.print(
-                f"[red]Error:[/red] Docker directory not found: {docker_dir}"
-            )
+            console.print(f"[red]Error:[/red] Docker directory not found: {docker_dir}")
             raise typer.Exit(1)
 
         # Build each backend
+        count = len(backends_to_install)
         console.print(
-            f"[cyan]Building {len(backends_to_install)} backend(s) using {container_engine}...[/cyan]\n"
+            f"[cyan]Building {count} backend(s) using {container_engine}...[/cyan]\n"
         )
 
         success_count = 0
@@ -96,7 +97,8 @@ def install(
 
             if not dockerfile_path.exists():
                 console.print(
-                    f"[red]✗[/red] {backend_enum.value}: Dockerfile not found at {dockerfile_path}"
+                    f"[red]✗[/red] {backend_enum.value}: "
+                    f"Dockerfile not found at {dockerfile_path}"
                 )
                 failed_backends.append(backend_enum.value)
                 continue
@@ -135,11 +137,17 @@ def install(
 
                     if result.returncode == 0:
                         progress.update(task, description=f"✓ Built {image_name}")
-                        console.print(f"[green]✓[/green] {backend_enum.value}: Built successfully")
+                        console.print(
+                            f"[green]✓[/green] {backend_enum.value}: Built successfully"
+                        )
                         success_count += 1
                     else:
-                        progress.update(task, description=f"✗ Failed to build {image_name}")
-                        console.print(f"[red]✗[/red] {backend_enum.value}: Build failed")
+                        progress.update(
+                            task, description=f"✗ Failed to build {image_name}"
+                        )
+                        console.print(
+                            f"[red]✗[/red] {backend_enum.value}: Build failed"
+                        )
                         console.print(f"[dim]{result.stderr}[/dim]")
                         failed_backends.append(backend_enum.value)
 
@@ -152,7 +160,9 @@ def install(
 
         # Print summary
         console.print("[bold]Build Summary:[/bold]")
-        console.print(f"  [green]Success:[/green] {success_count}/{len(backends_to_install)}")
+        console.print(
+            f"  [green]Success:[/green] {success_count}/{len(backends_to_install)}"
+        )
 
         if failed_backends:
             console.print(f"  [red]Failed:[/red] {', '.join(failed_backends)}")

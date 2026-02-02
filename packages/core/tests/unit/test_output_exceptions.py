@@ -1,6 +1,5 @@
 """Tests for output-related exceptions."""
 
-
 from color_scheme.core.exceptions import (
     ColorSchemeError,
     OutputWriteError,

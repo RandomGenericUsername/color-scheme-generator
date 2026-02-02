@@ -1,6 +1,5 @@
 """Tests for container image name resolution."""
 
-
 from color_scheme.config.config import AppConfig
 from color_scheme.config.enums import Backend
 
