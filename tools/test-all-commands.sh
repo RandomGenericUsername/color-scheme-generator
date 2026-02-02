@@ -131,14 +131,14 @@ if color-scheme generate "$TEST_IMAGE" \
     --output-dir "$multi_out" \
     --backend custom \
     -f json -f sh -f css -f yaml > /dev/null 2>&1; then
-    
+
     all_ok=true
     for fmt in json sh css yaml; do
         if [ ! -f "$multi_out/colors.$fmt" ]; then
             all_ok=false
         fi
     done
-    
+
     if [ "$all_ok" = true ]; then
         print_pass
     else
