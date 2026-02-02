@@ -171,8 +171,10 @@ def generate(
 
         # Write output files
         output_manager = OutputManager(config.core)
-        assert generator_config.output_dir is not None
-        assert generator_config.formats is not None
+        if generator_config.output_dir is None:
+            raise ValueError("output_dir must be configured for generate command")
+        if generator_config.formats is None:
+            raise ValueError("formats must be configured for generate command")
         console.print(
             f"[cyan]Writing output files to:[/cyan] {generator_config.output_dir}"
         )
