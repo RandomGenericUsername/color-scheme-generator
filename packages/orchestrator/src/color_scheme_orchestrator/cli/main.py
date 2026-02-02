@@ -189,9 +189,9 @@ def show(
 
     # Delegate to core - it runs on host, no container needed
     try:
-        # Call core's show function with the same arguments
-        # Use callback to call the Typer command programmatically
-        core_show_colors.callback(
+        # Call core's show function directly
+        # Typer commands are regular functions, no .callback needed
+        core_show_colors(
             image_path=image_path,
             backend=backend,
             saturation=saturation,
