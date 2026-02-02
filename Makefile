@@ -8,6 +8,7 @@ CORE_DIR := $(PACKAGES_DIR)/core
 ORCHESTRATOR_DIR := $(PACKAGES_DIR)/orchestrator
 SETTINGS_DIR := $(PACKAGES_DIR)/settings
 TOOLS_DIR := tools
+DEV_DIR := $(TOOLS_DIR)/dev
 
 # Color output
 BLUE := \033[0;34m
@@ -117,9 +118,14 @@ security-orchestrator: ## Security scan for orchestrator package
 	@echo "$(GREEN)✓ Orchestrator security scan complete$(NC)"
 
 ##@ Testing
-test-all: ## Run all tests (matches tools/test-all-commands.sh)
-	@echo "$(BLUE)Running comprehensive test suite...$(NC)"
-	@bash $(TOOLS_DIR)/test-all-commands.sh
+test-all: ## Run all tests with wallpaper - usage: make test-all WALLPAPER=path/to/wallpaper.jpg
+	@if [ -z "$(WALLPAPER)" ]; then \
+		echo "$(RED)Error: WALLPAPER argument is required$(NC)"; \
+		echo "Usage: make test-all WALLPAPER=path/to/wallpaper.jpg"; \
+		exit 1; \
+	fi
+	@echo "$(BLUE)Running comprehensive test suite with wallpaper: $(WALLPAPER)$(NC)"
+	@bash $(DEV_DIR)/test-all-commands.sh "$(WALLPAPER)"
 
 test-core: ## Test core package
 	@echo "$(BLUE)Testing core package...$(NC)"

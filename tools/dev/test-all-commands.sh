@@ -3,20 +3,45 @@
 # Comprehensive Test Suite for color-scheme (core + orchestrator)
 #
 # Tests both the core CLI (native execution) and orchestrator CLI (containerized)
-# Usage: ./test-all-commands.sh
+# Usage: ./test-all-commands.sh <wallpaper-path>
+#
+# Arguments:
+#   wallpaper-path  Path to wallpaper image file (required)
+#                   Example: ./test-all-commands.sh ~/Downloads/wallpaper.jpg
 ##############################################################################
 
+# Validate arguments
+if [ $# -eq 0 ]; then
+    echo "Error: wallpaper path is required"
+    echo "Usage: $0 <wallpaper-path>"
+    echo ""
+    echo "Example: $0 ~/Downloads/wallpaper.jpg"
+    exit 1
+fi
+
+TEST_IMAGE="$1"
+
+# Resolve to absolute path
+TEST_IMAGE="$(cd "$(dirname "$TEST_IMAGE")" && pwd)/$(basename "$TEST_IMAGE")"
+
+# Check if file exists
+if [ ! -f "$TEST_IMAGE" ]; then
+    echo "Error: Wallpaper file not found: $1"
+    exit 1
+fi
+
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-ORCH_VENV="$SCRIPT_DIR/packages/orchestrator/.venv"
+PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
+ORCH_VENV="$PROJECT_ROOT/packages/orchestrator/.venv"
 
 if [ ! -f "$ORCH_VENV/bin/activate" ]; then
-    echo "Error: Orchestrator venv not found"
+    echo "Error: Orchestrator venv not found at $ORCH_VENV"
+    echo "Please run: make install-orchestrator"
     exit 1
 fi
 
 source "$ORCH_VENV/bin/activate"
 
-TEST_IMAGE="$HOME/Downloads/wallpaper.jpg"
 TEST_OUTPUT_DIR="/tmp/color-scheme-test"
 PASSED=0
 FAILED=0
@@ -46,11 +71,7 @@ print_fail() {
 }
 
 echo -e "${BLUE}Checking prerequisites...${NC}"
-if [ ! -f "$TEST_IMAGE" ]; then
-    echo -e "${RED}✗ Test image not found${NC}"
-    exit 1
-fi
-echo -e "${GREEN}✓ Test image found${NC}"
+echo -e "${GREEN}✓ Test image:${NC} $TEST_IMAGE"
 mkdir -p "$TEST_OUTPUT_DIR"
 echo -e "${GREEN}✓ Output directory ready${NC}\n"
 
