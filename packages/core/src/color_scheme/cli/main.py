@@ -2,6 +2,7 @@
 
 import logging
 from pathlib import Path
+from typing import Any, Protocol, cast
 
 import typer
 from color_scheme_settings import configure, get_config
@@ -32,6 +33,12 @@ class CoreOnlyConfig(BaseModel):
     core: AppConfig = Field(default_factory=AppConfig)
 
 
+class HasCoreConfig(Protocol):
+    """Protocol for configs that have a .core attribute."""
+
+    core: AppConfig
+
+
 # Bootstrap settings for standalone core usage
 configure(CoreOnlyConfig)
 
@@ -47,7 +54,7 @@ logger = logging.getLogger(__name__)
 
 
 @app.command()
-def version():
+def version() -> None:
     """Show version information."""
     from color_scheme import __version__
 
@@ -60,25 +67,25 @@ def generate(
         ...,
         help="Path to source image",
     ),
-    output_dir: Path = typer.Option(
+    output_dir: Path | None = typer.Option(
         None,
         "--output-dir",
         "-o",
         help="Output directory for color scheme files",
     ),
-    backend: Backend = typer.Option(
+    backend: Backend | None = typer.Option(
         None,
         "--backend",
         "-b",
         help="Backend to use for color extraction (auto-detects if not specified)",
     ),
-    formats: list[ColorFormat] = typer.Option(
+    formats: list[ColorFormat] | None = typer.Option(
         None,
         "--format",
         "-f",
         help="Output format(s) to generate (can be specified multiple times)",
     ),
-    saturation: float = typer.Option(
+    saturation: float | None = typer.Option(
         None,
         "--saturation",
         "-s",
@@ -86,7 +93,7 @@ def generate(
         max=2.0,
         help="Saturation adjustment factor (0.0-2.0, default from settings)",
     ),
-):
+) -> None:
     """Generate color scheme from an image.
 
     Extracts colors from an image and generates color scheme files in various formats.
@@ -107,7 +114,7 @@ def generate(
     """
     try:
         # Load settings
-        config = get_config()
+        config = cast(HasCoreConfig, get_config())
 
         # Validate image path
         if not image_path.exists():
@@ -129,7 +136,7 @@ def generate(
             console.print(f"[cyan]Using backend:[/cyan] {backend.value}")
 
         # Build GeneratorConfig with overrides
-        overrides = {}
+        overrides: dict[str, Any] = {}
         if output_dir is not None:
             overrides["output_dir"] = output_dir
         if saturation is not None:
@@ -164,6 +171,8 @@ def generate(
 
         # Write output files
         output_manager = OutputManager(config.core)
+        assert generator_config.output_dir is not None
+        assert generator_config.formats is not None
         console.print(
             f"[cyan]Writing output files to:[/cyan] {generator_config.output_dir}"
         )
@@ -240,13 +249,13 @@ def show(
         ...,
         help="Path to source image",
     ),
-    backend: Backend = typer.Option(
+    backend: Backend | None = typer.Option(
         None,
         "--backend",
         "-b",
         help="Backend to use for color extraction (auto-detects if not specified)",
     ),
-    saturation: float = typer.Option(
+    saturation: float | None = typer.Option(
         None,
         "--saturation",
         "-s",
@@ -254,7 +263,7 @@ def show(
         max=2.0,
         help="Saturation adjustment factor (0.0-2.0, default from settings)",
     ),
-):
+) -> None:
     """Display color scheme from an image in the terminal.
 
     Extracts colors from an image and displays them in a formatted table
@@ -273,7 +282,7 @@ def show(
     """
     try:
         # Load settings
-        config = get_config()
+        config = cast(HasCoreConfig, get_config())
 
         # Validate image path
         if not image_path.exists():

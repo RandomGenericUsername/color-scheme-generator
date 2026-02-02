@@ -41,8 +41,8 @@ _package_root = Path(__file__).parent.parent  # color_scheme/
 _project_root = _package_root.parent.parent.parent.parent  # Go up to project root
 _project_templates = _project_root / "templates"
 
-if os.getenv("COLOR_SCHEME_TEMPLATES"):
-    template_directory = Path(os.getenv("COLOR_SCHEME_TEMPLATES"))
+if (env_templates := os.getenv("COLOR_SCHEME_TEMPLATES")) is not None:
+    template_directory = Path(env_templates)
 elif _container_templates.exists():
     # Running in container
     template_directory = _container_templates
