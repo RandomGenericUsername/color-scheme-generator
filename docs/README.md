@@ -4,90 +4,93 @@ Welcome to the color-scheme documentation.
 
 ## Quick Navigation
 
-### User Documentation
-- [Installation Guide](user-guide/installation.md) - Get started with installation
-- Configuration Guide (Coming soon) - Configure your color schemes
-- CLI Reference (Coming soon) - Complete command reference
-- Backend Documentation (Coming soon) - Backend comparison and usage
+### Tutorials (Learning-Oriented)
+- [Quick Start](tutorials/quick-start.md) - Generate your first color scheme in 5 minutes
+- [First Color Scheme](tutorials/first-color-scheme.md) - Complete beginner walkthrough
+- [Container Setup](tutorials/container-setup.md) - Running in containers (Docker/Podman)
+- [Developer Setup](tutorials/developer-setup.md) - Set up development environment
 
-### Development Documentation
-- [Getting Started](development/getting-started.md) - Set up your development environment
-- [Testing Guide](development/testing.md) - How to write and run tests
-- [Contributing Guide](development/contributing.md) - Contribution workflow and standards
-- [Verification Guide](development/verification-guide.md) - Quality assurance processes
+### How-To Guides (Task-Oriented)
+- [Generate Color Schemes](how-to/generate-colors.md) - Extract colors from images
+- [Configure Outputs](how-to/configure-outputs.md) - Customize output formats
+- [Use Multiple Backends](how-to/use-backends.md) - Switch between backends
+- [Create Custom Templates](how-to/custom-templates.md) - Build custom output formats
+- [Contribute](how-to/contribute.md) - Contribution workflow
+- [Run Tests](how-to/run-tests.md) - Testing guide
+- [Set Up Pre-commit](how-to/setup-pre-commit.md) - Pre-commit hooks
 
-### Architecture Documentation
-- [Architecture Overview](architecture/overview.md) - System design and component structure
-- [Monorepo Design](plans/2026-01-18-monorepo-architecture-design.md) - Detailed architecture decisions
+### Reference (Information-Oriented)
+- [CLI Commands](reference/cli/core-commands.md) - Complete CLI reference
+- [Configuration](reference/configuration/settings-model.md) - Settings reference
+- [Backends](reference/backends/pywal.md) - Backend documentation
+- [Templates](reference/templates/json-template.md) - Template reference
+- [Makefile](reference/makefile.md) - Make commands reference
 
-### Knowledge Base
-- [ADRs](knowledge-base/adrs/) - Architecture Decision Records
-- [Performance Notes](knowledge-base/performance/) - Performance considerations
-
-### Troubleshooting
-- [Error Database](troubleshooting/error-database.md) - Known errors and solutions
-- Common Issues (Coming soon) - Frequently encountered problems
-
-### Plans & Progress
-- [Implementation Progress](implementation-progress.md) - Current development status
-- [Phase 1: Foundation](plans/2026-01-20-phase1-foundation.md) - Foundation implementation plan
-- [Verification Infrastructure](plans/2026-01-18-verification-infrastructure.md) - Quality infrastructure
+### Explanations (Understanding-Oriented)
+- [Architecture](explanations/architecture.md) - System design overview
+- [Backends Explained](explanations/backends-explained.md) - How backends work
+- [Settings Layers](explanations/settings-layers.md) - Configuration system
+- [Design Patterns](explanations/design-patterns.md) - Patterns used in codebase
+- [Integration Patterns](explanations/integration-patterns.md) - Integration approaches
 
 ## Documentation Standards
 
-All documentation in this project follows these standards:
+All documentation follows the [Diátaxis](https://diataxis.fr/) framework:
 
-- **Format**: Markdown (.md files)
-- **Style**: Clear, concise, example-driven
-- **Structure**: Table of contents for long documents
-- **Code**: Syntax-highlighted code blocks
-- **Links**: Relative links within documentation
-- **Diagrams**: Mermaid or ASCII art where helpful
+| Type | Purpose | Focus |
+|------|---------|-------|
+| Tutorials | Learning | Follow along step-by-step |
+| How-To | Tasks | Accomplish specific goals |
+| Reference | Information | Look up facts |
+| Explanations | Understanding | Gain deeper insight |
 
 ## Contributing to Documentation
 
 When adding or updating documentation:
 
-1. Follow the existing structure
-2. Include practical examples
-3. Keep language clear and jargon-free
-4. Add table of contents for documents >100 lines
-5. Test all code examples
-6. Use relative links for cross-references
+1. Choose the correct category (tutorial, how-to, reference, explanation)
+2. Follow the existing structure and style
+3. Include practical examples
+4. Test all code examples
+5. Use relative links for cross-references
 
-See [Contributing Guide](development/contributing.md) for details.
+See [How to Contribute](how-to/contribute.md) for the full workflow.
 
-## Documentation Organization
+## Documentation Structure
 
 ```
 docs/
-├── README.md                    # This file - documentation index
-├── architecture/                # System architecture documentation
-│   └── overview.md             # High-level architecture overview
-├── development/                 # Developer documentation
-│   ├── contributing.md         # Contribution guidelines
-│   ├── getting-started.md      # Developer onboarding
-│   ├── testing.md              # Testing guide
-│   └── verification-guide.md   # Quality verification
-├── user-guide/                 # End-user documentation
-│   └── installation.md         # Installation instructions
-├── knowledge-base/             # Reference material
-│   ├── adrs/                   # Architecture decisions
-│   └── performance/            # Performance notes
-├── troubleshooting/            # Problem solving
-│   └── error-database.md       # Known errors
-├── plans/                      # Implementation plans
-│   ├── 2026-01-18-monorepo-architecture-design.md
-│   ├── 2026-01-18-verification-infrastructure.md
-│   └── 2026-01-20-phase1-foundation.md
-└── templates/                  # Documentation templates
-    ├── adr-template.md
-    └── error-entry-template.md
+├── README.md              # This index
+├── tutorials/             # Learning-oriented guides
+│   ├── quick-start.md
+│   ├── first-color-scheme.md
+│   ├── container-setup.md
+│   └── developer-setup.md
+├── how-to/                # Task-oriented guides
+│   ├── generate-colors.md
+│   ├── configure-outputs.md
+│   ├── use-backends.md
+│   ├── custom-templates.md
+│   ├── contribute.md
+│   ├── run-tests.md
+│   └── setup-pre-commit.md
+├── reference/             # Information-oriented
+│   ├── cli/
+│   ├── configuration/
+│   ├── backends/
+│   ├── templates/
+│   └── makefile.md
+└── explanations/          # Understanding-oriented
+    ├── architecture.md
+    ├── backends-explained.md
+    ├── settings-layers.md
+    ├── design-patterns.md
+    └── integration-patterns.md
 ```
 
 ## Getting Help
 
-- Check the relevant guide above
-- Search the [Error Database](troubleshooting/error-database.md)
-- Review existing [ADRs](knowledge-base/adrs/)
+- Start with the [Quick Start Tutorial](tutorials/quick-start.md)
+- Search the [CLI Reference](reference/cli/core-commands.md)
+- Check the [Architecture Explanation](explanations/architecture.md)
 - Open an issue on GitHub
