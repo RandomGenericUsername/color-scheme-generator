@@ -32,12 +32,8 @@ dev: install-deps ## Set up development environment
 	@echo "$(GREEN)✓ Development environment ready$(NC)"
 
 install-deps: ## Install all dependencies for development
-	@echo "$(BLUE)Installing settings package...$(NC)"
-	cd $(SETTINGS_DIR) && $(UV) sync --dev
-	@echo "$(BLUE)Installing core package...$(NC)"
-	cd $(CORE_DIR) && $(UV) sync --dev
-	@echo "$(BLUE)Installing orchestrator package...$(NC)"
-	cd $(ORCHESTRATOR_DIR) && $(UV) sync --dev
+	@echo "$(BLUE)Installing all packages in workspace...$(NC)"
+	$(UV) sync --dev
 	@echo "$(GREEN)✓ All dependencies installed$(NC)"
 
 install-core: ## Install color-scheme-core package
