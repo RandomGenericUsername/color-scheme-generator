@@ -1,0 +1,38 @@
+[project]
+name = "color-scheme-workspace"
+version = "0.1.0"
+description = "Workspace root for color-scheme monorepo"
+requires-python = ">=3.12"
+dependencies = [
+    "color-scheme-settings",
+    "color-scheme-templates",
+    "color-scheme-core",
+    "color-scheme-orchestrator",
+]
+
+[tool.uv.workspace]
+members = [
+    "packages/settings",
+    "packages/templates",
+    "packages/core",
+    "packages/orchestrator",
+]
+
+[tool.uv.sources]
+color-scheme-settings = { workspace = true }
+color-scheme-templates = { workspace = true }
+color-scheme-core = { workspace = true }
+color-scheme-orchestrator = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.2",
+    "pytest-cov>=4.1.0",
+    "pytest-xdist>=3.8.0",
+    "mypy>=1.11.0",
+    "black>=24.0.0",
+    "ruff>=0.6.0",
+    "isort>=5.13.0",
+    "bandit>=1.8.6",
+    "pre-commit>=3.8.0",
+]

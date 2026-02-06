@@ -78,11 +78,12 @@ repos:
     hooks:
       - id: bandit
         name: Security check with Bandit
-        args: [-r, src/, -ll]
+        args: [-ll]
         stages: [pre-commit]
         # Skip test files
         exclude: ^(tests/|test_.*\.py)
         files: ^(packages|src)/.*\.py$
+        additional_dependencies: [pbr]
 
   # File size checks
   - repo: https://github.com/pre-commit/pre-commit-hooks
