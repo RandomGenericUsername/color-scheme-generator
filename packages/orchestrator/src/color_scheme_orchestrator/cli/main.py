@@ -68,6 +68,12 @@ def generate(
         max=2.0,
         help="Saturation adjustment factor (0.0-2.0)",
     ),
+    dry_run: bool = typer.Option(  # noqa: B008
+        False,
+        "--dry-run",
+        "-n",
+        help="Show what would be done without executing",
+    ),
 ) -> None:
     """Generate color scheme using containerized backend.
 
@@ -87,6 +93,40 @@ def generate(
     try:
         # Load settings
         config = get_config()
+
+        # Handle dry-run mode
+        if dry_run:
+            from color_scheme_orchestrator.cli.dry_run import ContainerGenerateDryRunReporter
+            from color_scheme_settings.resolver import ConfigResolver
+            
+            # Build CLI args for resolver
+            cli_args = {}
+            if backend is not None:
+                cli_args["backend"] = backend.value
+            if output_dir is not None:
+                cli_args["output_dir"] = str(output_dir)
+            if formats is not None:
+                cli_args["formats"] = [f.value for f in formats]
+            if saturation is not None:
+                cli_args["saturation"] = saturation
+            
+            # Resolve configuration
+            resolver = ConfigResolver()
+            resolved = resolver.resolve(
+                cli_args=cli_args,
+                command_ctx={"command": "generate"}
+            )
+            
+            # Create reporter and run
+            reporter = ContainerGenerateDryRunReporter(
+                command="color-scheme generate",
+                resolved_config=resolved,
+                context={"image_path": image_path}
+            )
+            reporter.run()
+            
+            # Exit successfully without executing
+            raise typer.Exit(0)
 
         # Validate image path
         if not image_path.exists():
@@ -142,6 +182,10 @@ def generate(
 
         console.print("\n[green]Color scheme generated successfully![/green]")
 
+    except typer.Exit:
+        # Re-raise typer.Exit without catching it
+        raise
+
     except RuntimeError as e:
         console.print(f"[red]Container error:[/red] {str(e)}")
         raise typer.Exit(1) from None
@@ -171,6 +215,12 @@ def show(
         max=2.0,
         help="Saturation adjustment factor (0.0-2.0)",
     ),
+    dry_run: bool = typer.Option(  # noqa: B008
+        False,
+        "--dry-run",
+        "-n",
+        help="Show what would be done without executing",
+    ),
 ) -> None:
     """Display color scheme in terminal (delegates to core).
 
@@ -184,6 +234,36 @@ def show(
         # Show with specific backend
         color-scheme show wallpaper.jpg -b pywal
     """
+    # Handle dry-run mode
+    if dry_run:
+        from color_scheme_orchestrator.cli.dry_run import ContainerShowDryRunReporter
+        from color_scheme_settings.resolver import ConfigResolver
+        
+        # Build CLI args for resolver
+        cli_args = {}
+        if backend is not None:
+            cli_args["backend"] = backend.value
+        if saturation is not None:
+            cli_args["saturation"] = saturation
+        
+        # Resolve configuration
+        resolver = ConfigResolver()
+        resolved = resolver.resolve(
+            cli_args=cli_args,
+            command_ctx={"command": "show"}
+        )
+        
+        # Create reporter and run
+        reporter = ContainerShowDryRunReporter(
+            command="color-scheme show",
+            resolved_config=resolved,
+            context={"image_path": image_path}
+        )
+        reporter.run()
+        
+        # Exit successfully without executing
+        raise typer.Exit(0)
+
     # Import core's show implementation
     from color_scheme.cli.main import show as core_show_colors
 
@@ -195,6 +275,7 @@ def show(
             image_path=image_path,
             backend=backend,
             saturation=saturation,
+            dry_run=False,
         )
 
     except Exception as e:
