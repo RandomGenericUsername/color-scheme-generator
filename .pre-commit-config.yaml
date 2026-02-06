@@ -68,9 +68,8 @@ repos:
         additional_dependencies: [types-pillow]
         args: [--ignore-missing-imports]
         stages: [pre-commit]
-        # Only run on Python files
-        files: ^(packages|src)/.*\.py$
-        exclude: ^(tests/|__pycache__|\.venv)
+        # Exclude test directories to avoid duplicate module errors
+        exclude: ^(packages|src)/.*/tests/
 
   # Security scanning with Bandit
   - repo: https://github.com/PyCQA/bandit
@@ -80,8 +79,8 @@ repos:
         name: Security check with Bandit
         args: [-ll]
         stages: [pre-commit]
-        # Skip test files
-        exclude: ^(tests/|test_.*\.py)
+        # Skip test directories and files
+        exclude: ^(packages|src)/.*/tests/|test_.*\.py$
         files: ^(packages|src)/.*\.py$
         additional_dependencies: [pbr]
 
