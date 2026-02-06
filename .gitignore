@@ -11,3 +11,21 @@ wheels/
 
 # Worktrees
 .worktrees/
+
+# Editor and IDE
+.vscode/
+.idea/
+
+# Test coverage and artifacts
+.coverage
+*.coverage
+htmlcov/
+.pytest_cache/
+
+# Local development files
+.archive/
+.mypy_cache/
+.ruff_cache/
+
+# OS files
+.DS_Store
