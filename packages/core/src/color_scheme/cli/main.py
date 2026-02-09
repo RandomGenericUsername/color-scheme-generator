@@ -93,6 +93,12 @@ def generate(
         max=2.0,
         help="Saturation adjustment factor (0.0-2.0, default from settings)",
     ),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        "-n",
+        help="Show what would be done without executing",
+    ),
 ) -> None:
     """Generate color scheme from an image.
 
@@ -113,6 +119,40 @@ def generate(
         color-scheme generate wallpaper.jpg -s 1.5
     """
     try:
+        # Handle dry-run mode
+        if dry_run:
+            from color_scheme.cli.dry_run import GenerateDryRunReporter
+            from color_scheme_settings.resolver import ConfigResolver
+
+            # Build CLI args for resolver
+            cli_args = {}
+            if backend is not None:
+                cli_args["backend"] = backend.value
+            if output_dir is not None:
+                cli_args["output_dir"] = str(output_dir)
+            if formats is not None:
+                cli_args["formats"] = [f.value for f in formats]
+            if saturation is not None:
+                cli_args["saturation"] = saturation
+
+            # Resolve configuration
+            resolver = ConfigResolver()
+            resolved = resolver.resolve(
+                cli_args=cli_args,
+                command_ctx={"command": "generate"}
+            )
+
+            # Create reporter and run
+            reporter = GenerateDryRunReporter(
+                command="color-scheme-core generate",
+                resolved_config=resolved,
+                context={"image_path": image_path}
+            )
+            reporter.run()
+
+            # Exit successfully without executing
+            raise typer.Exit(0)
+
         # Load settings
         config = cast(HasCoreConfig, get_config())
 
