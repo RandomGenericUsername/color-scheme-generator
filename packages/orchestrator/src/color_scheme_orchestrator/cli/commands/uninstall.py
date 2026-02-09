@@ -28,6 +28,12 @@ def uninstall(
         help="Container engine to use (docker or podman). "
         "Uses config default if not specified.",
     ),
+    dry_run: bool = typer.Option(  # noqa: B008
+        False,
+        "--dry-run",
+        "-n",
+        help="Show what would be done without executing",
+    ),
 ) -> None:
     """Remove container images for color extraction backends.
 
@@ -46,6 +52,38 @@ def uninstall(
         color-scheme uninstall --engine podman
     """
     try:
+        # Handle dry-run mode
+        if dry_run:
+            from color_scheme_orchestrator.cli.dry_run import UninstallDryRunReporter
+            from color_scheme_settings import get_config
+            from color_scheme_settings.resolver import ConfigResolver
+
+            # Determine backend for display
+            backend_name = backend.value if backend is not None else "all"
+
+            # Build CLI args for resolver
+            cli_args = {}
+            if engine is not None:
+                cli_args["engine"] = engine
+
+            # Resolve configuration
+            resolver = ConfigResolver()
+            resolved = resolver.resolve(
+                cli_args=cli_args,
+                command_ctx={"command": "uninstall"}
+            )
+
+            # Create reporter and run
+            reporter = UninstallDryRunReporter(
+                command="color-scheme uninstall",
+                resolved_config=resolved,
+                context={"backend": backend_name}
+            )
+            reporter.run()
+
+            # Exit successfully without executing
+            raise typer.Exit(0)
+
         # Determine container engine
         if engine is None:
             # Default to docker since we removed container settings from core
