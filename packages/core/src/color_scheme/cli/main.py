@@ -305,6 +305,12 @@ def show(
         max=2.0,
         help="Saturation adjustment factor (0.0-2.0, default from settings)",
     ),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        "-n",
+        help="Show what would be done without executing",
+    ),
 ) -> None:
     """Display color scheme from an image in the terminal.
 
@@ -323,6 +329,36 @@ def show(
         color-scheme show wallpaper.jpg -s 1.5
     """
     try:
+        # Handle dry-run mode
+        if dry_run:
+            from color_scheme.cli.dry_run import ShowDryRunReporter
+            from color_scheme_settings.resolver import ConfigResolver
+
+            # Build CLI args for resolver
+            cli_args = {}
+            if backend is not None:
+                cli_args["backend"] = backend.value
+            if saturation is not None:
+                cli_args["saturation"] = saturation
+
+            # Resolve configuration
+            resolver = ConfigResolver()
+            resolved = resolver.resolve(
+                cli_args=cli_args,
+                command_ctx={"command": "show"}
+            )
+
+            # Create reporter and run
+            reporter = ShowDryRunReporter(
+                command="color-scheme-core show",
+                resolved_config=resolved,
+                context={"image_path": image_path}
+            )
+            reporter.run()
+
+            # Exit successfully without executing
+            raise typer.Exit(0)
+
         # Load settings
         config = cast(HasCoreConfig, get_config())
 
