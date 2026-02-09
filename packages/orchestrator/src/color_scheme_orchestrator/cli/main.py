@@ -275,7 +275,6 @@ def show(
             image_path=image_path,
             backend=backend,
             saturation=saturation,
-            dry_run=False,
         )
 
     except Exception as e:
