@@ -92,8 +92,10 @@ class TestContainerExecution:
 
         call_args = mock_run.call_args[0][0]
 
-        # Container command should include: color-scheme generate /input/image.png ...
-        assert "color-scheme" in call_args
+        # Docker command should include the image and pass CLI args to the container
+        # The "color-scheme" command is handled by the container entrypoint
+        assert "docker" in call_args
+        assert "run" in call_args
         assert "generate" in call_args
         assert "/input/image.png" in call_args
         assert "--saturation" in call_args
