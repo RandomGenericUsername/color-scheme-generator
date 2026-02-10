@@ -78,8 +78,12 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = "-v --strict-markers --tb=short"
+markers = [
+    "docker: marks tests requiring docker (deselect with '-m \"not docker\"')",
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
 
-# Development: use local core package
+# Development: use workspace members
 [tool.uv.sources]
-color-scheme-core = { path = "../core", editable = true }
-color-scheme-settings = { path = "../settings", editable = true }
+color-scheme-core = { workspace = true }
+color-scheme-settings = { workspace = true }
