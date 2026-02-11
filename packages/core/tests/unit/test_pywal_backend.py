@@ -77,8 +77,7 @@ class TestPywalGenerator:
 
         # Mock pywal cache file
         cache_file = tmp_path / "colors.json"
-        cache_file.write_text(
-            """{
+        cache_file.write_text("""{
             "special": {
                 "background": "#1a1a1a",
                 "foreground": "#ffffff",
@@ -102,8 +101,7 @@ class TestPywalGenerator:
                 "color14": "#eeeeee",
                 "color15": "#ffffff"
             }
-        }"""
-        )
+        }""")
 
         with patch.object(generator, "_get_cache_file", return_value=cache_file):
             scheme = generator.generate(test_image, config)
@@ -238,8 +236,7 @@ class TestPywalGenerator:
 
         # Mock pywal cache file
         cache_file = tmp_path / "colors.json"
-        cache_file.write_text(
-            """{
+        cache_file.write_text("""{
             "special": {
                 "background": "#1a1a1a",
                 "foreground": "#ffffff",
@@ -263,8 +260,7 @@ class TestPywalGenerator:
                 "color14": "#eeeeee",
                 "color15": "#ffffff"
             }
-        }"""
-        )
+        }""")
 
         config = GeneratorConfig(saturation_adjustment=1.5)
 
