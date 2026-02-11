@@ -160,6 +160,49 @@ Each workflow:
 ### Setup Codecov
 Add `CODECOV_TOKEN` secret to GitHub repo settings for coverage reports.
 
+### Running GitHub Actions Locally
+
+Before pushing to GitHub, test the entire CI pipeline locally:
+
+```bash
+make push
+```
+
+This will:
+1. Download the `act` tool (GitHub Actions CLI) if not already present
+2. Run all GitHub Actions workflows in local Docker containers
+3. Simulate the exact environment GitHub uses (Ubuntu, specific Python versions)
+4. Report any issues before they reach the cloud
+
+**Benefits of local testing:**
+- Catch CI failures before pushing
+- Faster feedback loop (minutes vs. GitHub Actions queuing)
+- No failed builds in your commit history
+- Safe testing of edge cases
+
+### Workflow: Fast Testing → Local CI → Push to Cloud
+
+```bash
+# 1. Make your changes
+vim packages/core/src/color_scheme/something.py
+
+# 2. Format and lint locally
+make format-core
+make lint-core
+
+# 3. Test locally
+make test-core
+
+# 4. Run full local pipeline
+make pipeline
+
+# 5. Run GitHub Actions locally (final check)
+make push
+
+# 6. Push to GitHub if all passes
+git push origin main
+```
+
 ---
 
 ## Tools Overview
@@ -289,7 +332,8 @@ Run `make test-all` to check coverage across all packages.
 2. Make changes and format code: `make format`
 3. Run tests: `make test-all`
 4. Check the full pipeline: `make pipeline`
-5. Commit with clear messages
-6. Push and create a pull request
+5. Run GitHub Actions locally: `make push`
+6. Commit with clear messages
+7. Push and create a pull request
 
 The GitHub Actions workflows will automatically validate all changes.

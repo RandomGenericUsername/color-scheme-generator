@@ -1,4 +1,4 @@
-.PHONY: help dev lint format build install-core install-orchestrator install-settings install-templates test-all test-run pipeline lint-templates format-templates security-templates test-templates
+.PHONY: help dev lint format build install-core install-orchestrator install-settings install-templates test-all test-run pipeline lint-templates format-templates security-templates test-templates push clean
 
 # Variables
 PYTHON_VERSION := 3.12
@@ -218,6 +218,24 @@ pipeline: ## Validate pipeline - simulate GitHub Actions workflows locally
 	@echo -e "$(GREEN)✓✓✓ Pipeline validation successful! $(NC)"
 	@echo -e "$(GREEN)Your changes are safe to push to the cloud.$(NC)"
 	@echo -e ""
+
+push: ## Run GitHub Actions workflows locally using act
+	@echo -e "$(BLUE)Setting up GitHub Actions locally...$(NC)"
+	@if [ ! -f ./bin/act ]; then \
+		echo -e "$(BLUE)Downloading act (GitHub Actions CLI)...$(NC)"; \
+		mkdir -p ./bin; \
+		curl -sL https://github.com/nektos/act/releases/download/v0.2.65/act_Linux_x86_64.tar.gz -o /tmp/act.tar.gz; \
+		tar -xzf /tmp/act.tar.gz -C ./bin; \
+		rm /tmp/act.tar.gz; \
+		echo -e "$(GREEN)✓ act installed to ./bin/act$(NC)"; \
+	else \
+		echo -e "$(GREEN)✓ act already available$(NC)"; \
+	fi
+	@echo -e ""
+	@echo -e "$(BLUE)Running GitHub Actions workflows locally...$(NC)"
+	@./bin/act push
+	@echo -e ""
+	@echo -e "$(GREEN)✓ GitHub Actions simulation complete$(NC)"
 
 ##@ Cleanup
 clean: ## Remove build artifacts and caches
