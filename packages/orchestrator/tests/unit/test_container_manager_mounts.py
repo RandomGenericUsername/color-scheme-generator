@@ -3,8 +3,6 @@
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from color_scheme_orchestrator.container.manager import ContainerManager
 
 
@@ -21,9 +19,7 @@ class TestVolumeMountsRelativePath:
 
         manager = ContainerManager(mock_config)
 
-        with patch(
-            "color_scheme_orchestrator.container.manager.Path.cwd"
-        ) as mock_cwd:
+        with patch("color_scheme_orchestrator.container.manager.Path.cwd") as mock_cwd:
             mock_cwd.return_value = Path("/home/user/project")
             # Call build_volume_mounts with the patched cwd
             mounts = manager.build_volume_mounts(

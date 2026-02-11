@@ -1,9 +1,9 @@
 """Enumerations for configuration."""
 
-from enum import Enum
+from enum import StrEnum
 
 
-class Backend(str, Enum):
+class Backend(StrEnum):
     """Available color extraction backends."""
 
     PYWAL = "pywal"
@@ -11,14 +11,14 @@ class Backend(str, Enum):
     CUSTOM = "custom"
 
 
-class ColorAlgorithm(str, Enum):
+class ColorAlgorithm(StrEnum):
     """Custom backend color extraction algorithms."""
 
     KMEANS = "kmeans"
     DOMINANT = "dominant"
 
 
-class ColorFormat(str, Enum):
+class ColorFormat(StrEnum):
     """Output format types."""
 
     JSON = "json"

@@ -82,9 +82,7 @@ class TestGenerateErrors:
 
     def test_path_is_directory(self, runner, tmp_path):
         """Test error when path is directory."""
-        result = runner.invoke(
-            app, ["generate", str(tmp_path), "-o", str(tmp_path)]
-        )
+        result = runner.invoke(app, ["generate", str(tmp_path), "-o", str(tmp_path)])
         assert result.exit_code == 1
         assert "not a file" in result.stdout.lower()
 
@@ -135,10 +133,12 @@ class TestGenerateErrors:
             with patch("color_scheme.cli.main.OutputManager") as mock_output:
                 gen = MagicMock()
                 gen.generate.return_value = _mock_scheme()
-                mock_factory.return_value.auto_detect.return_value = MagicMock(value="custom")
+                mock_factory.return_value.auto_detect.return_value = MagicMock(
+                    value="custom"
+                )
                 mock_factory.return_value.create.return_value = gen
-                mock_output.return_value.write_outputs.side_effect = TemplateRenderError(
-                    "colors.css.j2", "syntax error"
+                mock_output.return_value.write_outputs.side_effect = (
+                    TemplateRenderError("colors.css.j2", "syntax error")
                 )
 
                 result = runner.invoke(
@@ -153,7 +153,9 @@ class TestGenerateErrors:
             with patch("color_scheme.cli.main.OutputManager") as mock_output:
                 gen = MagicMock()
                 gen.generate.return_value = _mock_scheme()
-                mock_factory.return_value.auto_detect.return_value = MagicMock(value="custom")
+                mock_factory.return_value.auto_detect.return_value = MagicMock(
+                    value="custom"
+                )
                 mock_factory.return_value.create.return_value = gen
                 mock_output.return_value.write_outputs.side_effect = OutputWriteError(
                     Path("/readonly"), "permission denied"
@@ -201,7 +203,16 @@ class TestGenerateSaturation:
         """Test saturation option."""
         result = runner.invoke(
             app,
-            ["generate", str(test_image), "-o", str(tmp_path), "-b", "custom", "-s", "1.5"],
+            [
+                "generate",
+                str(test_image),
+                "-o",
+                str(tmp_path),
+                "-b",
+                "custom",
+                "-s",
+                "1.5",
+            ],
         )
         assert result.exit_code == 0
         assert "saturation" in result.stdout.lower() or "1.5" in result.stdout
@@ -300,9 +311,11 @@ class TestMainEntryPoint:
     def test_main_callable(self):
         """Test main is callable."""
         from color_scheme.cli.main import main
+
         assert callable(main)
 
     def test_app_has_commands(self):
         """Test app has command decorator."""
         from color_scheme.cli.main import app
+
         assert hasattr(app, "command")

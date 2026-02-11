@@ -3,8 +3,9 @@
 from pathlib import Path
 
 import pytest
-from color_scheme.cli.main import app
 from typer.testing import CliRunner
+
+from color_scheme.cli.main import app
 
 
 class TestGenerateDryRun:

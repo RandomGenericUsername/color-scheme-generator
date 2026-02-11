@@ -1,7 +1,5 @@
 """Tests for ResolvedValue, ResolvedConfig, Warning, and related models."""
 
-import pytest
-
 from color_scheme_settings.models import (
     ConfigSource,
     ResolvedConfig,
@@ -203,7 +201,9 @@ class TestResolvedConfig:
         )
         config.set(
             "output.directory",
-            ResolvedValue("/tmp/output", ConfigSource.PACKAGE_DEFAULT, "Package default"),
+            ResolvedValue(
+                "/tmp/output", ConfigSource.PACKAGE_DEFAULT, "Package default"
+            ),
         )
 
         assert len(config) == 2
@@ -235,7 +235,9 @@ class TestResolvedConfig:
         """Test converting to dict with simple keys."""
         config = ResolvedConfig()
         config.set("backend", ResolvedValue("pywal", ConfigSource.CLI, "--backend"))
-        config.set("level", ResolvedValue("INFO", ConfigSource.ENV, "COLORSCHEME_LEVEL"))
+        config.set(
+            "level", ResolvedValue("INFO", ConfigSource.ENV, "COLORSCHEME_LEVEL")
+        )
 
         result = config.to_dict()
         assert result["backend"] == "pywal"
@@ -276,7 +278,9 @@ class TestResolvedConfig:
     def test_overwrite_value(self):
         """Test overwriting an existing value."""
         config = ResolvedConfig()
-        config.set("key", ResolvedValue("value1", ConfigSource.PACKAGE_DEFAULT, "default"))
+        config.set(
+            "key", ResolvedValue("value1", ConfigSource.PACKAGE_DEFAULT, "default")
+        )
         assert config.get("key").value == "value1"
 
         config.set("key", ResolvedValue("value2", ConfigSource.CLI, "--key"))
@@ -296,9 +300,12 @@ class TestResolvedConfig:
         config = ResolvedConfig()
         config.set("string", ResolvedValue("text", ConfigSource.CLI, "--string"))
         config.set("number", ResolvedValue(42, ConfigSource.ENV, "NUMBER"))
-        config.set("list", ResolvedValue([1, 2, 3], ConfigSource.PACKAGE_DEFAULT, "default"))
         config.set(
-            "nested.dict", ResolvedValue({"key": "val"}, ConfigSource.USER_CONFIG, "user")
+            "list", ResolvedValue([1, 2, 3], ConfigSource.PACKAGE_DEFAULT, "default")
+        )
+        config.set(
+            "nested.dict",
+            ResolvedValue({"key": "val"}, ConfigSource.USER_CONFIG, "user"),
         )
 
         result = config.to_dict()

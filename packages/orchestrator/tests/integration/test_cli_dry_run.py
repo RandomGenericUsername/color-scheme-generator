@@ -1,8 +1,9 @@
 """Integration tests for orchestrator CLI dry-run functionality."""
 
 import pytest
-from color_scheme_orchestrator.cli.main import app
 from typer.testing import CliRunner
+
+from color_scheme_orchestrator.cli.main import app
 
 
 class TestInstallDryRun:

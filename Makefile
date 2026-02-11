@@ -125,22 +125,22 @@ security: security-core security-settings security-templates security-orchestrat
 
 security-core: ## Security scan for core package
 	@echo -e "$(BLUE)Running security scan on core package...$(NC)"
-	cd $(CORE_DIR) && $(UV) run bandit -r src/ -f json -o bandit-report.json
+	cd $(CORE_DIR) && $(UV) run bandit -r src/ -ll -f json -o bandit-report.json
 	@echo -e "$(GREEN)✓ Core security scan complete$(NC)"
 
 security-settings: ## Security scan for settings package
 	@echo -e "$(BLUE)Running security scan on settings package...$(NC)"
-	cd $(SETTINGS_DIR) && $(UV) run bandit -r src/ -f json -o bandit-report.json
+	cd $(SETTINGS_DIR) && $(UV) run bandit -r src/ -ll -f json -o bandit-report.json
 	@echo -e "$(GREEN)✓ Settings security scan complete$(NC)"
 
 security-templates: ## Security scan for templates package
 	@echo -e "$(BLUE)Running security scan on templates package...$(NC)"
-	cd $(TEMPLATES_DIR) && $(UV) run bandit -r src/ -f json -o bandit-report.json
+	cd $(TEMPLATES_DIR) && $(UV) run bandit -r src/ -ll -f json -o bandit-report.json
 	@echo -e "$(GREEN)✓ Templates security scan complete$(NC)"
 
 security-orchestrator: ## Security scan for orchestrator package
 	@echo -e "$(BLUE)Running security scan on orchestrator package...$(NC)"
-	cd $(ORCHESTRATOR_DIR) && $(UV) run bandit -r src/ -f json -o bandit-report.json
+	cd $(ORCHESTRATOR_DIR) && $(UV) run bandit -r src/ -ll -f json -o bandit-report.json
 	@echo -e "$(GREEN)✓ Orchestrator security scan complete$(NC)"
 
 ##@ Testing

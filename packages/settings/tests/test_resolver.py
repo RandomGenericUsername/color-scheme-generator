@@ -1,10 +1,13 @@
 """Tests for ConfigResolver."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
-import pytest
-
-from color_scheme_settings.models import ConfigSource, ResolvedConfig, Warning, WarningLevel
+from color_scheme_settings.models import (
+    ConfigSource,
+    ResolvedConfig,
+    Warning,
+    WarningLevel,
+)
 from color_scheme_settings.resolver import ConfigResolver
 
 
@@ -81,15 +84,13 @@ class TestConfigResolverLoadProjectConfig:
 
         # Create a valid settings.toml file
         config_file = tmp_path / "settings.toml"
-        config_file.write_text(
-            """
+        config_file.write_text("""
 [generation]
 default_backend = "pywal"
 
 [output]
 directory = "/tmp/output"
-"""
-        )
+""")
 
         original_cwd = os.getcwd()
         try:
@@ -108,12 +109,10 @@ directory = "/tmp/output"
 
         # Create a malformed TOML file
         config_file = tmp_path / "settings.toml"
-        config_file.write_text(
-            """
+        config_file.write_text("""
 [generation
 default_backend = "pywal"
-"""
-        )
+""")
 
         original_cwd = os.getcwd()
         try:
@@ -178,9 +177,8 @@ class TestConfigResolverCollectEnvVars:
             # Should include COLORSCHEME_ variables in nested dict format
             assert isinstance(result, dict)
             # Either flat format or nested format is acceptable
-            has_backend = (
-                "generation.default_backend" in result
-                or ("generation" in result and "default_backend" in result["generation"])
+            has_backend = "generation.default_backend" in result or (
+                "generation" in result and "default_backend" in result["generation"]
             )
             assert has_backend or len(result) == 0
 
@@ -273,7 +271,10 @@ class TestConfigResolverApplyPrecedence:
         # User value should win over project value
         key_resolved = result.get("key")
         if key_resolved:
-            assert key_resolved.source in [ConfigSource.USER_CONFIG, ConfigSource.PROJECT_CONFIG]
+            assert key_resolved.source in [
+                ConfigSource.USER_CONFIG,
+                ConfigSource.PROJECT_CONFIG,
+            ]
 
     def test_apply_precedence_returns_all_sources(self):
         """Test that _apply_precedence includes values from all sources."""
@@ -364,7 +365,7 @@ class TestConfigResolverWarnings:
         resolver = ConfigResolver()
         with patch("pathlib.Path.cwd"):
             # Create a scenario that would generate a warning
-            result = resolver._load_project_config()
+            _ = resolver._load_project_config()
             # Check warning structure if any were created
             for warning in resolver.warnings:
                 assert isinstance(warning, Warning)

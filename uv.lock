@@ -94,7 +94,6 @@ version = "0.1.0"
 source = { editable = "packages/core" }
 dependencies = [
     { name = "color-scheme-settings" },
-    { name = "color-scheme-templates" },
     { name = "jinja2" },
     { name = "numpy" },
     { name = "pillow" },
@@ -126,7 +125,6 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "color-scheme-settings", editable = "packages/settings" },
-    { name = "color-scheme-templates", editable = "packages/templates" },
     { name = "jinja2", specifier = ">=3.1.6" },
     { name = "numpy", specifier = ">=1.24.0" },
     { name = "pillow", specifier = ">=10.0.0" },
@@ -141,14 +139,14 @@ provides-extras = ["pywal"]
 [package.metadata.requires-dev]
 dev = [
     { name = "bandit", specifier = ">=1.8.6" },
-    { name = "black", specifier = ">=24.0.0" },
-    { name = "isort", specifier = ">=5.13.0" },
-    { name = "mypy", specifier = ">=1.11.0" },
+    { name = "black", specifier = ">=26.0.0" },
+    { name = "isort", specifier = ">=7.0.0" },
+    { name = "mypy", specifier = ">=1.19.0" },
     { name = "pre-commit", specifier = ">=3.8.0" },
-    { name = "pytest", specifier = ">=8.4.2" },
-    { name = "pytest-cov", specifier = ">=4.1.0" },
+    { name = "pytest", specifier = ">=9.0.0" },
+    { name = "pytest-cov", specifier = ">=7.0.0" },
     { name = "pytest-xdist", specifier = ">=3.8.0" },
-    { name = "ruff", specifier = ">=0.6.0" },
+    { name = "ruff", specifier = ">=0.14.0" },
     { name = "types-pillow", specifier = ">=10.0.0" },
 ]
 
@@ -187,14 +185,14 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "bandit", specifier = ">=1.8.6" },
-    { name = "black", specifier = ">=24.0.0" },
-    { name = "isort", specifier = ">=5.13.0" },
-    { name = "mypy", specifier = ">=1.11.0" },
+    { name = "black", specifier = ">=26.0.0" },
+    { name = "isort", specifier = ">=7.0.0" },
+    { name = "mypy", specifier = ">=1.19.0" },
     { name = "pre-commit", specifier = ">=3.8.0" },
-    { name = "pytest", specifier = ">=8.4.2" },
-    { name = "pytest-cov", specifier = ">=4.1.0" },
+    { name = "pytest", specifier = ">=9.0.0" },
+    { name = "pytest-cov", specifier = ">=7.0.0" },
     { name = "pytest-xdist", specifier = ">=3.8.0" },
-    { name = "ruff", specifier = ">=0.6.0" },
+    { name = "ruff", specifier = ">=0.14.0" },
 ]
 
 [[package]]
@@ -221,13 +219,13 @@ requires-dist = [{ name = "pydantic", specifier = ">=2.11.9" }]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "black", specifier = ">=24.0.0" },
-    { name = "isort", specifier = ">=5.13.0" },
-    { name = "mypy", specifier = ">=1.11.0" },
-    { name = "pytest", specifier = ">=8.4.2" },
-    { name = "pytest-cov", specifier = ">=4.1.0" },
+    { name = "black", specifier = ">=26.0.0" },
+    { name = "isort", specifier = ">=7.0.0" },
+    { name = "mypy", specifier = ">=1.19.0" },
+    { name = "pytest", specifier = ">=9.0.0" },
+    { name = "pytest-cov", specifier = ">=7.0.0" },
     { name = "pytest-xdist", specifier = ">=3.8.0" },
-    { name = "ruff", specifier = ">=0.6.0" },
+    { name = "ruff", specifier = ">=0.14.0" },
 ]
 
 [[package]]
@@ -254,13 +252,13 @@ requires-dist = [{ name = "color-scheme-settings", editable = "packages/settings
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "black", specifier = ">=24.0.0" },
-    { name = "isort", specifier = ">=5.13.0" },
-    { name = "mypy", specifier = ">=1.11.0" },
-    { name = "pytest", specifier = ">=8.4.2" },
-    { name = "pytest-cov", specifier = ">=4.1.0" },
+    { name = "black", specifier = ">=26.0.0" },
+    { name = "isort", specifier = ">=7.0.0" },
+    { name = "mypy", specifier = ">=1.19.0" },
+    { name = "pytest", specifier = ">=9.0.0" },
+    { name = "pytest-cov", specifier = ">=7.0.0" },
     { name = "pytest-xdist", specifier = ">=3.8.0" },
-    { name = "ruff", specifier = ">=0.6.0" },
+    { name = "ruff", specifier = ">=0.14.0" },
 ]
 
 [[package]]
@@ -298,14 +296,14 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "bandit", specifier = ">=1.8.6" },
-    { name = "black", specifier = ">=24.0.0" },
-    { name = "isort", specifier = ">=5.13.0" },
-    { name = "mypy", specifier = ">=1.11.0" },
+    { name = "black", specifier = ">=26.0.0" },
+    { name = "isort", specifier = ">=7.0.0" },
+    { name = "mypy", specifier = ">=1.19.0" },
     { name = "pre-commit", specifier = ">=3.8.0" },
-    { name = "pytest", specifier = ">=8.4.2" },
-    { name = "pytest-cov", specifier = ">=4.1.0" },
+    { name = "pytest", specifier = ">=9.0.0" },
+    { name = "pytest-cov", specifier = ">=7.0.0" },
     { name = "pytest-xdist", specifier = ">=3.8.0" },
-    { name = "ruff", specifier = ">=0.6.0" },
+    { name = "ruff", specifier = ">=0.14.0" },
 ]
 
 [[package]]

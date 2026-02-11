@@ -121,11 +121,12 @@ def generate(
     try:
         # Handle dry-run mode
         if dry_run:
-            from color_scheme.cli.dry_run import GenerateDryRunReporter
             from color_scheme_settings.resolver import ConfigResolver
 
+            from color_scheme.cli.dry_run import GenerateDryRunReporter
+
             # Build CLI args for resolver
-            cli_args = {}
+            cli_args: dict[str, Any] = {}
             if backend is not None:
                 cli_args["backend"] = backend.value
             if output_dir is not None:
@@ -138,15 +139,14 @@ def generate(
             # Resolve configuration
             resolver = ConfigResolver()
             resolved = resolver.resolve(
-                cli_args=cli_args,
-                command_ctx={"command": "generate"}
+                cli_args=cli_args, command_ctx={"command": "generate"}
             )
 
             # Create reporter and run
             reporter = GenerateDryRunReporter(
                 command="color-scheme-core generate",
                 resolved_config=resolved,
-                context={"image_path": image_path}
+                context={"image_path": image_path},
             )
             reporter.run()
 
@@ -331,11 +331,12 @@ def show(
     try:
         # Handle dry-run mode
         if dry_run:
-            from color_scheme.cli.dry_run import ShowDryRunReporter
             from color_scheme_settings.resolver import ConfigResolver
 
+            from color_scheme.cli.dry_run import ShowDryRunReporter
+
             # Build CLI args for resolver
-            cli_args = {}
+            cli_args: dict[str, Any] = {}
             if backend is not None:
                 cli_args["backend"] = backend.value
             if saturation is not None:
@@ -344,15 +345,14 @@ def show(
             # Resolve configuration
             resolver = ConfigResolver()
             resolved = resolver.resolve(
-                cli_args=cli_args,
-                command_ctx={"command": "show"}
+                cli_args=cli_args, command_ctx={"command": "show"}
             )
 
             # Create reporter and run
             reporter = ShowDryRunReporter(
                 command="color-scheme-core show",
                 resolved_config=resolved,
-                context={"image_path": image_path}
+                context={"image_path": image_path},
             )
             reporter.run()
 

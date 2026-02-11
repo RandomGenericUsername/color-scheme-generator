@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import pytest
+
 from color_scheme_templates import reset
 
 

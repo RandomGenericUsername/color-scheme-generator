@@ -54,9 +54,9 @@ def uninstall(
     try:
         # Handle dry-run mode
         if dry_run:
-            from color_scheme_orchestrator.cli.dry_run import UninstallDryRunReporter
-            from color_scheme_settings import get_config
             from color_scheme_settings.resolver import ConfigResolver
+
+            from color_scheme_orchestrator.cli.dry_run import UninstallDryRunReporter
 
             # Determine backend for display
             backend_name = backend.value if backend is not None else "all"
@@ -69,15 +69,14 @@ def uninstall(
             # Resolve configuration
             resolver = ConfigResolver()
             resolved = resolver.resolve(
-                cli_args=cli_args,
-                command_ctx={"command": "uninstall"}
+                cli_args=cli_args, command_ctx={"command": "uninstall"}
             )
 
             # Create reporter and run
             reporter = UninstallDryRunReporter(
                 command="color-scheme uninstall",
                 resolved_config=resolved,
-                context={"backend": backend_name}
+                context={"backend": backend_name},
             )
             reporter.run()
 
@@ -98,6 +97,7 @@ def uninstall(
                 raise typer.Exit(1)
 
         # Determine which backends to uninstall
+        backends_to_remove: list[Backend]
         if backend is None:
             backends_to_remove = list(Backend)
         else:

@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import pytest
+
 from color_scheme_templates.errors import TemplateNotFoundError
 from color_scheme_templates.loader import TemplateLayer
 from color_scheme_templates.resolver import TemplateResolver

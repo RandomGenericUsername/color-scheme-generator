@@ -3,12 +3,13 @@
 from pathlib import Path
 
 import pytest
+from color_scheme_settings.models import ConfigSource, ResolvedConfig, ResolvedValue
+
 from color_scheme.cli.dry_run import (
     DryRunReporter,
     GenerateDryRunReporter,
     ShowDryRunReporter,
 )
-from color_scheme_settings.models import ConfigSource, ResolvedConfig, ResolvedValue
 
 
 @pytest.fixture

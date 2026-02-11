@@ -2,8 +2,9 @@
 
 from unittest.mock import MagicMock, Mock, patch
 
-from color_scheme_orchestrator.cli.main import app
 from typer.testing import CliRunner
+
+from color_scheme_orchestrator.cli.main import app
 
 runner = CliRunner()
 

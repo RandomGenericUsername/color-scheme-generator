@@ -87,7 +87,8 @@ class PywalGenerator(ColorSchemeGenerator):
             ]
 
             logger.debug("Running pywal command: %s", " ".join(cmd))
-            # Security: command hardcoded, image_path validated, shell=False, timeout set
+            # Security: command hardcoded, image_path validated,
+            # shell=False, timeout set
             subprocess.run(  # nosec B603
                 cmd,
                 capture_output=True,

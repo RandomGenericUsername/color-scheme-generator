@@ -57,9 +57,9 @@ def install(
     try:
         # Handle dry-run mode
         if dry_run:
-            from color_scheme_orchestrator.cli.dry_run import InstallDryRunReporter
-            from color_scheme_settings import get_config
             from color_scheme_settings.resolver import ConfigResolver
+
+            from color_scheme_orchestrator.cli.dry_run import InstallDryRunReporter
 
             # Determine backend for display
             backend_name = backend.value if backend is not None else "all"
@@ -72,15 +72,14 @@ def install(
             # Resolve configuration
             resolver = ConfigResolver()
             resolved = resolver.resolve(
-                cli_args=cli_args,
-                command_ctx={"command": "install"}
+                cli_args=cli_args, command_ctx={"command": "install"}
             )
 
             # Create reporter and run
             reporter = InstallDryRunReporter(
                 command="color-scheme install",
                 resolved_config=resolved,
-                context={"backend": backend_name}
+                context={"backend": backend_name},
             )
             reporter.run()
 
@@ -102,6 +101,7 @@ def install(
                 raise typer.Exit(1)
 
         # Determine which backends to install
+        backends_to_install: list[Backend]
         if backend is None:
             backends_to_install = list(Backend)
         else:

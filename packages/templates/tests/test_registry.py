@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import pytest
+
 from color_scheme_templates.errors import TemplateRegistryError
 from color_scheme_templates.registry import TemplateRegistry
 

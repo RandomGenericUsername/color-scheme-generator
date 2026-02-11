@@ -88,7 +88,8 @@ class WallustGenerator(ColorSchemeGenerator):
             ]
 
             logger.debug("Running wallust command: %s", " ".join(cmd))
-            # Security: command hardcoded, image_path validated, shell=False, timeout set
+            # Security: command hardcoded, image_path validated,
+            # shell=False, timeout set
             subprocess.run(  # nosec B603
                 cmd,
                 capture_output=True,

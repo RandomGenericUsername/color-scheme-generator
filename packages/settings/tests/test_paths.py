@@ -3,8 +3,6 @@
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
-
 from color_scheme_settings.paths import (
     APP_NAME,
     CONTAINER_OUTPUT_DIR,
@@ -64,11 +62,11 @@ class TestPathConstants:
 
     def test_container_templates_dir(self):
         """Test CONTAINER_TEMPLATES_DIR constant."""
-        assert CONTAINER_TEMPLATES_DIR == Path("/templates")
+        assert Path("/templates") == CONTAINER_TEMPLATES_DIR
 
     def test_container_output_dir(self):
         """Test CONTAINER_OUTPUT_DIR constant."""
-        assert CONTAINER_OUTPUT_DIR == Path("/output")
+        assert Path("/output") == CONTAINER_OUTPUT_DIR
 
 
 class TestGetProjectSettingsFile:

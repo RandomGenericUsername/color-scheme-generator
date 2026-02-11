@@ -1,9 +1,8 @@
 """Tests for main.py error handling paths."""
 
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock, patch
 
-import pytest
 from typer.testing import CliRunner
 
 from color_scheme_orchestrator.cli.main import app

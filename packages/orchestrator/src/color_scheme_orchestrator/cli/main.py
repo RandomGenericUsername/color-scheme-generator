@@ -1,6 +1,7 @@
 """CLI entry point for color-scheme orchestrator."""
 
 from pathlib import Path
+from typing import cast
 
 import typer
 from color_scheme.config.enums import Backend, ColorFormat
@@ -92,13 +93,16 @@ def generate(
     """
     try:
         # Load settings
-        config = get_config()
+        config = cast(UnifiedConfig, get_config())
 
         # Handle dry-run mode
         if dry_run:
-            from color_scheme_orchestrator.cli.dry_run import ContainerGenerateDryRunReporter
             from color_scheme_settings.resolver import ConfigResolver
-            
+
+            from color_scheme_orchestrator.cli.dry_run import (
+                ContainerGenerateDryRunReporter,
+            )
+
             # Build CLI args for resolver
             cli_args = {}
             if backend is not None:
@@ -109,22 +113,21 @@ def generate(
                 cli_args["formats"] = [f.value for f in formats]
             if saturation is not None:
                 cli_args["saturation"] = saturation
-            
+
             # Resolve configuration
             resolver = ConfigResolver()
             resolved = resolver.resolve(
-                cli_args=cli_args,
-                command_ctx={"command": "generate"}
+                cli_args=cli_args, command_ctx={"command": "generate"}
             )
-            
+
             # Create reporter and run
             reporter = ContainerGenerateDryRunReporter(
                 command="color-scheme generate",
                 resolved_config=resolved,
-                context={"image_path": image_path}
+                context={"image_path": image_path},
             )
             reporter.run()
-            
+
             # Exit successfully without executing
             raise typer.Exit(0)
 
@@ -149,22 +152,22 @@ def generate(
         output_dir.mkdir(parents=True, exist_ok=True)
 
         # Build CLI arguments to pass to container
-        cli_args = []
+        container_args: list[str] = []
 
         # Output directory (container will write to /output)
-        cli_args.extend(["--output-dir", "/output"])
+        container_args.extend(["--output-dir", "/output"])
 
         # Backend
-        cli_args.extend(["--backend", backend.value])
+        container_args.extend(["--backend", backend.value])
 
         # Formats
         if formats:
             for fmt in formats:
-                cli_args.extend(["--format", fmt.value])
+                container_args.extend(["--format", fmt.value])
 
         # Saturation
         if saturation is not None:
-            cli_args.extend(["--saturation", str(saturation)])
+            container_args.extend(["--saturation", str(saturation)])
 
         # Create container manager
         manager = ContainerManager(config)
@@ -177,7 +180,7 @@ def generate(
             backend=backend,
             image_path=image_path,
             output_dir=output_dir,
-            cli_args=cli_args,
+            cli_args=container_args,
         )
 
         console.print("\n[green]Color scheme generated successfully![/green]")
@@ -236,31 +239,31 @@ def show(
     """
     # Handle dry-run mode
     if dry_run:
-        from color_scheme_orchestrator.cli.dry_run import ContainerShowDryRunReporter
+        from typing import Any
+
         from color_scheme_settings.resolver import ConfigResolver
-        
+
+        from color_scheme_orchestrator.cli.dry_run import ContainerShowDryRunReporter
+
         # Build CLI args for resolver
-        cli_args = {}
+        cli_args: dict[str, Any] = {}
         if backend is not None:
             cli_args["backend"] = backend.value
         if saturation is not None:
             cli_args["saturation"] = saturation
-        
+
         # Resolve configuration
         resolver = ConfigResolver()
-        resolved = resolver.resolve(
-            cli_args=cli_args,
-            command_ctx={"command": "show"}
-        )
-        
+        resolved = resolver.resolve(cli_args=cli_args, command_ctx={"command": "show"})
+
         # Create reporter and run
         reporter = ContainerShowDryRunReporter(
             command="color-scheme show",
             resolved_config=resolved,
-            context={"image_path": image_path}
+            context={"image_path": image_path},
         )
         reporter.run()
-        
+
         # Exit successfully without executing
         raise typer.Exit(0)
 
