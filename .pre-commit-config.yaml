@@ -29,7 +29,7 @@ repos:
 
   # Python formatting and linting
   - repo: https://github.com/psf/black
-    rev: 24.1.1
+    rev: 24.10.0
     hooks:
       - id: black
         name: Format code with Black
@@ -48,7 +48,7 @@ repos:
 
   # Ruff linting (checks and fixes)
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.2.1
+    rev: v0.8.4
     hooks:
       - id: ruff
         name: Lint with Ruff
@@ -60,20 +60,20 @@ repos:
 
   # Type checking with mypy
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.8.0
+    rev: v1.13.0
     hooks:
       - id: mypy
         name: Type check with mypy
         language_version: python3.12
         additional_dependencies: [types-pillow]
-        args: [--ignore-missing-imports]
+        args: [--ignore-missing-imports, --disable-error-code=import-untyped]
         stages: [pre-commit]
         # Exclude test directories to avoid duplicate module errors
         exclude: ^(packages|src)/.*/tests/
 
   # Security scanning with Bandit
   - repo: https://github.com/PyCQA/bandit
-    rev: 1.7.5
+    rev: 1.8.0
     hooks:
       - id: bandit
         name: Security check with Bandit

@@ -14,13 +14,13 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "pytest>=8.4.2",
-    "pytest-cov>=4.1.0",
+    "pytest>=9.0.0",
+    "pytest-cov>=7.0.0",
     "pytest-xdist>=3.8.0",
-    "mypy>=1.11.0",
-    "black>=24.0.0",
-    "ruff>=0.6.0",
-    "isort>=5.13.0",
+    "mypy>=1.19.0",
+    "black>=26.0.0",
+    "ruff>=0.14.0",
+    "isort>=7.0.0",
 ]
 
 [build-system]

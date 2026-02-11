@@ -1,0 +1,121 @@
+name: Orchestrator Package CI
+
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - "packages/orchestrator/**"
+      - ".github/workflows/ci-orchestrator.yml"
+  pull_request:
+    branches: [develop, main]
+    paths:
+      - "packages/orchestrator/**"
+
+jobs:
+  lint:
+    name: Lint (Orchestrator)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install dependencies
+        run: uv sync --dev
+
+      - name: Ruff check
+        run: |
+          cd packages/orchestrator
+          uv run ruff check .
+
+      - name: Black check
+        run: |
+          cd packages/orchestrator
+          uv run black --check .
+
+      - name: isort check
+        run: |
+          cd packages/orchestrator
+          uv run isort --check .
+
+      - name: mypy type check
+        run: |
+          cd packages/orchestrator
+          uv run mypy src/
+
+  security:
+    name: Security Scan (Orchestrator)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install dependencies
+        run: uv sync --dev
+
+      - name: Bandit security scan
+        run: |
+          cd packages/orchestrator
+          uv run bandit -r src/ -f json -o bandit-report.json
+
+      - name: Upload security report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-report-orchestrator
+          path: packages/orchestrator/bandit-report.json
+
+  test:
+    name: Test (Orchestrator)
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ["3.12", "3.13"]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install dependencies
+        run: uv sync --dev
+
+      - name: Run tests with coverage
+        run: |
+          cd packages/orchestrator
+          uv run pytest -n auto --cov=src --cov-report=xml --cov-report=term
+
+      - name: Check coverage threshold
+        run: |
+          cd packages/orchestrator
+          uv run coverage report --fail-under=95
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: packages/orchestrator/coverage.xml
+          flags: orchestrator
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
