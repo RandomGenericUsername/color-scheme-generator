@@ -35,6 +35,7 @@ dev = [
     "isort>=7.0.0",
     "bandit>=1.8.6",
     "pre-commit>=3.8.0",
+    "pywal>=3.3.0",
 ]
 
 # Tool configuration (shared across workspace)
