@@ -35,17 +35,17 @@ jobs:
       - name: Ruff check
         run: |
           cd packages/core
-          uv run ruff check .
+          uv run ruff check --line-length 88 .
 
       - name: Black check
         run: |
           cd packages/core
-          uv run black --check .
+          uv run black --check --line-length 88 .
 
       - name: isort check
         run: |
           cd packages/core
-          uv run isort --check .
+          uv run isort --check --profile black --line-length 88 .
 
       - name: mypy type check
         run: |
@@ -73,7 +73,7 @@ jobs:
       - name: Bandit security scan
         run: |
           cd packages/core
-          uv run bandit -r src/ -f json -o bandit-report.json
+          uv run bandit -r src/ -ll -f json -o bandit-report.json
 
       - name: Upload security report
         if: always()
