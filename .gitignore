@@ -75,6 +75,13 @@ Thumbs.db
 .archive/
 .mypy_cache/
 .ruff_cache/
+bandit-report.json
+
+# Development reference documents (generated during implementation)
+DRY_RUN_*.md
+AI_HANDOFF_PROMPT.md
+TODO-*.txt
+*_COMPLETION_SUMMARY.md
 
 # Git worktrees
 .worktrees/
