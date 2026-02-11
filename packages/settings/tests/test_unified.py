@@ -16,10 +16,8 @@ class TestConvertKeysToLowercase:
         assert result == {"level": "INFO"}
 
     def test_nested_dict(self):
-        result = convert_keys_to_lowercase(
-            {"BACKENDS": {"PYWAL": {"ALGO": "haishoku"}}}
-        )
-        assert result == {"backends": {"pywal": {"algo": "haishoku"}}}
+        result = convert_keys_to_lowercase({"BACKENDS": {"PYWAL": {"ALGO": "wal"}}})
+        assert result == {"backends": {"pywal": {"algo": "wal"}}}
 
     def test_values_unchanged(self):
         result = convert_keys_to_lowercase({"KEY": "VALUE_UNCHANGED"})

@@ -117,7 +117,7 @@ class TestPywalBackendSettings:
     def test_default_values(self):
         """Test default pywal settings."""
         settings = PywalBackendSettings()
-        assert settings.backend_algorithm == "haishoku"
+        assert settings.backend_algorithm == "wal"
 
     def test_valid_algorithms(self):
         """Test valid pywal algorithms."""

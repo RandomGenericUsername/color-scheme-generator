@@ -302,51 +302,81 @@ class TestGenerateDryRun:
 class TestShowDelegation:
     """Tests for show command delegation to core (lines 267-278)."""
 
-    @patch("color_scheme.cli.main.show")
-    def test_show_delegates_to_core_show(self, mock_core_show):
-        """Verify core's show function is called (lines 274-278)."""
+    @patch("subprocess.run")
+    def test_show_delegates_to_core_show(self, mock_run):
+        """Verify core's show command is invoked via subprocess (lines 274-278)."""
+        from unittest.mock import MagicMock
+
+        result = MagicMock()
+        result.returncode = 0
+        mock_run.return_value = result
+
         runner.invoke(app, ["show", "/tmp/image.jpg"])
 
-        # The delegation happens, verify it was called
-        assert mock_core_show.called
+        # The delegation happens, verify subprocess.run was called
+        assert mock_run.called
+        # Check that it's calling the core show command
+        call_args = mock_run.call_args[0][0]
+        assert call_args[0] == "color-scheme-core"
+        assert call_args[1] == "show"
+        assert "/tmp/image.jpg" in call_args
 
-    @patch("color_scheme.cli.main.show")
-    def test_show_passes_image_path_to_core(self, mock_core_show):
+    @patch("subprocess.run")
+    def test_show_passes_image_path_to_core(self, mock_run):
         """Verify image path is passed to core's show."""
+        from unittest.mock import MagicMock
+
+        result = MagicMock()
+        result.returncode = 0
+        mock_run.return_value = result
+
         runner.invoke(app, ["show", "/tmp/image.jpg"])
 
         # Verify the call happened with image path
-        assert mock_core_show.called
-        call_kwargs = mock_core_show.call_args[1]
-        # Check that image_path was passed
-        assert "image_path" in call_kwargs
+        assert mock_run.called
+        call_args = mock_run.call_args[0][0]
+        assert "/tmp/image.jpg" in call_args
 
-    @patch("color_scheme.cli.main.show")
-    def test_show_passes_backend_to_core(self, mock_core_show):
+    @patch("subprocess.run")
+    def test_show_passes_backend_to_core(self, mock_run):
         """Verify backend option is passed to core."""
+        from unittest.mock import MagicMock
+
+        result = MagicMock()
+        result.returncode = 0
+        mock_run.return_value = result
+
         runner.invoke(app, ["show", "/tmp/image.jpg", "--backend", "pywal"])
 
-        assert mock_core_show.called
-        call_kwargs = mock_core_show.call_args[1]
-        assert call_kwargs.get("backend") == Backend.PYWAL
+        assert mock_run.called
+        call_args = mock_run.call_args[0][0]
+        assert "--backend" in call_args
+        assert "pywal" in call_args
 
-    @patch("color_scheme.cli.main.show")
-    def test_show_passes_saturation_to_core(self, mock_core_show):
+    @patch("subprocess.run")
+    def test_show_passes_saturation_to_core(self, mock_run):
         """Verify saturation option is passed to core."""
+        from unittest.mock import MagicMock
+
+        result = MagicMock()
+        result.returncode = 0
+        mock_run.return_value = result
+
         runner.invoke(app, ["show", "/tmp/image.jpg", "--saturation", "1.2"])
 
-        assert mock_core_show.called
-        call_kwargs = mock_core_show.call_args[1]
-        assert call_kwargs.get("saturation") == 1.2
+        assert mock_run.called
+        call_args = mock_run.call_args[0][0]
+        assert "--saturation" in call_args
+        assert "1.2" in call_args
 
 
 class TestShowErrorHandling:
     """Tests for show error handling (lines 280-282)."""
 
-    @patch("color_scheme.cli.main.show")
-    def test_show_handles_core_error(self, mock_core_show):
+    @patch("subprocess.run")
+    def test_show_handles_core_error(self, mock_run):
         """Verify errors from core are caught (lines 280-282)."""
-        mock_core_show.side_effect = Exception("Core error")
+        mock_run.side_effect = Exception("Core error")
 
         result = runner.invoke(app, ["show", "/tmp/image.jpg"])
 

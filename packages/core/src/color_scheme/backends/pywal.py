@@ -97,7 +97,11 @@ class PywalGenerator(ColorSchemeGenerator):
 
             if result.returncode != 0:
                 error_msg = result.stderr or result.stdout or "Unknown error"
-                logger.error("Pywal command failed with exit code %d: %s", result.returncode, error_msg)
+                logger.error(
+                    "Pywal command failed with exit code %d: %s",
+                    result.returncode,
+                    error_msg,
+                )
                 raise subprocess.CalledProcessError(
                     result.returncode, cmd, output=result.stdout, stderr=result.stderr
                 )

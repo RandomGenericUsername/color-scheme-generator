@@ -31,7 +31,7 @@ default_backend = "pywal"
 saturation_adjustment = 1.5
 
 [backends.pywal]
-backend_algorithm = "haishoku"
+backend_algorithm = "wal"
 
 [backends.wallust]
 backend_type = "resized"
@@ -108,7 +108,7 @@ def sample_config_dict() -> dict[str, Any]:
         },
         "backends": {
             "pywal": {
-                "backend_algorithm": "haishoku",
+                "backend_algorithm": "wal",
             },
             "wallust": {
                 "backend_type": "resized",

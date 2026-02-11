@@ -23,7 +23,7 @@ def sample_settings_dict():
             "saturation_adjustment": 1.5,
         },
         "backends": {
-            "pywal": {"backend_algorithm": "haishoku"},
+            "pywal": {"backend_algorithm": "wal"},
             "wallust": {"backend_type": "resized"},
             "custom": {"algorithm": "kmeans", "n_clusters": 16},
         },

@@ -29,7 +29,7 @@ default_backend = "pywal"
 saturation_adjustment = 1.0
 
 [backends.pywal]
-backend_algorithm = "haishoku"
+backend_algorithm = "wal"
 
 [backends.wallust]
 backend_type = "resized"

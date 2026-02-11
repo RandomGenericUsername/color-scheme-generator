@@ -86,7 +86,7 @@ class TestBackendDefaults:
 
     def test_pywal_backend_algorithm(self):
         """Test pywal backend algorithm default."""
-        assert defaults.pywal_backend_algorithm == "haishoku"
+        assert defaults.pywal_backend_algorithm == "wal"
         assert isinstance(defaults.pywal_backend_algorithm, str)
 
     def test_wallust_backend_type(self):
