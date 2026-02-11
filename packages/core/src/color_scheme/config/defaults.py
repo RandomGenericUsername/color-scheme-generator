@@ -26,7 +26,7 @@ default_backend = "pywal"
 saturation_adjustment = 1.0
 
 # Backend-specific defaults
-pywal_backend_algorithm = "haishoku"
+pywal_backend_algorithm = "wal"
 wallust_backend_type = "resized"
 custom_algorithm = "kmeans"
 custom_n_clusters = 16

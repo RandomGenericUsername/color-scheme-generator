@@ -267,18 +267,25 @@ def show(
         # Exit successfully without executing
         raise typer.Exit(0)
 
-    # Import core's show implementation
-    from color_scheme.cli.main import show as core_show_colors
-
     # Delegate to core - it runs on host, no container needed
+    import subprocess
+
     try:
-        # Call core's show function directly
-        # Typer commands are regular functions, no .callback needed
-        core_show_colors(
-            image_path=image_path,
-            backend=backend,
-            saturation=saturation,
-        )
+        # Build command to invoke core's show through subprocess
+        # This properly invokes the Typer command instead of calling the function directly
+        cmd = ["color-scheme-core", "show", str(image_path)]
+
+        if backend is not None:
+            cmd.extend(["--backend", backend.value])
+
+        if saturation is not None:
+            cmd.extend(["--saturation", str(saturation)])
+
+        # Run the core command in a subprocess
+        result = subprocess.run(cmd, check=False)
+
+        if result.returncode != 0:
+            raise typer.Exit(result.returncode)
 
     except Exception as e:
         console.print(f"[red]Error:[/red] {str(e)}")
