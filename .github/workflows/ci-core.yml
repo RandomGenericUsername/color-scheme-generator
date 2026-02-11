@@ -30,7 +30,7 @@ jobs:
         run: pip install uv
 
       - name: Install dependencies
-        run: uv sync --dev
+        run: uv sync --dev --all-packages
 
       - name: Ruff check
         run: |
@@ -68,7 +68,7 @@ jobs:
         run: pip install uv
 
       - name: Install dependencies
-        run: uv sync --dev
+        run: uv sync --dev --all-packages
 
       - name: Bandit security scan
         run: |
@@ -102,7 +102,7 @@ jobs:
         run: pip install uv
 
       - name: Install dependencies
-        run: uv sync --dev
+        run: uv sync --dev --all-packages
 
       - name: Run tests with coverage
         run: |
