@@ -272,7 +272,7 @@ def show(
 
     try:
         # Build command to invoke core's show through subprocess
-        # This properly invokes the Typer command instead of calling the function directly
+        # Invokes the Typer command instead of calling the function directly
         cmd = ["color-scheme-core", "show", str(image_path)]
 
         if backend is not None:
