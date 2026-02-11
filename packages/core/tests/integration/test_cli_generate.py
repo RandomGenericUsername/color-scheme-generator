@@ -24,13 +24,20 @@ class TestCLIGenerate:
     def test_generate_with_defaults(self, runner, test_image, tmp_path):
         """Test generate command with default options."""
         # Use tmp_path as output directory
+        # Use --backend custom to avoid requiring ImageMagick in CI
         result = runner.invoke(
             app,
-            ["generate", str(test_image), "--output-dir", str(tmp_path)],
+            [
+                "generate",
+                str(test_image),
+                "--output-dir",
+                str(tmp_path),
+                "--backend",
+                "custom",
+            ],
         )
 
         assert result.exit_code == 0
-        assert "Auto-detected backend:" in result.stdout
         assert "Generated color scheme" in result.stdout
 
         # Verify some output files were created
@@ -61,6 +68,7 @@ class TestCLIGenerate:
 
     def test_generate_with_formats(self, runner, test_image, tmp_path):
         """Test generate command with specific format selection."""
+        # Use --backend custom to avoid requiring ImageMagick in CI
         result = runner.invoke(
             app,
             [
@@ -68,6 +76,8 @@ class TestCLIGenerate:
                 str(test_image),
                 "--output-dir",
                 str(tmp_path),
+                "--backend",
+                "custom",
                 "--format",
                 "json",
                 "--format",
