@@ -6,10 +6,7 @@ from pathlib import Path
 import pytest
 
 from color_scheme.config.enums import Backend, ColorFormat
-from color_scheme.core.exceptions import (
-    OutputWriteError,
-    TemplateRenderError,
-)
+from color_scheme.core.exceptions import OutputWriteError, TemplateRenderError
 from color_scheme.core.types import Color, ColorScheme
 from color_scheme.output.manager import OutputManager
 
@@ -199,47 +196,43 @@ class TestErrorHandling:
 
     def test_permission_denied_write(self, manager, color_scheme, tmp_path):
         """Test error when permission denied during write."""
+        from pathlib import Path as PathlibPath
+        from unittest.mock import patch
+
         output_dir = tmp_path / "output"
         output_dir.mkdir()
 
-        # Create a read-only file
-        output_file = output_dir / "colors.json"
-        output_file.touch()
-        output_file.chmod(0o444)
-
         formats = [ColorFormat.JSON]
 
-        try:
+        # Mock write_text to raise PermissionError
+        with patch.object(
+            PathlibPath, "write_text", side_effect=PermissionError("Permission denied")
+        ):
             with pytest.raises(OutputWriteError) as exc_info:
                 manager.write_outputs(color_scheme, output_dir, formats)
 
             assert "colors.json" in exc_info.value.file_path
             assert "Permission denied" in exc_info.value.reason
-        finally:
-            # Cleanup - restore write permission
-            output_file.chmod(0o644)
 
     def test_permission_denied_binary_write(self, manager, color_scheme, tmp_path):
         """Test error when permission denied during binary write."""
+        from pathlib import Path as PathlibPath
+        from unittest.mock import patch
+
         output_dir = tmp_path / "output"
         output_dir.mkdir()
 
-        # Create a read-only file
-        output_file = output_dir / "colors.sequences"
-        output_file.touch()
-        output_file.chmod(0o444)
-
         formats = [ColorFormat.SEQUENCES]
 
-        try:
+        # Mock write_bytes to raise PermissionError
+        with patch.object(
+            PathlibPath, "write_bytes", side_effect=PermissionError("Permission denied")
+        ):
             with pytest.raises(OutputWriteError) as exc_info:
                 manager.write_outputs(color_scheme, output_dir, formats)
 
             assert "colors.sequences" in exc_info.value.file_path
             assert "Permission denied" in exc_info.value.reason
-        finally:
-            # Cleanup - restore write permission
-            output_file.chmod(0o644)
 
     def test_oserror_write_file(self, manager, color_scheme, tmp_path):
         """Test OSError handling in _write_file."""
