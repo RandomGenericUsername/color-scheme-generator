@@ -350,7 +350,7 @@ push: ## Run GitHub Actions workflows locally (add SMOKE=true for smoke tests)
 		echo -e "$(BLUE)───────────────────────────────────────────────────────────$(NC)" | tee -a "$$LOG_FILE"; \
 		echo -e "$(BLUE)PHASE 1: Standard CI Workflows$(NC)" | tee -a "$$LOG_FILE"; \
 		echo -e "$(BLUE)───────────────────────────────────────────────────────────$(NC)" | tee -a "$$LOG_FILE"; \
-		./bin/act push 2>&1 | tee -a "$$LOG_FILE"; \
+		./bin/act push --container-options "--user $$(id -u):$$(id -g)" 2>&1 | tee -a "$$LOG_FILE"; \
 		STANDARD_EXIT=$${PIPESTATUS[0]}; \
 		echo -e "" | tee -a "$$LOG_FILE"; \
 		if [ $$STANDARD_EXIT -eq 0 ]; then \
@@ -361,17 +361,17 @@ push: ## Run GitHub Actions workflows locally (add SMOKE=true for smoke tests)
 			echo -e "$(BLUE)───────────────────────────────────────────────────────────$(NC)" | tee -a "$$LOG_FILE"; \
 			SMOKE_FAILED=0; \
 			echo -e "$(BLUE)Running: Custom Backend Smoke Test$(NC)" | tee -a "$$LOG_FILE"; \
-			./bin/act workflow_dispatch -W .github/workflows/smoke-test-custom.yml 2>&1 | tee -a "$$LOG_FILE"; \
+			./bin/act workflow_dispatch -W .github/workflows/smoke-test-custom.yml --container-options "--user $$(id -u):$$(id -g)" 2>&1 | tee -a "$$LOG_FILE"; \
 			ACT_EXIT=$${PIPESTATUS[0]}; \
 			if [ $$ACT_EXIT -ne 0 ]; then SMOKE_FAILED=$$((SMOKE_FAILED + 1)); fi; \
 			echo -e "" | tee -a "$$LOG_FILE"; \
 			echo -e "$(BLUE)Running: Pywal Backend Smoke Test$(NC)" | tee -a "$$LOG_FILE"; \
-			./bin/act workflow_dispatch -W .github/workflows/smoke-test-pywal.yml 2>&1 | tee -a "$$LOG_FILE"; \
+			./bin/act workflow_dispatch -W .github/workflows/smoke-test-pywal.yml --container-options "--user $$(id -u):$$(id -g)" 2>&1 | tee -a "$$LOG_FILE"; \
 			ACT_EXIT=$${PIPESTATUS[0]}; \
 			if [ $$ACT_EXIT -ne 0 ]; then SMOKE_FAILED=$$((SMOKE_FAILED + 1)); fi; \
 			echo -e "" | tee -a "$$LOG_FILE"; \
 			echo -e "$(BLUE)Running: Wallust Backend Smoke Test$(NC)" | tee -a "$$LOG_FILE"; \
-			./bin/act workflow_dispatch -W .github/workflows/smoke-test-wallust.yml 2>&1 | tee -a "$$LOG_FILE"; \
+			./bin/act workflow_dispatch -W .github/workflows/smoke-test-wallust.yml --container-options "--user $$(id -u):$$(id -g)" 2>&1 | tee -a "$$LOG_FILE"; \
 			ACT_EXIT=$${PIPESTATUS[0]}; \
 			if [ $$ACT_EXIT -ne 0 ]; then SMOKE_FAILED=$$((SMOKE_FAILED + 1)); fi; \
 			echo -e "" | tee -a "$$LOG_FILE"; \
@@ -394,7 +394,7 @@ push: ## Run GitHub Actions workflows locally (add SMOKE=true for smoke tests)
 		echo -e "$(YELLOW)Tip: Add SMOKE=true to include smoke tests$(NC)" | tee -a "$$LOG_FILE"; \
 		echo -e "$(BLUE)═══════════════════════════════════════════════════════════$(NC)" | tee -a "$$LOG_FILE"; \
 		echo -e "" | tee -a "$$LOG_FILE"; \
-		./bin/act push 2>&1 | tee -a "$$LOG_FILE"; \
+		./bin/act push --container-options "--user $$(id -u):$$(id -g)" 2>&1 | tee -a "$$LOG_FILE"; \
 		EXIT_CODE=$${PIPESTATUS[0]}; \
 	fi; \
 	echo -e "" | tee -a "$$LOG_FILE"; \
