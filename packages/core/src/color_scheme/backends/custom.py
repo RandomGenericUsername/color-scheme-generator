@@ -10,10 +10,7 @@ from sklearn.cluster import KMeans  # type: ignore[import-untyped]
 from color_scheme.config.config import AppConfig
 from color_scheme.config.enums import ColorAlgorithm
 from color_scheme.core.base import ColorSchemeGenerator
-from color_scheme.core.exceptions import (
-    ColorExtractionError,
-    InvalidImageError,
-)
+from color_scheme.core.exceptions import ColorExtractionError, InvalidImageError
 from color_scheme.core.types import Color, ColorScheme, GeneratorConfig
 
 logger = logging.getLogger(__name__)
@@ -78,8 +75,7 @@ class CustomGenerator(ColorSchemeGenerator):
 
         try:
             # Load and process image
-            img = Image.open(image_path)
-            img = img.convert("RGB")
+            img: Image.Image = Image.open(image_path).convert("RGB")
             logger.debug("Loaded image: %s", img.size)
 
             # Extract colors using K-means

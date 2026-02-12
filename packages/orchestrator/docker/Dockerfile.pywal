@@ -11,7 +11,16 @@ RUN apk add --no-cache \
     libffi-dev \
     openblas-dev \
     lapack-dev \
-    imagemagick
+    imagemagick \
+    jpeg-dev
+
+# Fix ImageMagick 7 security policy to allow piping for color extraction
+# Alpine's default policy disables piping - remove the restrictive coder policies
+RUN for policy_file in /etc/ImageMagick-7/policy.xml /etc/ImageMagick-6/policy.xml; do \
+    if [ -f "$policy_file" ]; then \
+    sed -i '/<policy domain="coder"/d' "$policy_file"; \
+    fi; \
+    done
 
 # Install pywal and its backend dependencies
 RUN pip install --no-cache-dir \
