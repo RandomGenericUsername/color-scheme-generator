@@ -1,0 +1,116 @@
+name: Settings Package CI
+
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - "packages/settings/**"
+      - ".github/workflows/ci-settings.yml"
+  pull_request:
+    branches: [develop, main]
+    paths:
+      - "packages/settings/**"
+
+jobs:
+  lint:
+    name: Lint (Settings)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install dependencies
+        run: uv sync --dev --all-packages
+
+      - name: Ruff check
+        run: |
+          cd packages/settings
+          uv run ruff check --line-length 88 .
+
+      - name: Black check
+        run: |
+          cd packages/settings
+          uv run black --check --line-length 88 .
+
+      - name: isort check
+        run: |
+          cd packages/settings
+          uv run isort --check --profile black --line-length 88 .
+
+  security:
+    name: Security Scan (Settings)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install dependencies
+        run: uv sync --dev --all-packages
+
+      - name: Bandit security scan
+        run: |
+          cd packages/settings
+          uv run bandit -r src/ -ll -f json -o bandit-report.json
+
+      - name: Upload security report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-report-settings
+          path: packages/settings/bandit-report.json
+
+  test:
+    name: Test (Settings)
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ["3.12", "3.13"]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install dependencies
+        run: uv sync --dev --all-packages
+
+      - name: Run tests with coverage
+        run: |
+          cd packages/settings
+          uv run pytest -n auto --cov=src --cov-report=xml --cov-report=term
+
+      - name: Check coverage threshold
+        run: |
+          cd packages/settings
+          uv run coverage report --fail-under=95
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: packages/settings/coverage.xml
+          flags: settings
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false

@@ -3,16 +3,13 @@
 import json
 import logging
 import shutil
-import subprocess
+import subprocess  # nosec B404 - Required for external tool invocation
 from pathlib import Path
 from typing import Any
 
 from color_scheme.config.config import AppConfig
 from color_scheme.core.base import ColorSchemeGenerator
-from color_scheme.core.exceptions import (
-    ColorExtractionError,
-    InvalidImageError,
-)
+from color_scheme.core.exceptions import ColorExtractionError, InvalidImageError
 from color_scheme.core.types import Color, ColorScheme, GeneratorConfig
 
 logger = logging.getLogger(__name__)
@@ -76,19 +73,24 @@ class WallustGenerator(ColorSchemeGenerator):
             backend_settings = config.get_backend_settings(self.settings)
             backend_type = backend_settings.get("backend_type", "resized")
 
-            # Run wallust with JSON output
+            # Run wallust
+            # Note: wallust doesn't output JSON to stdout,
+            # it writes to ~/.cache/wallust/
             cmd = [
                 "wallust",
                 "run",
                 str(image_path),
                 "--backend",
                 backend_type,
-                "-s",  # Skip generating templates
-                "-j",  # JSON output
+                "-s",  # Skip setting terminal sequences
+                "-T",  # Skip templating
+                "-q",  # Quiet mode
             ]
 
             logger.debug("Running wallust command: %s", " ".join(cmd))
-            result = subprocess.run(
+            # Security: command hardcoded, image_path validated,
+            # shell=False, timeout set
+            subprocess.run(  # nosec B603
                 cmd,
                 capture_output=True,
                 text=True,
@@ -98,8 +100,38 @@ class WallustGenerator(ColorSchemeGenerator):
 
             logger.debug("Wallust completed successfully")
 
-            # Parse JSON output
-            colors_data = json.loads(result.stdout)
+            # Find and read the palette file from cache
+            cache_dir = Path.home() / ".cache" / "wallust"
+            if not cache_dir.exists():
+                raise ColorExtractionError(
+                    self.backend_name, "Wallust cache directory not found"
+                )
+
+            # Find the subdirectory (wallust creates a hash-based subdir)
+            subdirs = [d for d in cache_dir.iterdir() if d.is_dir()]
+            if not subdirs:
+                raise ColorExtractionError(
+                    self.backend_name, "No cache subdirectory found"
+                )
+
+            # Use the most recently created subdirectory
+            subdir = max(subdirs, key=lambda d: d.stat().st_mtime)
+
+            # Find the palette file (usually the one with the longest name)
+            palette_files = [
+                f for f in subdir.iterdir() if f.is_file() and f.stat().st_size < 10000
+            ]
+            if not palette_files:
+                raise ColorExtractionError(
+                    self.backend_name, "No palette file found in cache"
+                )
+
+            # Use the file with the longest name (the full palette file)
+            palette_file = max(palette_files, key=lambda f: len(f.name))
+
+            logger.debug("Reading palette from: %s", palette_file)
+            with palette_file.open() as f:
+                colors_data = json.load(f)
 
             # Parse colors
             scheme = self._parse_colors(colors_data, image_path)

@@ -8,7 +8,6 @@ from color_scheme.backends.custom import CustomGenerator
 from color_scheme.backends.pywal import PywalGenerator
 from color_scheme.backends.wallust import WallustGenerator
 from color_scheme.config.enums import Backend
-from color_scheme.config.settings import Settings
 from color_scheme.core.exceptions import BackendNotAvailableError
 from color_scheme.factory import BackendFactory
 
@@ -17,14 +16,9 @@ class TestBackendFactory:
     """Tests for BackendFactory."""
 
     @pytest.fixture
-    def settings(self):
-        """Get settings."""
-        return Settings.get()
-
-    @pytest.fixture
-    def factory(self, settings):
+    def factory(self, app_config):
         """Create BackendFactory."""
-        return BackendFactory(settings)
+        return BackendFactory(app_config)
 
     def test_create_custom_backend(self, factory):
         """Test creating custom backend."""

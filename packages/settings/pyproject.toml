@@ -1,0 +1,65 @@
+[project]
+name = "color-scheme-settings"
+version = "0.1.0"
+description = "Shared layered configuration system for color-scheme"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+authors = [
+    { name = "Juan David", email = "jdavidth.01@gmail.com" }
+]
+
+dependencies = [
+    "pydantic>=2.11.9",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.0",
+    "pytest-cov>=7.0.0",
+    "pytest-xdist>=3.8.0",
+    "mypy>=1.19.0",
+    "black>=26.0.0",
+    "ruff>=0.14.0",
+    "isort>=7.0.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/color_scheme_settings"]
+
+[tool.black]
+line-length = 88
+target-version = ["py312"]
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "C4", "UP", "ARG", "SIM", "PTH", "N"]
+ignore = []
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+"tests/**/*.py" = ["ARG", "PTH"]
+
+[tool.mypy]
+python_version = "3.12"
+check_untyped_defs = true
+disallow_incomplete_defs = true
+warn_return_any = true
+warn_unused_configs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --strict-markers --tb=short"

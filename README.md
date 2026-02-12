@@ -37,11 +37,11 @@ color-scheme generate wallpaper.png --backend wallust
 
 ## Documentation
 
-- [Installation Guide](docs/user-guide/installation.md)
-- [Configuration Guide](docs/user-guide/configuration.md)
-- [CLI Reference](docs/user-guide/cli-reference.md)
-- [Backend Documentation](docs/user-guide/backends.md)
-- [Contributing Guide](docs/development/contributing.md)
+- [Quick Start Tutorial](docs/tutorials/quick-start.md)
+- [CLI Reference](docs/reference/cli/core-commands.md)
+- [Configuration Reference](docs/reference/configuration/settings-model.md)
+- [Backend Documentation](docs/reference/backends/pywal.md)
+- [How to Contribute](docs/how-to/contribute.md)
 
 ## Development
 
@@ -58,26 +58,25 @@ cd packages/core
 uv run pytest
 ```
 
-See [Contributing Guide](docs/development/contributing.md) for full workflow.
+See [Developer Setup Tutorial](docs/tutorials/developer-setup.md) for full environment setup.
 
 ## Architecture
 
-This is a monorepo with two packages:
+This is a monorepo with three packages:
 
 - **color-scheme-core**: Standalone color extraction and generation
 - **color-scheme-orchestrator**: Container orchestration layer
+- **color-scheme-settings**: Shared configuration system
 
-Both expose the same `color-scheme` CLI. Choose based on your needs:
+Both core and orchestrator expose the same `color-scheme` CLI. Choose based on your needs:
 - Core: Direct installation, you manage dependencies
 - Orchestrator: Containerized, isolated execution
 
-See [Architecture Design](docs/plans/2026-01-18-monorepo-architecture-design.md) for details.
+See [Architecture Explanation](docs/explanations/architecture.md) for details.
 
 ## Project Status
 
-Current version: **Phase 1 (Foundation)** - v0.1.0
-
-See [Implementation Progress](docs/implementation-progress.md) for roadmap.
+Current version: **v0.1.0**
 
 ## License
 

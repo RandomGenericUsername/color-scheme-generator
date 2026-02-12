@@ -1,16 +1,18 @@
 """CLI entry point for color-scheme."""
 
 import logging
-import sys
 from pathlib import Path
+from typing import Any, Protocol, cast
 
 import typer
+from color_scheme_settings import configure, get_config
+from pydantic import BaseModel, ConfigDict, Field
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
+from color_scheme.config.config import AppConfig
 from color_scheme.config.enums import Backend, ColorFormat
-from color_scheme.config.settings import Settings
 from color_scheme.core.exceptions import (
     BackendNotAvailableError,
     ColorExtractionError,
@@ -22,6 +24,23 @@ from color_scheme.core.exceptions import (
 from color_scheme.core.types import GeneratorConfig
 from color_scheme.factory import BackendFactory
 from color_scheme.output.manager import OutputManager
+
+
+class CoreOnlyConfig(BaseModel):
+    """Configuration for standalone core usage (without orchestrator)."""
+
+    model_config = ConfigDict(frozen=True)
+    core: AppConfig = Field(default_factory=AppConfig)
+
+
+class HasCoreConfig(Protocol):
+    """Protocol for configs that have a .core attribute."""
+
+    core: AppConfig
+
+
+# Bootstrap settings for standalone core usage
+configure(CoreOnlyConfig)
 
 app = typer.Typer(
     name="color-scheme",
@@ -35,7 +54,7 @@ logger = logging.getLogger(__name__)
 
 
 @app.command()
-def version():
+def version() -> None:
     """Show version information."""
     from color_scheme import __version__
 
@@ -48,25 +67,25 @@ def generate(
         ...,
         help="Path to source image",
     ),
-    output_dir: Path = typer.Option(
+    output_dir: Path | None = typer.Option(
         None,
         "--output-dir",
         "-o",
         help="Output directory for color scheme files",
     ),
-    backend: Backend = typer.Option(
+    backend: Backend | None = typer.Option(
         None,
         "--backend",
         "-b",
         help="Backend to use for color extraction (auto-detects if not specified)",
     ),
-    formats: list[ColorFormat] = typer.Option(
+    formats: list[ColorFormat] | None = typer.Option(
         None,
         "--format",
         "-f",
         help="Output format(s) to generate (can be specified multiple times)",
     ),
-    saturation: float = typer.Option(
+    saturation: float | None = typer.Option(
         None,
         "--saturation",
         "-s",
@@ -74,7 +93,13 @@ def generate(
         max=2.0,
         help="Saturation adjustment factor (0.0-2.0, default from settings)",
     ),
-):
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        "-n",
+        help="Show what would be done without executing",
+    ),
+) -> None:
     """Generate color scheme from an image.
 
     Extracts colors from an image and generates color scheme files in various formats.
@@ -94,8 +119,42 @@ def generate(
         color-scheme generate wallpaper.jpg -s 1.5
     """
     try:
+        # Handle dry-run mode
+        if dry_run:
+            from color_scheme_settings.resolver import ConfigResolver
+
+            from color_scheme.cli.dry_run import GenerateDryRunReporter
+
+            # Build CLI args for resolver
+            cli_args: dict[str, Any] = {}
+            if backend is not None:
+                cli_args["backend"] = backend.value
+            if output_dir is not None:
+                cli_args["output_dir"] = str(output_dir)
+            if formats is not None:
+                cli_args["formats"] = [f.value for f in formats]
+            if saturation is not None:
+                cli_args["saturation"] = saturation
+
+            # Resolve configuration
+            resolver = ConfigResolver()
+            resolved = resolver.resolve(
+                cli_args=cli_args, command_ctx={"command": "generate"}
+            )
+
+            # Create reporter and run
+            reporter = GenerateDryRunReporter(
+                command="color-scheme-core generate",
+                resolved_config=resolved,
+                context={"image_path": image_path},
+            )
+            reporter.run()
+
+            # Exit successfully without executing
+            raise typer.Exit(0)
+
         # Load settings
-        settings = Settings.get()
+        config = cast(HasCoreConfig, get_config())
 
         # Validate image path
         if not image_path.exists():
@@ -107,7 +166,7 @@ def generate(
             raise typer.Exit(1)
 
         # Create backend factory
-        factory = BackendFactory(settings)
+        factory = BackendFactory(config.core)
 
         # Auto-detect backend if not specified
         if backend is None:
@@ -117,7 +176,7 @@ def generate(
             console.print(f"[cyan]Using backend:[/cyan] {backend.value}")
 
         # Build GeneratorConfig with overrides
-        overrides = {}
+        overrides: dict[str, Any] = {}
         if output_dir is not None:
             overrides["output_dir"] = output_dir
         if saturation is not None:
@@ -125,7 +184,7 @@ def generate(
         if formats is not None:
             overrides["formats"] = formats
 
-        config = GeneratorConfig.from_settings(settings, **overrides)
+        generator_config = GeneratorConfig.from_settings(config.core, **overrides)
 
         # Create generator
         console.print("[cyan]Creating generator...[/cyan]")
@@ -133,35 +192,36 @@ def generate(
 
         # Generate color scheme
         console.print(f"[cyan]Extracting colors from:[/cyan] {image_path}")
-        color_scheme = generator.generate(image_path, config)
+        color_scheme = generator.generate(image_path, generator_config)
 
         # Apply saturation adjustment if specified
-        if config.saturation_adjustment is not None and config.saturation_adjustment != 1.0:
-            console.print(
-                f"[cyan]Adjusting saturation:[/cyan] {config.saturation_adjustment}"
-            )
+        if (
+            generator_config.saturation_adjustment is not None
+            and generator_config.saturation_adjustment != 1.0
+        ):
+            sat = generator_config.saturation_adjustment
+            console.print(f"[cyan]Adjusting saturation:[/cyan] {sat}")
             # Adjust all colors
-            color_scheme.background = color_scheme.background.adjust_saturation(
-                config.saturation_adjustment
-            )
-            color_scheme.foreground = color_scheme.foreground.adjust_saturation(
-                config.saturation_adjustment
-            )
-            color_scheme.cursor = color_scheme.cursor.adjust_saturation(
-                config.saturation_adjustment
-            )
+            color_scheme.background = color_scheme.background.adjust_saturation(sat)
+            color_scheme.foreground = color_scheme.foreground.adjust_saturation(sat)
+            color_scheme.cursor = color_scheme.cursor.adjust_saturation(sat)
             color_scheme.colors = [
-                c.adjust_saturation(config.saturation_adjustment)
-                for c in color_scheme.colors
+                c.adjust_saturation(sat) for c in color_scheme.colors
             ]
 
         # Write output files
-        output_manager = OutputManager(settings)
-        console.print(f"[cyan]Writing output files to:[/cyan] {config.output_dir}")
+        output_manager = OutputManager(config.core)
+        if generator_config.output_dir is None:
+            raise ValueError("output_dir must be configured for generate command")
+        if generator_config.formats is None:
+            raise ValueError("formats must be configured for generate command")
+        console.print(
+            f"[cyan]Writing output files to:[/cyan] {generator_config.output_dir}"
+        )
         output_manager.write_outputs(
             color_scheme,
-            config.output_dir,
-            config.formats,
+            generator_config.output_dir,
+            generator_config.formats,
         )
 
         # Display success message with file list
@@ -172,8 +232,8 @@ def generate(
         table.add_column("Format", style="cyan")
         table.add_column("File Path", style="green")
 
-        for fmt in config.formats:
-            file_path = config.output_dir / f"colors.{fmt.value}"
+        for fmt in generator_config.formats:
+            file_path = generator_config.output_dir / f"colors.{fmt.value}"
             table.add_row(fmt.value, str(file_path))
 
         console.print(table)
@@ -184,8 +244,12 @@ def generate(
         raise typer.Exit(1)
 
     except BackendNotAvailableError as e:
-        console.print(f"[red]Error:[/red] Backend '{e.backend}' not available: {e.reason}")
-        console.print("\n[yellow]Tip:[/yellow] Try auto-detection or use a different backend")
+        console.print(
+            f"[red]Error:[/red] Backend '{e.backend}' not available: {e.reason}"
+        )
+        console.print(
+            "\n[yellow]Tip:[/yellow] Try auto-detection or use a different backend"
+        )
         logger.error("Backend not available: %s", e)
         raise typer.Exit(1)
 
@@ -227,13 +291,13 @@ def show(
         ...,
         help="Path to source image",
     ),
-    backend: Backend = typer.Option(
+    backend: Backend | None = typer.Option(
         None,
         "--backend",
         "-b",
         help="Backend to use for color extraction (auto-detects if not specified)",
     ),
-    saturation: float = typer.Option(
+    saturation: float | None = typer.Option(
         None,
         "--saturation",
         "-s",
@@ -241,7 +305,13 @@ def show(
         max=2.0,
         help="Saturation adjustment factor (0.0-2.0, default from settings)",
     ),
-):
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        "-n",
+        help="Show what would be done without executing",
+    ),
+) -> None:
     """Display color scheme from an image in the terminal.
 
     Extracts colors from an image and displays them in a formatted table
@@ -259,8 +329,38 @@ def show(
         color-scheme show wallpaper.jpg -s 1.5
     """
     try:
+        # Handle dry-run mode
+        if dry_run:
+            from color_scheme_settings.resolver import ConfigResolver
+
+            from color_scheme.cli.dry_run import ShowDryRunReporter
+
+            # Build CLI args for resolver
+            cli_args: dict[str, Any] = {}
+            if backend is not None:
+                cli_args["backend"] = backend.value
+            if saturation is not None:
+                cli_args["saturation"] = saturation
+
+            # Resolve configuration
+            resolver = ConfigResolver()
+            resolved = resolver.resolve(
+                cli_args=cli_args, command_ctx={"command": "show"}
+            )
+
+            # Create reporter and run
+            reporter = ShowDryRunReporter(
+                command="color-scheme-core show",
+                resolved_config=resolved,
+                context={"image_path": image_path},
+            )
+            reporter.run()
+
+            # Exit successfully without executing
+            raise typer.Exit(0)
+
         # Load settings
-        settings = Settings.get()
+        config = cast(HasCoreConfig, get_config())
 
         # Validate image path
         if not image_path.exists():
@@ -272,7 +372,7 @@ def show(
             raise typer.Exit(1)
 
         # Create backend factory
-        factory = BackendFactory(settings)
+        factory = BackendFactory(config.core)
 
         # Auto-detect backend if not specified
         if backend is None:
@@ -286,33 +386,28 @@ def show(
         if saturation is not None:
             overrides["saturation_adjustment"] = saturation
 
-        config = GeneratorConfig.from_settings(settings, **overrides)
+        generator_config = GeneratorConfig.from_settings(config.core, **overrides)
 
         # Create generator
         generator = factory.create(backend)
 
         # Generate color scheme
         console.print(f"[cyan]Extracting colors from:[/cyan] {image_path}")
-        color_scheme = generator.generate(image_path, config)
+        color_scheme = generator.generate(image_path, generator_config)
 
         # Apply saturation adjustment if specified
-        if config.saturation_adjustment is not None and config.saturation_adjustment != 1.0:
-            console.print(
-                f"[cyan]Adjusting saturation:[/cyan] {config.saturation_adjustment}"
-            )
+        if (
+            generator_config.saturation_adjustment is not None
+            and generator_config.saturation_adjustment != 1.0
+        ):
+            sat = generator_config.saturation_adjustment
+            console.print(f"[cyan]Adjusting saturation:[/cyan] {sat}")
             # Adjust all colors
-            color_scheme.background = color_scheme.background.adjust_saturation(
-                config.saturation_adjustment
-            )
-            color_scheme.foreground = color_scheme.foreground.adjust_saturation(
-                config.saturation_adjustment
-            )
-            color_scheme.cursor = color_scheme.cursor.adjust_saturation(
-                config.saturation_adjustment
-            )
+            color_scheme.background = color_scheme.background.adjust_saturation(sat)
+            color_scheme.foreground = color_scheme.foreground.adjust_saturation(sat)
+            color_scheme.cursor = color_scheme.cursor.adjust_saturation(sat)
             color_scheme.colors = [
-                c.adjust_saturation(config.saturation_adjustment)
-                for c in color_scheme.colors
+                c.adjust_saturation(sat) for c in color_scheme.colors
             ]
 
         # Display color scheme information
@@ -323,8 +418,13 @@ def show(
             f"[cyan]Source Image:[/cyan] {image_path}",
             f"[cyan]Backend:[/cyan] {backend.value}",
         ]
-        if config.saturation_adjustment is not None and config.saturation_adjustment != 1.0:
-            info_lines.append(f"[cyan]Saturation:[/cyan] {config.saturation_adjustment}")
+        if (
+            generator_config.saturation_adjustment is not None
+            and generator_config.saturation_adjustment != 1.0
+        ):
+            info_lines.append(
+                f"[cyan]Saturation:[/cyan] {generator_config.saturation_adjustment}"
+            )
 
         info_panel = Panel(
             "\n".join(info_lines),
@@ -398,8 +498,12 @@ def show(
         raise typer.Exit(1)
 
     except BackendNotAvailableError as e:
-        console.print(f"[red]Error:[/red] Backend '{e.backend}' not available: {e.reason}")
-        console.print("\n[yellow]Tip:[/yellow] Try auto-detection or use a different backend")
+        console.print(
+            f"[red]Error:[/red] Backend '{e.backend}' not available: {e.reason}"
+        )
+        console.print(
+            "\n[yellow]Tip:[/yellow] Try auto-detection or use a different backend"
+        )
         logger.error("Backend not available: %s", e)
         raise typer.Exit(1)
 

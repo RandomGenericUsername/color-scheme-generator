@@ -6,7 +6,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from color_scheme.backends.wallust import WallustGenerator
-from color_scheme.config.settings import Settings
 from color_scheme.core.exceptions import (
     BackendNotAvailableError,
     ColorExtractionError,
@@ -19,14 +18,9 @@ class TestWallustGenerator:
     """Tests for WallustGenerator."""
 
     @pytest.fixture
-    def settings(self):
-        """Get settings."""
-        return Settings.get()
-
-    @pytest.fixture
-    def generator(self, settings):
+    def generator(self, app_config):
         """Create WallustGenerator."""
-        return WallustGenerator(settings)
+        return WallustGenerator(app_config)
 
     @pytest.fixture
     def test_image(self):
@@ -67,14 +61,18 @@ class TestWallustGenerator:
     @patch("subprocess.run")
     @patch("shutil.which")
     def test_generate_success(
-        self, mock_which, mock_run, generator, test_image, config
+        self, mock_which, mock_run, generator, test_image, config, tmp_path
     ):
         """Test successful color generation."""
         mock_which.return_value = "/usr/bin/wallust"
 
-        # Mock wallust JSON output
-        mock_run.return_value = MagicMock()
-        mock_run.return_value.stdout = """{
+        # Create mock cache directory structure
+        cache_dir = tmp_path / ".cache" / "wallust" / "test_hash"
+        cache_dir.mkdir(parents=True)
+
+        # Create mock palette file with JSON
+        palette_file = cache_dir / "FastResize_Salience_auto_SalienceDark"
+        palette_file.write_text("""{
             "background": "#1a1a1a",
             "foreground": "#ffffff",
             "cursor": "#ff0000",
@@ -94,9 +92,14 @@ class TestWallustGenerator:
             "color13": "#dddddd",
             "color14": "#eeeeee",
             "color15": "#ffffff"
-        }"""
+        }""")
 
-        scheme = generator.generate(test_image, config)
+        # Mock subprocess to succeed
+        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
+
+        # Mock Path.home() to return tmp_path
+        with patch("pathlib.Path.home", return_value=tmp_path):
+            scheme = generator.generate(test_image, config)
 
         assert scheme.backend == "wallust"
         assert len(scheme.colors) == 16
@@ -159,31 +162,38 @@ class TestWallustGenerator:
     @patch("subprocess.run")
     @patch("shutil.which")
     def test_generate_invalid_json(
-        self, mock_which, mock_run, generator, test_image, config
+        self, mock_which, mock_run, generator, test_image, config, tmp_path
     ):
         """Test generation with invalid JSON output."""
         mock_which.return_value = "/usr/bin/wallust"
 
-        # Mock wallust output with invalid JSON
-        mock_run.return_value = MagicMock()
-        mock_run.return_value.stdout = "not valid json{"
+        # Create mock cache directory with invalid JSON file
+        cache_dir = tmp_path / ".cache" / "wallust" / "test_hash"
+        cache_dir.mkdir(parents=True)
+        palette_file = cache_dir / "palette_file"
+        palette_file.write_text("not valid json{")
 
-        with pytest.raises(ColorExtractionError) as exc_info:
-            generator.generate(test_image, config)
+        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
 
-        assert "Invalid JSON" in str(exc_info.value)
+        with patch("pathlib.Path.home", return_value=tmp_path):
+            with pytest.raises(ColorExtractionError) as exc_info:
+                generator.generate(test_image, config)
+
+        assert "wallust" in str(exc_info.value).lower()
 
     @patch("subprocess.run")
     @patch("shutil.which")
     def test_generate_with_saturation(
-        self, mock_which, mock_run, generator, test_image
+        self, mock_which, mock_run, generator, test_image, tmp_path
     ):
         """Test generation with saturation adjustment."""
         mock_which.return_value = "/usr/bin/wallust"
 
-        # Mock wallust JSON output
-        mock_run.return_value = MagicMock()
-        mock_run.return_value.stdout = """{
+        # Create mock cache directory structure
+        cache_dir = tmp_path / ".cache" / "wallust" / "test_hash"
+        cache_dir.mkdir(parents=True)
+        palette_file = cache_dir / "FastResize_Salience_auto_SalienceDark"
+        palette_file.write_text("""{
             "background": "#1a1a1a",
             "foreground": "#ffffff",
             "cursor": "#ff0000",
@@ -203,10 +213,63 @@ class TestWallustGenerator:
             "color13": "#dddddd",
             "color14": "#eeeeee",
             "color15": "#ffffff"
-        }"""
+        }""")
+
+        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
 
         config = GeneratorConfig(saturation_adjustment=1.5)
-        scheme = generator.generate(test_image, config)
+
+        with patch("pathlib.Path.home", return_value=tmp_path):
+            scheme = generator.generate(test_image, config)
 
         assert scheme.backend == "wallust"
         assert len(scheme.colors) == 16
+
+    @patch("subprocess.run")
+    @patch("shutil.which")
+    def test_generate_cache_dir_not_found(
+        self, mock_which, mock_run, generator, test_image, config, tmp_path
+    ):
+        """Test error when cache directory doesn't exist."""
+        mock_which.return_value = "/usr/bin/wallust"
+
+        with patch("pathlib.Path.home", return_value=tmp_path):
+            with pytest.raises(ColorExtractionError) as exc_info:
+                generator.generate(test_image, config)
+
+            assert "cache directory not found" in str(exc_info.value.reason).lower()
+
+    @patch("subprocess.run")
+    @patch("shutil.which")
+    def test_generate_no_cache_subdirectory(
+        self, mock_which, mock_run, generator, test_image, config, tmp_path
+    ):
+        """Test error when no subdirectory in cache."""
+        mock_which.return_value = "/usr/bin/wallust"
+
+        cache_dir = tmp_path / ".cache" / "wallust"
+        cache_dir.mkdir(parents=True)
+
+        with patch("pathlib.Path.home", return_value=tmp_path):
+            with pytest.raises(ColorExtractionError) as exc_info:
+                generator.generate(test_image, config)
+
+            assert "subdirectory" in str(exc_info.value.reason).lower()
+
+    @patch("subprocess.run")
+    @patch("shutil.which")
+    def test_generate_no_palette_file(
+        self, mock_which, mock_run, generator, test_image, config, tmp_path
+    ):
+        """Test error when no palette file in cache."""
+        mock_which.return_value = "/usr/bin/wallust"
+
+        subdir = tmp_path / ".cache" / "wallust" / "abc123"
+        subdir.mkdir(parents=True)
+        (subdir / "large.bin").write_bytes(b"x" * 15000)
+
+        with patch("pathlib.Path.home", return_value=tmp_path):
+            with pytest.raises(ColorExtractionError) as exc_info:
+                generator.generate(test_image, config)
+
+            assert "palette file" in str(exc_info.value.reason).lower()

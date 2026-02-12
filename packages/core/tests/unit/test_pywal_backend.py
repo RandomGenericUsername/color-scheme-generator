@@ -6,7 +6,6 @@ from unittest.mock import patch
 import pytest
 
 from color_scheme.backends.pywal import PywalGenerator
-from color_scheme.config.settings import Settings
 from color_scheme.core.exceptions import (
     BackendNotAvailableError,
     ColorExtractionError,
@@ -19,14 +18,9 @@ class TestPywalGenerator:
     """Tests for PywalGenerator."""
 
     @pytest.fixture
-    def settings(self):
-        """Get settings."""
-        return Settings.get()
-
-    @pytest.fixture
-    def generator(self, settings):
+    def generator(self, app_config):
         """Create PywalGenerator."""
-        return PywalGenerator(settings)
+        return PywalGenerator(app_config)
 
     @pytest.fixture
     def test_image(self):
@@ -71,6 +65,15 @@ class TestPywalGenerator:
     ):
         """Test successful color generation."""
         mock_which.return_value = "/usr/bin/wal"
+
+        # Mock subprocess.run to return success
+        from unittest.mock import MagicMock
+
+        result = MagicMock()
+        result.returncode = 0
+        result.stdout = ""
+        result.stderr = ""
+        mock_run.return_value = result
 
         # Mock pywal cache file
         cache_file = tmp_path / "colors.json"
@@ -167,7 +170,16 @@ class TestPywalGenerator:
         self, mock_which, mock_run, generator, test_image, config, tmp_path
     ):
         """Test generation when cache file doesn't exist."""
+        from unittest.mock import MagicMock
+
         mock_which.return_value = "/usr/bin/wal"
+
+        # Mock subprocess.run to return success (so the code tries to read cache)
+        result = MagicMock()
+        result.returncode = 0
+        result.stdout = ""
+        result.stderr = ""
+        mock_run.return_value = result
 
         # Mock cache file that doesn't exist
         cache_file = tmp_path / "nonexistent.json"
@@ -184,7 +196,16 @@ class TestPywalGenerator:
         self, mock_which, mock_run, generator, test_image, config, tmp_path
     ):
         """Test generation with invalid JSON in cache."""
+        from unittest.mock import MagicMock
+
         mock_which.return_value = "/usr/bin/wal"
+
+        # Mock subprocess.run to return success (so the code tries to read cache)
+        result = MagicMock()
+        result.returncode = 0
+        result.stdout = ""
+        result.stderr = ""
+        mock_run.return_value = result
 
         # Mock cache file with invalid JSON
         cache_file = tmp_path / "invalid.json"
@@ -202,7 +223,16 @@ class TestPywalGenerator:
         self, mock_which, mock_run, generator, test_image, tmp_path
     ):
         """Test generation with saturation adjustment."""
+        from unittest.mock import MagicMock
+
         mock_which.return_value = "/usr/bin/wal"
+
+        # Mock subprocess.run to return success
+        result = MagicMock()
+        result.returncode = 0
+        result.stdout = ""
+        result.stderr = ""
+        mock_run.return_value = result
 
         # Mock pywal cache file
         cache_file = tmp_path / "colors.json"

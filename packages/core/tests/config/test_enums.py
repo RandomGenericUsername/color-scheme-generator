@@ -27,7 +27,7 @@ class TestBackendEnum:
 
     def test_backend_string_representation(self):
         """Test string representation of Backend enum."""
-        assert str(Backend.PYWAL) == "Backend.PYWAL"
+        assert str(Backend.PYWAL) == "pywal"
         assert Backend.PYWAL.value == "pywal"
 
     def test_backend_equality(self):
@@ -77,7 +77,7 @@ class TestColorAlgorithmEnum:
 
     def test_color_algorithm_string_representation(self):
         """Test string representation of ColorAlgorithm enum."""
-        assert str(ColorAlgorithm.KMEANS) == "ColorAlgorithm.KMEANS"
+        assert str(ColorAlgorithm.KMEANS) == "kmeans"
         assert ColorAlgorithm.KMEANS.value == "kmeans"
 
     def test_color_algorithm_equality(self):

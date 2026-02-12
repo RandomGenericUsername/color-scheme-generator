@@ -11,19 +11,20 @@ authors = [
 
 dependencies = [
     "color-scheme-core>=0.1.0",
+    "color-scheme-settings>=0.1.0",
     "typer>=0.21.1",
     "rich>=13.0.0",
 ]
 
 [dependency-groups]
 dev = [
-    "pytest>=8.4.2",
-    "pytest-cov>=4.1.0",
+    "pytest>=9.0.0",
+    "pytest-cov>=7.0.0",
     "pytest-xdist>=3.8.0",
-    "mypy>=1.11.0",
-    "black>=24.0.0",
-    "ruff>=0.6.0",
-    "isort>=5.13.0",
+    "mypy>=1.19.0",
+    "black>=26.0.0",
+    "ruff>=0.14.0",
+    "isort>=7.0.0",
     "bandit>=1.8.6",
     "pre-commit>=3.8.0",
 ]
@@ -53,7 +54,12 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "W", "F", "I", "B", "C4", "UP", "ARG", "SIM", "PTH", "N"]
-ignore = []
+ignore = [
+    "B008",   # function calls in argument defaults (typer pattern)
+    "B904",   # raise from in except (typer.Exit pattern)
+    "B905",   # zip without strict (acceptable in most cases)
+    "SIM108", # ternary operator (readability preference)
+]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
@@ -72,7 +78,12 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = "-v --strict-markers --tb=short"
+markers = [
+    "docker: marks tests requiring docker (deselect with '-m \"not docker\"')",
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
 
-# Development: use local core package
+# Development: use workspace members
 [tool.uv.sources]
-color-scheme-core = { path = "../core", editable = true }
+color-scheme-core = { workspace = true }
+color-scheme-settings = { workspace = true }

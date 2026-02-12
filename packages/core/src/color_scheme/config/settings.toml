@@ -4,9 +4,6 @@ level = "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
 show_time = true
 show_path = false
 
-[container]
-engine = "docker" # docker | podman
-
 # Output configuration
 [output]
 directory = "$HOME/.config/color-scheme/output"
@@ -19,7 +16,7 @@ saturation_adjustment = 1.0
 
 # Backend-specific settings
 [backends.pywal]
-backend_algorithm = "haishoku"
+backend_algorithm = "wal"
 
 [backends.wallust]
 backend_type = "resized"

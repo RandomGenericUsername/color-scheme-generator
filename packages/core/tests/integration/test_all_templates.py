@@ -8,7 +8,6 @@ import pytest
 import yaml
 
 from color_scheme.config.enums import ColorFormat
-from color_scheme.config.settings import Settings
 from color_scheme.core.types import Color, ColorScheme
 from color_scheme.output.manager import OutputManager
 
@@ -16,10 +15,7 @@ from color_scheme.output.manager import OutputManager
 @pytest.fixture
 def sample_scheme():
     """Create sample color scheme for testing."""
-    colors = [
-        Color(hex=f"#{i:02X}{i:02X}{i:02X}", rgb=(i, i, i))
-        for i in range(16)
-    ]
+    colors = [Color(hex=f"#{i:02X}{i:02X}{i:02X}", rgb=(i, i, i)) for i in range(16)]
 
     return ColorScheme(
         background=Color(hex="#1A1B26", rgb=(26, 27, 38)),
@@ -33,10 +29,9 @@ def sample_scheme():
 
 
 @pytest.fixture
-def manager():
+def manager(app_config):
     """Create OutputManager instance."""
-    settings = Settings.get()
-    return OutputManager(settings)
+    return OutputManager(app_config)
 
 
 def test_json_template(manager, sample_scheme, tmp_path):

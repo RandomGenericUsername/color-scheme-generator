@@ -22,9 +22,6 @@ level = "DEBUG"
 show_time = true
 show_path = true
 
-[container]
-engine = "docker"
-
 [output]
 directory = "$HOME/.config/color-scheme/output"
 formats = ["json", "sh", "css"]
@@ -34,7 +31,7 @@ default_backend = "pywal"
 saturation_adjustment = 1.5
 
 [backends.pywal]
-backend_algorithm = "haishoku"
+backend_algorithm = "wal"
 
 [backends.wallust]
 backend_type = "resized"
@@ -101,9 +98,6 @@ def sample_config_dict() -> dict[str, Any]:
             "show_time": True,
             "show_path": False,
         },
-        "container": {
-            "engine": "docker",
-        },
         "output": {
             "directory": Path.home() / ".config" / "color-scheme" / "output",
             "formats": ["json", "sh", "css"],
@@ -114,7 +108,7 @@ def sample_config_dict() -> dict[str, Any]:
         },
         "backends": {
             "pywal": {
-                "backend_algorithm": "haishoku",
+                "backend_algorithm": "wal",
             },
             "wallust": {
                 "backend_type": "resized",

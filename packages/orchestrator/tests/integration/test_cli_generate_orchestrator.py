@@ -2,7 +2,7 @@
 
 import tempfile
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 from typer.testing import CliRunner
 
@@ -69,4 +69,6 @@ class TestOrchestratorGenerate:
         result = runner.invoke(app, ["generate"])
 
         assert result.exit_code != 0
-        assert "Missing argument" in result.output or "required" in result.output.lower()
+        assert (
+            "Missing argument" in result.output or "required" in result.output.lower()
+        )

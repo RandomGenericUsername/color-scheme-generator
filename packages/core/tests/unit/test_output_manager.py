@@ -2,16 +2,11 @@
 
 from datetime import datetime
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 
 from color_scheme.config.enums import Backend, ColorFormat
-from color_scheme.config.settings import Settings
-from color_scheme.core.exceptions import (
-    OutputWriteError,
-    TemplateRenderError,
-)
+from color_scheme.core.exceptions import OutputWriteError, TemplateRenderError
 from color_scheme.core.types import Color, ColorScheme
 from color_scheme.output.manager import OutputManager
 
@@ -19,16 +14,11 @@ from color_scheme.output.manager import OutputManager
 class TestOutputManagerInit:
     """Test OutputManager initialization."""
 
-    @pytest.fixture
-    def settings(self):
-        """Get settings."""
-        return Settings.get()
-
-    def test_init_with_settings(self, settings):
+    def test_init_with_settings(self, app_config):
         """Test initialization with settings."""
-        manager = OutputManager(settings)
+        manager = OutputManager(app_config)
 
-        assert manager.settings == settings
+        assert manager.settings == app_config
         assert manager.template_env is not None
         assert manager.template_env.loader is not None
 
@@ -44,9 +34,7 @@ class TestOutputManagerInit:
         (template_dir / "colors.json.j2").write_text('{"test": "{{ backend }}"}')
 
         # Create settings with absolute path
-        settings = AppConfig(
-            templates=TemplateSettings(directory=template_dir)
-        )
+        settings = AppConfig(templates=TemplateSettings(directory=template_dir))
 
         manager = OutputManager(settings)
 
@@ -59,14 +47,9 @@ class TestWriteOutputs:
     """Test OutputManager.write_outputs method."""
 
     @pytest.fixture
-    def settings(self):
-        """Get settings."""
-        return Settings.get()
-
-    @pytest.fixture
-    def manager(self, settings):
+    def manager(self, app_config):
         """Create OutputManager instance."""
-        return OutputManager(settings)
+        return OutputManager(app_config)
 
     @pytest.fixture
     def color_scheme(self, tmp_path):
@@ -163,14 +146,9 @@ class TestErrorHandling:
     """Test error handling in OutputManager."""
 
     @pytest.fixture
-    def settings(self):
-        """Get settings."""
-        return Settings.get()
-
-    @pytest.fixture
-    def manager(self, settings):
+    def manager(self, app_config):
         """Create OutputManager instance."""
-        return OutputManager(settings)
+        return OutputManager(app_config)
 
     @pytest.fixture
     def color_scheme(self, tmp_path):
@@ -204,8 +182,6 @@ class TestErrorHandling:
 
     def test_template_not_found(self, manager, color_scheme, tmp_path):
         """Test error when template is not found."""
-        output_dir = tmp_path / "output"
-
         # Create a fake format enum value
         # We'll patch the ColorFormat to include a non-existent format
         from unittest.mock import Mock
@@ -220,51 +196,47 @@ class TestErrorHandling:
 
     def test_permission_denied_write(self, manager, color_scheme, tmp_path):
         """Test error when permission denied during write."""
+        from pathlib import Path as PathlibPath
+        from unittest.mock import patch
+
         output_dir = tmp_path / "output"
         output_dir.mkdir()
 
-        # Create a read-only file
-        output_file = output_dir / "colors.json"
-        output_file.touch()
-        output_file.chmod(0o444)
-
         formats = [ColorFormat.JSON]
 
-        try:
+        # Mock write_text to raise PermissionError
+        with patch.object(
+            PathlibPath, "write_text", side_effect=PermissionError("Permission denied")
+        ):
             with pytest.raises(OutputWriteError) as exc_info:
                 manager.write_outputs(color_scheme, output_dir, formats)
 
             assert "colors.json" in exc_info.value.file_path
             assert "Permission denied" in exc_info.value.reason
-        finally:
-            # Cleanup - restore write permission
-            output_file.chmod(0o644)
 
     def test_permission_denied_binary_write(self, manager, color_scheme, tmp_path):
         """Test error when permission denied during binary write."""
+        from pathlib import Path as PathlibPath
+        from unittest.mock import patch
+
         output_dir = tmp_path / "output"
         output_dir.mkdir()
 
-        # Create a read-only file
-        output_file = output_dir / "colors.sequences"
-        output_file.touch()
-        output_file.chmod(0o444)
-
         formats = [ColorFormat.SEQUENCES]
 
-        try:
+        # Mock write_bytes to raise PermissionError
+        with patch.object(
+            PathlibPath, "write_bytes", side_effect=PermissionError("Permission denied")
+        ):
             with pytest.raises(OutputWriteError) as exc_info:
                 manager.write_outputs(color_scheme, output_dir, formats)
 
             assert "colors.sequences" in exc_info.value.file_path
             assert "Permission denied" in exc_info.value.reason
-        finally:
-            # Cleanup - restore write permission
-            output_file.chmod(0o644)
 
     def test_oserror_write_file(self, manager, color_scheme, tmp_path):
         """Test OSError handling in _write_file."""
-        from unittest.mock import Mock, PropertyMock
+        from unittest.mock import Mock
 
         # Mock file path that raises OSError
         mock_path = Mock(spec=Path)
@@ -280,7 +252,7 @@ class TestErrorHandling:
 
     def test_oserror_write_binary_file(self, manager, color_scheme, tmp_path):
         """Test OSError handling in _write_binary_file."""
-        from unittest.mock import Mock, PropertyMock
+        from unittest.mock import Mock
 
         # Mock file path that raises OSError
         mock_path = Mock(spec=Path)
@@ -307,7 +279,6 @@ class TestErrorHandling:
 
         def mock_get_template(name):
             template = original_get_template(name)
-            original_render = template.render
             template.render = Mock(side_effect=RuntimeError("Template error"))
             return template
 

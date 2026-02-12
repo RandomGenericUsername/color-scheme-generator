@@ -2,14 +2,13 @@
 
 import pytest
 
+from color_scheme.config.config import AppConfig
+
 
 @pytest.fixture
 def sample_settings_dict():
     """Sample settings dictionary for testing."""
     return {
-        "container": {
-            "engine": "docker",
-        },
         "logging": {
             "level": "DEBUG",
             "show_time": True,
@@ -24,9 +23,15 @@ def sample_settings_dict():
             "saturation_adjustment": 1.5,
         },
         "backends": {
-            "pywal": {"backend_algorithm": "haishoku"},
+            "pywal": {"backend_algorithm": "wal"},
             "wallust": {"backend_type": "resized"},
             "custom": {"algorithm": "kmeans", "n_clusters": 16},
         },
         "templates": {"directory": "templates"},
     }
+
+
+@pytest.fixture
+def app_config(sample_settings_dict):
+    """Create an AppConfig instance for testing."""
+    return AppConfig(**sample_settings_dict)

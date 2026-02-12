@@ -40,7 +40,10 @@ class OutputManager:
             template_dir = package_root / template_dir
 
         # Setup Jinja2 environment with StrictUndefined
-        self.template_env = Environment(
+        # NOTE: Autoescape disabled - we generate config files
+        # (CSS/JSON/YAML), not HTML. Enabling autoescape would corrupt
+        # hex colors: #FF0000 → &#35;FF0000
+        self.template_env = Environment(  # nosec B701
             loader=FileSystemLoader(str(template_dir)),
             undefined=StrictUndefined,
             trim_blocks=True,
@@ -134,14 +137,10 @@ class OutputManager:
             return content
         except TemplateNotFound as e:
             raise TemplateRenderError(
-                template_name=template_name,
-                reason="Template not found"
+                template_name=template_name, reason="Template not found"
             ) from e
         except Exception as e:
-            raise TemplateRenderError(
-                template_name=template_name,
-                reason=str(e)
-            ) from e
+            raise TemplateRenderError(template_name=template_name, reason=str(e)) from e
 
     def _convert_to_escape_sequences(self, content: str) -> bytes:
         """Convert template placeholders to actual escape sequences.
@@ -175,14 +174,10 @@ class OutputManager:
             file_path.write_bytes(content)
         except PermissionError as e:
             raise OutputWriteError(
-                file_path=str(file_path),
-                reason="Permission denied"
+                file_path=str(file_path), reason="Permission denied"
             ) from e
         except OSError as e:
-            raise OutputWriteError(
-                file_path=str(file_path),
-                reason=str(e)
-            ) from e
+            raise OutputWriteError(file_path=str(file_path), reason=str(e)) from e
 
     def _write_file(self, file_path: Path, content: str) -> None:
         """Write text content to file.
@@ -198,11 +193,7 @@ class OutputManager:
             file_path.write_text(content, encoding="utf-8")
         except PermissionError as e:
             raise OutputWriteError(
-                file_path=str(file_path),
-                reason="Permission denied"
+                file_path=str(file_path), reason="Permission denied"
             ) from e
         except OSError as e:
-            raise OutputWriteError(
-                file_path=str(file_path),
-                reason=str(e)
-            ) from e
+            raise OutputWriteError(file_path=str(file_path), reason=str(e)) from e

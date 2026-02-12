@@ -3,16 +3,13 @@
 import json
 import logging
 import shutil
-import subprocess
+import subprocess  # nosec B404 - Required for external tool invocation
 from pathlib import Path
 from typing import Any
 
 from color_scheme.config.config import AppConfig
 from color_scheme.core.base import ColorSchemeGenerator
-from color_scheme.core.exceptions import (
-    ColorExtractionError,
-    InvalidImageError,
-)
+from color_scheme.core.exceptions import ColorExtractionError, InvalidImageError
 from color_scheme.core.types import Color, ColorScheme, GeneratorConfig
 
 logger = logging.getLogger(__name__)
@@ -84,19 +81,30 @@ class PywalGenerator(ColorSchemeGenerator):
                 "-i",
                 str(image_path),
                 "-n",  # Skip setting wallpaper
-                "-q",  # Quiet mode
                 "--backend",
                 backend_arg,
             ]
 
             logger.debug("Running pywal command: %s", " ".join(cmd))
-            subprocess.run(
+            # Security: command hardcoded, image_path validated,
+            # shell=False, timeout set
+            result = subprocess.run(  # nosec B603
                 cmd,
                 capture_output=True,
                 text=True,
-                check=True,
                 timeout=30,
             )
+
+            if result.returncode != 0:
+                error_msg = result.stderr or result.stdout or "Unknown error"
+                logger.error(
+                    "Pywal command failed with exit code %d: %s",
+                    result.returncode,
+                    error_msg,
+                )
+                raise subprocess.CalledProcessError(
+                    result.returncode, cmd, output=result.stdout, stderr=result.stderr
+                )
 
             logger.debug("Pywal completed successfully")
 

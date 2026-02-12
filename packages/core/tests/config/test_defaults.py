@@ -86,7 +86,7 @@ class TestBackendDefaults:
 
     def test_pywal_backend_algorithm(self):
         """Test pywal backend algorithm default."""
-        assert defaults.pywal_backend_algorithm == "haishoku"
+        assert defaults.pywal_backend_algorithm == "wal"
         assert isinstance(defaults.pywal_backend_algorithm, str)
 
     def test_wallust_backend_type(self):
@@ -138,11 +138,11 @@ class TestTemplateDefaults:
         monkeypatch.delenv("COLOR_SCHEME_TEMPLATES")
         importlib.reload(defaults)
 
-    def test_package_templates_path(self):
-        """Test internal _package_templates variable exists and is valid."""
-        assert hasattr(defaults, "_package_templates")
-        assert isinstance(defaults._package_templates, Path)
-        assert defaults._package_templates.name == "templates"
+    def test_project_templates_path(self):
+        """Test internal _project_templates variable exists and is valid."""
+        assert hasattr(defaults, "_project_templates")
+        assert isinstance(defaults._project_templates, Path)
+        assert defaults._project_templates.name == "templates"
 
 
 class TestDefaultValueTypes:
