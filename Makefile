@@ -351,7 +351,7 @@ push: ## Run GitHub Actions workflows locally (add SMOKE=true for smoke tests)
 		echo -e "$(BLUE)PHASE 1: Standard CI Workflows$(NC)" | tee -a "$$LOG_FILE"; \
 		echo -e "$(BLUE)───────────────────────────────────────────────────────────$(NC)" | tee -a "$$LOG_FILE"; \
 		./bin/act push 2>&1 | tee -a "$$LOG_FILE"; \
-		STANDARD_EXIT=$$?; \
+		STANDARD_EXIT=$${PIPESTATUS[0]}; \
 		echo -e "" | tee -a "$$LOG_FILE"; \
 		if [ $$STANDARD_EXIT -eq 0 ]; then \
 			echo -e "$(GREEN)✓ Standard CI passed$(NC)" | tee -a "$$LOG_FILE"; \
@@ -395,7 +395,7 @@ push: ## Run GitHub Actions workflows locally (add SMOKE=true for smoke tests)
 		echo -e "$(BLUE)═══════════════════════════════════════════════════════════$(NC)" | tee -a "$$LOG_FILE"; \
 		echo -e "" | tee -a "$$LOG_FILE"; \
 		./bin/act push 2>&1 | tee -a "$$LOG_FILE"; \
-		EXIT_CODE=$$?; \
+		EXIT_CODE=$${PIPESTATUS[0]}; \
 	fi; \
 	echo -e "" | tee -a "$$LOG_FILE"; \
 	echo -e "$(BLUE)═══════════════════════════════════════════════════════════$(NC)" | tee -a "$$LOG_FILE"; \
