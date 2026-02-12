@@ -199,6 +199,109 @@ build-orchestrator: ## Build orchestrator package
 	cd $(ORCHESTRATOR_DIR) && $(UV) build
 	@echo -e "$(GREEN)✓ Orchestrator package built$(NC)"
 
+##@ Smoke Testing
+SMOKE_TEST_WALLPAPER := tests/fixtures/test-wallpaper.jpg
+SMOKE_TEST_SCRIPT := tests/smoke/run-smoke-tests.sh
+
+.PHONY: smoke-test-check-deps smoke-test-custom smoke-test-pywal smoke-test-wallust smoke-test
+
+smoke-test-check-deps: ## Check smoke test dependencies
+	@echo -e "$(BLUE)Checking smoke test dependencies...$(NC)"
+	@# Check test wallpaper exists
+	@if [ ! -f "$(SMOKE_TEST_WALLPAPER)" ]; then \
+		echo -e "$(RED)✗ Test wallpaper not found at $(SMOKE_TEST_WALLPAPER)$(NC)"; \
+		exit 1; \
+	fi
+	@echo -e "$(GREEN)✓ Test wallpaper available$(NC)"
+	@# Check ImageMagick
+	@if ! command -v magick &> /dev/null; then \
+		echo -e "$(RED)✗ ImageMagick (magick) not found$(NC)"; \
+		echo -e "$(RED)  Install: sudo apt-get install imagemagick$(NC)"; \
+		echo -e "$(RED)  Or macOS: brew install imagemagick$(NC)"; \
+		echo -e "$(RED)  Or Fedora: sudo dnf install ImageMagick$(NC)"; \
+		exit 1; \
+	fi
+	@echo -e "$(GREEN)✓ ImageMagick available: $$(magick --version | head -1)$(NC)"
+	@# Check Docker or Podman
+	@if ! command -v docker &> /dev/null && ! command -v podman &> /dev/null; then \
+		echo -e "$(RED)✗ Docker or Podman not found$(NC)"; \
+		echo -e "$(RED)  Install Docker: https://docs.docker.com/get-docker/$(NC)"; \
+		echo -e "$(RED)  Or Podman: sudo apt-get install podman$(NC)"; \
+		exit 1; \
+	fi
+	@if command -v docker &> /dev/null; then \
+		echo -e "$(GREEN)✓ Docker available: $$(docker --version)$(NC)"; \
+	else \
+		echo -e "$(GREEN)✓ Podman available: $$(podman --version)$(NC)"; \
+	fi
+	@# Check smoke test script exists
+	@if [ ! -f "$(SMOKE_TEST_SCRIPT)" ]; then \
+		echo -e "$(RED)✗ Smoke test script not found at $(SMOKE_TEST_SCRIPT)$(NC)"; \
+		exit 1; \
+	fi
+	@echo -e "$(GREEN)✓ Smoke test script available$(NC)"
+
+smoke-test-custom: smoke-test-check-deps ## Run smoke tests with custom backend only
+	@echo -e "$(BLUE)Running smoke tests: Custom Backend$(NC)"
+	@if [ "$(VERBOSE)" = "true" ]; then \
+		bash $(SMOKE_TEST_SCRIPT) --verbose $(SMOKE_TEST_WALLPAPER); \
+	else \
+		bash $(SMOKE_TEST_SCRIPT) $(SMOKE_TEST_WALLPAPER); \
+	fi
+	@echo -e "$(GREEN)✓ Custom backend smoke tests completed$(NC)"
+
+smoke-test-pywal: smoke-test-check-deps ## Run smoke tests with pywal backend only
+	@echo -e "$(BLUE)Running smoke tests: Pywal Backend$(NC)"
+	@# Check if pywal is installed
+	@if ! command -v wal &> /dev/null; then \
+		echo -e "$(YELLOW)⚠ Pywal not installed, install with: pip install pywal$(NC)"; \
+		echo -e "$(YELLOW)⊘ Skipping pywal smoke tests$(NC)"; \
+		exit 0; \
+	fi
+	@if [ "$(VERBOSE)" = "true" ]; then \
+		bash $(SMOKE_TEST_SCRIPT) --verbose $(SMOKE_TEST_WALLPAPER); \
+	else \
+		bash $(SMOKE_TEST_SCRIPT) $(SMOKE_TEST_WALLPAPER); \
+	fi
+	@echo -e "$(GREEN)✓ Pywal backend smoke tests completed$(NC)"
+
+smoke-test-wallust: smoke-test-check-deps ## Run smoke tests with wallust backend only
+	@echo -e "$(BLUE)Running smoke tests: Wallust Backend$(NC)"
+	@# Check if wallust is installed
+	@if ! command -v wallust &> /dev/null; then \
+		echo -e "$(YELLOW)⚠ Wallust not installed, install with: cargo install wallust$(NC)"; \
+		echo -e "$(YELLOW)⊘ Skipping wallust smoke tests$(NC)"; \
+		exit 0; \
+	fi
+	@if [ "$(VERBOSE)" = "true" ]; then \
+		bash $(SMOKE_TEST_SCRIPT) --verbose $(SMOKE_TEST_WALLPAPER); \
+	else \
+		bash $(SMOKE_TEST_SCRIPT) $(SMOKE_TEST_WALLPAPER); \
+	fi
+	@echo -e "$(GREEN)✓ Wallust backend smoke tests completed$(NC)"
+
+smoke-test: smoke-test-check-deps ## Run all smoke tests (all backends)
+	@echo -e "$(BLUE)Running smoke tests: All Backends$(NC)"
+	@echo -e ""
+	@# Run custom (always available)
+	@$(MAKE) smoke-test-custom
+	@echo -e ""
+	@# Run pywal if available
+	@if command -v wal &> /dev/null; then \
+		$(MAKE) smoke-test-pywal; \
+	else \
+		echo -e "$(YELLOW)⊘ Skipping pywal smoke tests (not installed)$(NC)"; \
+	fi
+	@echo -e ""
+	@# Run wallust if available
+	@if command -v wallust &> /dev/null; then \
+		$(MAKE) smoke-test-wallust; \
+	else \
+		echo -e "$(YELLOW)⊘ Skipping wallust smoke tests (not installed)$(NC)"; \
+	fi
+	@echo -e ""
+	@echo -e "$(GREEN)✓ All available smoke tests completed$(NC)"
+
 ##@ CI/CD Pipeline
 pipeline: ## Validate pipeline - simulate GitHub Actions workflows locally
 	@echo -e "$(BLUE)Running pipeline validation...$(NC)"
@@ -219,7 +322,7 @@ pipeline: ## Validate pipeline - simulate GitHub Actions workflows locally
 	@echo -e "$(GREEN)Your changes are safe to push to the cloud.$(NC)"
 	@echo -e ""
 
-push: ## Run GitHub Actions workflows locally using act
+push: ## Run GitHub Actions workflows locally (add SMOKE=true for smoke tests)
 	@echo -e "$(BLUE)Setting up GitHub Actions locally...$(NC)"
 	@if [ ! -f ./bin/act ]; then \
 		echo -e "$(BLUE)Downloading act (GitHub Actions CLI)...$(NC)"; \
@@ -231,24 +334,78 @@ push: ## Run GitHub Actions workflows locally using act
 	else \
 		echo -e "$(GREEN)✓ act already available$(NC)"; \
 	fi
+	@echo -e ""
 	@mkdir -p .logs
-	@LOG_FILE=.logs/make-push-$(shell date +%Y%m%d-%H%M%S).log; \
-	echo -e ""; \
-	echo -e "$(BLUE)Running GitHub Actions workflows locally...$(NC)"; \
-	echo -e "$(BLUE)Logs will be saved to: $$LOG_FILE$(NC)"; \
-	echo -e ""; \
-	./bin/act push 2>&1 | tee $$LOG_FILE; \
-	EXIT_CODE=$$?; \
-	echo -e ""; \
-	if [ $$EXIT_CODE -eq 0 ]; then \
-		echo -e "$(GREEN)✓ GitHub Actions simulation complete$(NC)"; \
+	@TIMESTAMP=$$(date +%Y%m%d-%H%M%S); \
+	LOG_FILE=".logs/make-push-$$TIMESTAMP.log"; \
+	if [ "$(SMOKE)" = "true" ]; then \
+		echo -e "$(BLUE)═══════════════════════════════════════════════════════════$(NC)" | tee "$$LOG_FILE"; \
+		echo -e "$(BLUE)Running GitHub Actions with SMOKE TESTS enabled$(NC)" | tee -a "$$LOG_FILE"; \
+		echo -e "$(BLUE)═══════════════════════════════════════════════════════════$(NC)" | tee -a "$$LOG_FILE"; \
+		echo -e "$(BLUE)Phase 1: Standard CI (4 package workflows)$(NC)" | tee -a "$$LOG_FILE"; \
+		echo -e "$(BLUE)Phase 2: Smoke Tests (3 backend workflows)$(NC)" | tee -a "$$LOG_FILE"; \
+		echo -e "$(BLUE)Logs: $$LOG_FILE$(NC)" | tee -a "$$LOG_FILE"; \
+		echo -e "$(BLUE)═══════════════════════════════════════════════════════════$(NC)" | tee -a "$$LOG_FILE"; \
+		echo -e "" | tee -a "$$LOG_FILE"; \
+		echo -e "$(BLUE)───────────────────────────────────────────────────────────$(NC)" | tee -a "$$LOG_FILE"; \
+		echo -e "$(BLUE)PHASE 1: Standard CI Workflows$(NC)" | tee -a "$$LOG_FILE"; \
+		echo -e "$(BLUE)───────────────────────────────────────────────────────────$(NC)" | tee -a "$$LOG_FILE"; \
+		./bin/act push 2>&1 | tee -a "$$LOG_FILE"; \
+		STANDARD_EXIT=$$?; \
+		echo -e "" | tee -a "$$LOG_FILE"; \
+		if [ $$STANDARD_EXIT -eq 0 ]; then \
+			echo -e "$(GREEN)✓ Standard CI passed$(NC)" | tee -a "$$LOG_FILE"; \
+			echo -e "" | tee -a "$$LOG_FILE"; \
+			echo -e "$(BLUE)───────────────────────────────────────────────────────────$(NC)" | tee -a "$$LOG_FILE"; \
+			echo -e "$(BLUE)PHASE 2: Smoke Test Workflows$(NC)" | tee -a "$$LOG_FILE"; \
+			echo -e "$(BLUE)───────────────────────────────────────────────────────────$(NC)" | tee -a "$$LOG_FILE"; \
+			SMOKE_FAILED=0; \
+			echo -e "$(BLUE)Running: Custom Backend Smoke Test$(NC)" | tee -a "$$LOG_FILE"; \
+			./bin/act workflow_dispatch -W .github/workflows/smoke-test-custom.yml 2>&1 | tee -a "$$LOG_FILE"; \
+			if [ $$? -ne 0 ]; then SMOKE_FAILED=$$((SMOKE_FAILED + 1)); fi; \
+			echo -e "" | tee -a "$$LOG_FILE"; \
+			echo -e "$(BLUE)Running: Pywal Backend Smoke Test$(NC)" | tee -a "$$LOG_FILE"; \
+			./bin/act workflow_dispatch -W .github/workflows/smoke-test-pywal.yml 2>&1 | tee -a "$$LOG_FILE"; \
+			if [ $$? -ne 0 ]; then SMOKE_FAILED=$$((SMOKE_FAILED + 1)); fi; \
+			echo -e "" | tee -a "$$LOG_FILE"; \
+			echo -e "$(BLUE)Running: Wallust Backend Smoke Test$(NC)" | tee -a "$$LOG_FILE"; \
+			./bin/act workflow_dispatch -W .github/workflows/smoke-test-wallust.yml 2>&1 | tee -a "$$LOG_FILE"; \
+			if [ $$? -ne 0 ]; then SMOKE_FAILED=$$((SMOKE_FAILED + 1)); fi; \
+			echo -e "" | tee -a "$$LOG_FILE"; \
+			if [ $$SMOKE_FAILED -eq 0 ]; then \
+				echo -e "$(GREEN)✓ All smoke tests passed (3/3)$(NC)" | tee -a "$$LOG_FILE"; \
+				EXIT_CODE=0; \
+			else \
+				echo -e "$(RED)✗ Some smoke tests failed ($$SMOKE_FAILED/3)$(NC)" | tee -a "$$LOG_FILE"; \
+				EXIT_CODE=1; \
+			fi; \
+		else \
+			echo -e "$(RED)✗ Standard CI failed, skipping smoke tests$(NC)" | tee -a "$$LOG_FILE"; \
+			EXIT_CODE=$$STANDARD_EXIT; \
+		fi; \
 	else \
-		echo -e "$(RED)✗ GitHub Actions simulation finished with errors$(NC)"; \
+		echo -e "$(BLUE)═══════════════════════════════════════════════════════════$(NC)" | tee "$$LOG_FILE"; \
+		echo -e "$(BLUE)Running Standard GitHub Actions Workflows$(NC)" | tee -a "$$LOG_FILE"; \
+		echo -e "$(BLUE)═══════════════════════════════════════════════════════════$(NC)" | tee -a "$$LOG_FILE"; \
+		echo -e "$(BLUE)Logs: $$LOG_FILE$(NC)" | tee -a "$$LOG_FILE"; \
+		echo -e "$(YELLOW)Tip: Add SMOKE=true to include smoke tests$(NC)" | tee -a "$$LOG_FILE"; \
+		echo -e "$(BLUE)═══════════════════════════════════════════════════════════$(NC)" | tee -a "$$LOG_FILE"; \
+		echo -e "" | tee -a "$$LOG_FILE"; \
+		./bin/act push 2>&1 | tee -a "$$LOG_FILE"; \
+		EXIT_CODE=$$?; \
 	fi; \
-	echo -e ""; \
-	echo -e "$(BLUE)📋 Full logs saved to: $$LOG_FILE$(NC)"; \
-	echo -e "$(BLUE)Review logs with: cat $$LOG_FILE$(NC)"; \
-	echo -e "$(BLUE)Search logs with: grep 'PASSED\|FAILED' $$LOG_FILE$(NC)"; \
+	echo -e "" | tee -a "$$LOG_FILE"; \
+	echo -e "$(BLUE)═══════════════════════════════════════════════════════════$(NC)" | tee -a "$$LOG_FILE"; \
+	if [ $$EXIT_CODE -eq 0 ]; then \
+		echo -e "$(GREEN)✓ GitHub Actions simulation complete$(NC)" | tee -a "$$LOG_FILE"; \
+	else \
+		echo -e "$(RED)✗ GitHub Actions simulation failed (exit: $$EXIT_CODE)$(NC)" | tee -a "$$LOG_FILE"; \
+	fi; \
+	echo -e "$(BLUE)═══════════════════════════════════════════════════════════$(NC)" | tee -a "$$LOG_FILE"; \
+	echo -e "" | tee -a "$$LOG_FILE"; \
+	echo -e "$(GREEN)📋 Full logs: $$LOG_FILE$(NC)"; \
+	echo -e "$(GREEN)View logs: cat $$LOG_FILE$(NC)"; \
+	echo -e "$(GREEN)Search: grep 'PASSED\|FAILED' $$LOG_FILE$(NC)"; \
 	echo -e ""; \
 	exit $$EXIT_CODE
 

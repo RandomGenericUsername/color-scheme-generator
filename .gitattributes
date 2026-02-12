@@ -1,0 +1,7 @@
+# Binary files
+*.jpg binary
+*.png binary
+*.gif binary
+
+# Test fixtures
+tests/fixtures/* binary

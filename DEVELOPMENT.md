@@ -148,6 +148,9 @@ Workflows are automatically triggered on push/PR:
 - `ci-settings.yml` - Runs when settings package changes
 - `ci-templates.yml` - Runs when templates package changes
 - `ci-orchestrator.yml` - Runs when orchestrator package changes
+- `smoke-test-custom.yml` - Manual smoke tests for custom backend
+- `smoke-test-pywal.yml` - Manual smoke tests for pywal backend
+- `smoke-test-wallust.yml` - Manual smoke tests for wallust backend
 
 ### What They Do
 Each workflow:
@@ -202,6 +205,121 @@ make push
 # 6. Push to GitHub if all passes
 git push origin main
 ```
+
+### Running with Smoke Tests
+
+For comprehensive end-to-end validation including real CLI command execution across all backends:
+
+```bash
+make push SMOKE=true
+```
+
+This will:
+1. **Phase 1**: Run all standard GitHub Actions workflows (lint, security, tests for 4 packages)
+2. **Phase 2**: Run end-to-end smoke tests for all 3 backends (custom, pywal, wallust)
+
+Smoke tests validate:
+- Core CLI commands with real image processing
+- Orchestrator CLI with containerized execution
+- All three backends (custom, pywal, wallust)
+- Container image building
+- Dry-run functionality
+- Settings and templates layer merging
+
+**Requirements for smoke tests:**
+- ImageMagick (`magick` command) must be installed
+- Docker or Podman must be available
+- Backend-specific tools (optional for local, required for CI):
+  - pywal: `pip install pywal`
+  - wallust: `cargo install wallust` (requires Rust toolchain)
+- Adds 5-10 minutes to test execution time
+
+#### Run Smoke Tests Directly
+
+Test individual backends without full CI:
+
+```bash
+# Test all available backends
+make smoke-test
+
+# Test specific backend
+make smoke-test-custom    # Custom backend (always available)
+make smoke-test-pywal     # Pywal backend (if installed)
+make smoke-test-wallust   # Wallust backend (if installed)
+
+# Verbose output
+make smoke-test VERBOSE=true
+make smoke-test-custom VERBOSE=true
+```
+
+#### Troubleshooting Smoke Tests
+
+**ImageMagick not found:**
+```bash
+# Ubuntu/Debian
+sudo apt-get install imagemagick
+
+# macOS
+brew install imagemagick
+
+# Fedora
+sudo dnf install ImageMagick
+
+# Verify installation
+magick --version
+```
+
+**Docker not found:**
+```bash
+# Install Docker
+# https://docs.docker.com/get-docker/
+
+# Or use Podman
+sudo apt-get install podman
+
+# Verify
+docker --version
+```
+
+**Pywal not found:**
+```bash
+pip install pywal
+wal --version
+```
+
+**Wallust not found:**
+```bash
+# Requires Rust toolchain
+cargo install wallust
+wallust --version
+```
+
+#### Smoke Test Architecture
+
+The smoke test system consists of:
+
+1. **Test Script**: `tests/smoke/run-smoke-tests.sh`
+   - Comprehensive CLI validation
+   - Tests all commands, backends, formats
+   - Detailed pass/fail/skip reporting
+
+2. **Test Fixtures**: `tests/fixtures/test-wallpaper.jpg`
+   - Sample wallpaper for testing
+   - Committed to repo for CI consistency
+
+3. **GitHub Actions Workflows**:
+   - `smoke-test-custom.yml` - Tests custom backend
+   - `smoke-test-pywal.yml` - Tests pywal backend
+   - `smoke-test-wallust.yml` - Tests wallust backend
+   - Each workflow manually triggered (`workflow_dispatch`)
+   - Separate failure reporting per backend
+
+4. **Makefile Targets**:
+   - `make smoke-test` - Run all backends
+   - `make smoke-test-custom` - Custom only
+   - `make smoke-test-pywal` - Pywal only
+   - `make smoke-test-wallust` - Wallust only
+   - `make push SMOKE=true` - CI + smoke tests
 
 ---
 

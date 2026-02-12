@@ -1,0 +1,61 @@
+name: Smoke Tests - Custom Backend
+
+on:
+  workflow_dispatch:  # Manual trigger only
+    inputs:
+      verbose:
+        description: 'Verbose test output'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  smoke-test-custom:
+    name: Smoke Test (Custom Backend)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install dependencies
+        run: uv sync --dev --all-packages
+
+      - name: Install ImageMagick
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y imagemagick
+          magick --version
+
+      - name: Verify Docker availability
+        run: |
+          if ! command -v docker &> /dev/null; then
+            echo "❌ Docker not available in runner"
+            exit 1
+          fi
+          docker --version
+
+      - name: Verify test wallpaper exists
+        run: |
+          if [ ! -f "tests/fixtures/test-wallpaper.jpg" ]; then
+            echo "❌ Test wallpaper not found"
+            exit 1
+          fi
+          file tests/fixtures/test-wallpaper.jpg
+
+      - name: Run smoke tests (Custom Backend)
+        run: |
+          if [ "${{ inputs.verbose }}" == "true" ]; then
+            make smoke-test-custom VERBOSE=true
+          else
+            make smoke-test-custom
+          fi
