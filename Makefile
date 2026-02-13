@@ -214,17 +214,16 @@ smoke-test-check-deps: ## Check smoke test dependencies
 	fi
 	@echo -e "$(GREEN)✓ Test wallpaper available$(NC)"
 	@# Check ImageMagick
-	@if ! command -v convert &> /dev/null && ! command -v magick &> /dev/null; then \
+	@if command -v convert >/dev/null 2>&1; then \
+		echo -e "$(GREEN)✓ ImageMagick available: $$(convert --version | head -1)$(NC)"; \
+	elif command -v magick >/dev/null 2>&1; then \
+		echo -e "$(GREEN)✓ ImageMagick available: $$(magick --version | head -1)$(NC)"; \
+	else \
 		echo -e "$(RED)✗ ImageMagick not found$(NC)"; \
 		echo -e "$(RED)  Install: sudo apt-get install imagemagick$(NC)"; \
 		echo -e "$(RED)  Or macOS: brew install imagemagick$(NC)"; \
 		echo -e "$(RED)  Or Fedora: sudo dnf install ImageMagick$(NC)"; \
 		exit 1; \
-	fi
-	@if command -v convert &> /dev/null; then \
-		echo -e "$(GREEN)✓ ImageMagick available: $$(convert --version | head -1)$(NC)"; \
-	else \
-		echo -e "$(GREEN)✓ ImageMagick available: $$(magick --version | head -1)$(NC)"; \
 	fi
 	@# Check Docker or Podman
 	@if ! command -v docker &> /dev/null && ! command -v podman &> /dev/null; then \
