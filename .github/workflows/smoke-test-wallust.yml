@@ -1,6 +1,8 @@
 name: Smoke Tests - Wallust Backend
 
 on:
+  push:
+    branches: ["**"]
   workflow_dispatch:
     inputs:
       verbose:

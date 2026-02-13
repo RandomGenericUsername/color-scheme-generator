@@ -1,7 +1,9 @@
 name: Smoke Tests - Custom Backend
 
 on:
-  workflow_dispatch:  # Manual trigger only
+  push:
+    branches: ["**"]
+  workflow_dispatch:
     inputs:
       verbose:
         description: 'Verbose test output'

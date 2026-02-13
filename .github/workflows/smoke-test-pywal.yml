@@ -1,6 +1,8 @@
 name: Smoke Tests - Pywal Backend
 
 on:
+  push:
+    branches: ["**"]
   workflow_dispatch:
     inputs:
       verbose:
