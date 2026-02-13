@@ -1,4 +1,4 @@
-name: Smoke Tests - Wallust Backend
+name: Smoke Tests (All Backends)
 
 on:
   push:
@@ -12,8 +12,8 @@ on:
         type: boolean
 
 jobs:
-  smoke-test-wallust:
-    name: Smoke Test (Wallust Backend)
+  smoke-tests:
+    name: Smoke Tests (Custom, Pywal, Wallust)
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -38,11 +38,16 @@ jobs:
           sudo apt-get install -y imagemagick
           convert --version
 
-      - name: Install Rust toolchain (for Wallust)
+      - name: Install Pywal
+        run: |
+          pip install pywal
+          wal -h | head -1
+
+      - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-          override: true
+          profile: minimal
 
       - name: Install Wallust
         run: |
@@ -65,10 +70,10 @@ jobs:
           fi
           file tests/fixtures/test-wallpaper.jpg
 
-      - name: Run smoke tests (Wallust Backend)
+      - name: Run smoke tests (All Backends)
         run: |
           if [ "${{ inputs.verbose }}" == "true" ]; then
-            make smoke-test-wallust VERBOSE=true
+            VERBOSE=true bash tests/smoke/run-smoke-tests.sh tests/fixtures/test-wallpaper.jpg --verbose
           else
-            make smoke-test-wallust
+            bash tests/smoke/run-smoke-tests.sh tests/fixtures/test-wallpaper.jpg
           fi
