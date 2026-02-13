@@ -1,5 +1,6 @@
 """Container manager for orchestrating color extraction in containers."""
 
+import os
 import subprocess
 from pathlib import Path
 
@@ -106,6 +107,11 @@ class ContainerManager:
 
         # Construct docker/podman command
         cmd = [self.engine, "run", "--rm"]
+
+        # Run as current user to avoid permission issues with volume mounts
+        user_id = os.getuid()
+        group_id = os.getgid()
+        cmd.extend(["--user", f"{user_id}:{group_id}"])
 
         # Add volume mounts
         for mount in mounts:
