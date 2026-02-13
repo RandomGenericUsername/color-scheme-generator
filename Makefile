@@ -226,16 +226,15 @@ smoke-test-check-deps: ## Check smoke test dependencies
 		exit 1; \
 	fi
 	@# Check Docker or Podman
-	@if ! command -v docker &> /dev/null && ! command -v podman &> /dev/null; then \
+	@if command -v docker >/dev/null 2>&1; then \
+		echo -e "$(GREEN)✓ Docker available: $$(docker --version)$(NC)"; \
+	elif command -v podman >/dev/null 2>&1; then \
+		echo -e "$(GREEN)✓ Podman available: $$(podman --version)$(NC)"; \
+	else \
 		echo -e "$(RED)✗ Docker or Podman not found$(NC)"; \
 		echo -e "$(RED)  Install Docker: https://docs.docker.com/get-docker/$(NC)"; \
 		echo -e "$(RED)  Or Podman: sudo apt-get install podman$(NC)"; \
 		exit 1; \
-	fi
-	@if command -v docker &> /dev/null; then \
-		echo -e "$(GREEN)✓ Docker available: $$(docker --version)$(NC)"; \
-	else \
-		echo -e "$(GREEN)✓ Podman available: $$(podman --version)$(NC)"; \
 	fi
 	@# Check smoke test script exists
 	@if [ ! -f "$(SMOKE_TEST_SCRIPT)" ]; then \
