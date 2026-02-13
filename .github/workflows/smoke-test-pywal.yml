@@ -41,7 +41,7 @@ jobs:
       - name: Install Pywal
         run: |
           pip install pywal
-          wal --version
+          wal -h | head -1
 
       - name: Verify Docker availability
         run: |
