@@ -200,13 +200,14 @@ build-orchestrator: ## Build orchestrator package
 	@echo -e "$(GREEN)✓ Orchestrator package built$(NC)"
 
 ##@ Smoke Testing
-SMOKE_TEST_WALLPAPER := tests/fixtures/test-wallpaper.jpg
+SMOKE_TEST_WALLPAPER := $(or $(WALLPAPER),tests/fixtures/test-wallpaper.jpg)
 SMOKE_TEST_SCRIPT := tests/smoke/run-smoke-tests.sh
 
 .PHONY: smoke-test-check-deps smoke-test-custom smoke-test-pywal smoke-test-wallust smoke-test
 
 smoke-test-check-deps: ## Check smoke test dependencies
 	@echo -e "$(BLUE)Checking smoke test dependencies...$(NC)"
+	@echo -e "$(BLUE)Using wallpaper: $(SMOKE_TEST_WALLPAPER)$(NC)"
 	@# Check test wallpaper exists
 	@if [ ! -f "$(SMOKE_TEST_WALLPAPER)" ]; then \
 		echo -e "$(RED)✗ Test wallpaper not found at $(SMOKE_TEST_WALLPAPER)$(NC)"; \
