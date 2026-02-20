@@ -70,10 +70,12 @@ jobs:
           fi
           file tests/fixtures/test-wallpaper.jpg
 
-      - name: Run smoke tests (All Backends)
+      - name: Run smoke tests (standard mode)
+        if: inputs.verbose == false && github.event_name != 'push'
         run: |
-          if [ "${{ inputs.verbose }}" == "true" ]; then
-            VERBOSE=true bash tests/smoke/run-smoke-tests.sh tests/fixtures/test-wallpaper.jpg --verbose
-          else
-            bash tests/smoke/run-smoke-tests.sh tests/fixtures/test-wallpaper.jpg
-          fi
+          bash tests/smoke/run-smoke-tests.sh tests/fixtures/test-wallpaper.jpg
+
+      - name: Run smoke tests (verbose mode)
+        if: inputs.verbose == true || github.event_name == 'push'
+        run: |
+          bash tests/smoke/run-smoke-tests.sh --verbose tests/fixtures/test-wallpaper.jpg
