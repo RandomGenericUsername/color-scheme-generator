@@ -1070,6 +1070,8 @@ print_summary() {
 
     # Final result
     echo ""
+    echo "Test outputs: $TEST_OUTPUT_DIR"
+    echo ""
 
     if [ $FAILED -eq 0 ]; then
         echo -e "${GREEN}════════════════════════════════════════════════════════════════${NC}"
