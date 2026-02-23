@@ -60,5 +60,6 @@ class SettingsRegistryError(SettingsError):
 
     def __init__(self, namespace: str, reason: str = "") -> None:
         self.namespace = namespace
+        self.reason = reason
         detail = f": {reason}" if reason else ""
         super().__init__(f"Registry error for namespace '{namespace}'{detail}")
