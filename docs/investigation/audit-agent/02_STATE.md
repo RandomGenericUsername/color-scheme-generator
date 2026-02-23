@@ -1,12 +1,19 @@
 # Investigation State
 
 ## Iteration
-- Current iteration: 0001
-- Phase: PHASE_1_INVENTORY
+- Current iteration: 0002
+- Phase: PHASE_8_FINALIZE_INVESTIGATION
 
 ## Progress
 Completed:
-- (none)
+- PHASE_1_INVENTORY
+- PHASE_2_TOPIC_MAP
+- PHASE_3_TEST_SPEC
+- PHASE_4_BEHAVIOR_CATALOG
+- PHASE_5_DOC_CLAIMS
+- PHASE_6_TRACEABILITY
+- PHASE_7_REVIEW_FINDINGS
+- PHASE_8_FINALIZE_INVESTIGATION
 
 Current focus:
-- Build repo-wide inventory and classify files.
+- COMPLETE. INVESTIGATION_STATUS = PASS.
