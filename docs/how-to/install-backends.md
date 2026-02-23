@@ -141,3 +141,12 @@ Use the same engine for uninstall as was used for install.
 | Failed build shows "Build failed" and exits 1 | BHV-0035 |
 | `install --dry-run` shows "Build Plan", exits 0, no build runs | BHV-0029 |
 | `uninstall --dry-run` skips confirmation, exits 0, no removal | BHV-0030 |
+
+
+---
+
+## See also
+
+- [Architecture and Design](../explanation/architecture.md) — container model and image naming
+- [color-scheme CLI reference](../reference/cli-orchestrator.md) — full option listing for install and uninstall
+- [Use Dry-Run Mode](../how-to/use-dry-run.md) — preview the build plan before running

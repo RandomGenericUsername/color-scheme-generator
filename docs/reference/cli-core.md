@@ -182,7 +182,8 @@ files are written.
 
 Output contains three sections:
 
-1. **Information panel** — source image path, backend used, saturation factor.
+1. **Information panel** — source image path, backend used, and saturation factor
+   (saturation line is omitted when the value is 1.0).
 2. **Special colors table** — background, foreground, and cursor; shows name, colored
    preview, hex value, and RGB value.
 3. **Terminal colors table (ANSI)** — all 16 colors (indices 0–15); shows index, name,
@@ -254,3 +255,12 @@ first): CLI flags > user config > project config > package defaults.
 | BHV-0008 | `show --dry-run` suppresses color tables |
 | BHV-0009 | Auto-detect order: wallust > pywal > custom |
 | BHV-0010 | `BackendNotAvailableError` raised when backend binary absent |
+
+
+---
+
+## See also
+
+- [Use Dry-Run Mode](../how-to/use-dry-run.md) — preview generate without writing files
+- [Configure Settings](../how-to/configure-settings.md) — change output directory, formats, and saturation defaults
+- [Core Types](../reference/types.md) — Color, ColorScheme, and GeneratorConfig models

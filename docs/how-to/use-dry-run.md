@@ -89,3 +89,11 @@ stdin is not a tty (useful in scripts).
 | `color-scheme-core show --dry-run` suppresses color tables | BHV-0008 |
 | `color-scheme install --dry-run` shows "Build Plan", exits 0 | BHV-0029 |
 | `color-scheme uninstall --dry-run` skips confirmation, exits 0 | BHV-0030 |
+
+
+---
+
+## See also
+
+- [color-scheme-core CLI reference](../reference/cli-core.md) — all generate and show options
+- [color-scheme CLI reference](../reference/cli-orchestrator.md) — all install and uninstall options

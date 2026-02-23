@@ -11,14 +11,15 @@ environment variables, and programmatic CLI overrides.
 
 ## Configuration file locations
 
-Settings are resolved from four layers in priority order (lowest to highest):
+Settings are resolved from five layers in priority order (lowest to highest):
 
 | Priority | Layer | Source |
 |----------|-------|--------|
 | 1 (lowest) | Package defaults | Built-in defaults bundled with each package |
 | 2 | Project config | `./settings.toml` in the current directory |
 | 3 | User config | `~/.config/color-scheme/settings.toml` |
-| 4 (highest) | CLI overrides | Passed via `get_config(overrides)` at runtime |
+| 4 | Environment variables | `COLORSCHEME_*` variables in the current environment |
+| 5 (highest) | CLI overrides | Passed via `get_config(overrides)` at runtime |
 
 A higher-priority layer overrides individual keys from lower layers. Missing files are
 silently ignored.
@@ -48,8 +49,8 @@ The key format for project and user config files is `[<namespace>.<section>]`.
 
 ### COLORSCHEME_* — map to nested config keys
 
-Environment variables with the `COLORSCHEME_` prefix are collected and applied on top
-of the user config layer (ENV has higher priority than user config).
+Environment variables with the `COLORSCHEME_` prefix are collected and applied as
+layer 4 — above user config but below CLI overrides.
 
 Format: `COLORSCHEME_<SECTION>__<KEY>` (double underscore as nesting separator,
 uppercase).
@@ -161,3 +162,11 @@ fresh = reload_config()
 | `load_config()` returns the same object on second call | BHV-0022 |
 | `COLORSCHEME_SECTION__KEY` maps to `section.key` in config | BHV-0031 |
 | `COLOR_SCHEME_TEMPLATES` maps to `templates.directory` | BHV-0032 |
+
+
+---
+
+## See also
+
+- [Settings API reference](../reference/settings-api.md) — full function signatures and SchemaRegistry docs
+- [Architecture and Design](../explanation/architecture.md) — settings layers mental model

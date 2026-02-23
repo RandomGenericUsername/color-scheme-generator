@@ -39,7 +39,8 @@ color-scheme-core show /path/to/wallpaper.jpg
 
 The output contains three sections:
 
-- An information panel listing the source image, backend used, and saturation factor.
+- An information panel listing the source image, backend used, and saturation factor
+  (saturation is only shown when the value is not 1.0).
 - A special colors table with background, foreground, and cursor colors (each showing
   its name, a colored preview, hex value, and RGB value).
 - A terminal colors table with all 16 ANSI colors (indices 0–15), previews, hex, and
@@ -165,3 +166,12 @@ After completing Step 3 you can verify the following behaviors hold:
 - `--dry-run` / `-n` exits 0 and writes no files. (BHV-0004, BHV-0005, BHV-0006)
 - `color-scheme-core show` prints background, foreground, cursor, and 16 ANSI colors.
   (BHV-0007)
+
+
+---
+
+## See also
+
+- [Architecture and Design](../explanation/architecture.md) — how the two CLIs and backends work
+- [color-scheme-core CLI reference](../reference/cli-core.md) — full option listing for all commands
+- [Configure Settings](../how-to/configure-settings.md) — change output directory, formats, and saturation defaults

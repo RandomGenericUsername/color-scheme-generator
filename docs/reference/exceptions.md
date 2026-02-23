@@ -14,11 +14,14 @@ Exception (Python built-in)
 │   ├── BackendNotAvailableError
 │   ├── TemplateRenderError
 │   └── OutputWriteError
-└── SettingsError                  (settings base)
-    ├── SettingsFileError
-    ├── SettingsValidationError
-    ├── SettingsOverrideError
-    └── SettingsRegistryError
+├── SettingsError                  (settings base)
+│   ├── SettingsFileError
+│   ├── SettingsValidationError
+│   ├── SettingsOverrideError
+│   └── SettingsRegistryError
+└── TemplateError                  (templates base)
+    ├── TemplateNotFoundError
+    └── TemplateRegistryError
 ```
 
 ---
@@ -268,14 +271,60 @@ except SettingsRegistryError as e:
 
 ## Template exceptions
 
+**Module:** `color_scheme_templates.errors`
+
+```python
+from color_scheme_templates.errors import (
+    TemplateError,
+    TemplateNotFoundError,
+    TemplateRegistryError,
+)
+```
+
+### TemplateError
+
+Base exception for all template errors.
+
+### TemplateNotFoundError
+
+Raised when a requested template cannot be found in any registered directory.
+
+**Properties:**
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `template_name` | `str` | Name of the template that could not be found |
+| `searched_paths` | `list[Path]` | Directories that were searched |
+
+**Message format:** `Template '<template_name>' not found. Searched: <paths>`
+
+**When raised:**
+- Template name does not exist in any registered template directory
+
 ### TemplateRegistryError
 
-**Module:** (color-scheme-templates package)
-
 Raised when `TemplateRegistry.register()` is called with a namespace that is already
-registered.
+registered, or when `TemplateRegistry.get()` is called for an unregistered namespace.
 
-**Message:** matches `"already registered"`.
+**Properties:**
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `namespace` | `str` | The namespace involved |
+| `reason` | `str` | Detail (e.g., `"namespace already registered"`) |
+
+**Message format:** `Template registry error for '<namespace>': <reason>`
+
+```python
+from color_scheme_templates.errors import TemplateRegistryError
+
+try:
+    TemplateRegistry.register("core", templates_dir)
+    TemplateRegistry.register("core", templates_dir)  # raises
+except TemplateRegistryError as e:
+    print(e.namespace)  # "core"
+    print(e.reason)     # "namespace already registered"
+```
 
 ---
 
@@ -287,3 +336,11 @@ registered.
 | BHV-0017 | `SettingsRegistryError` on duplicate namespace registration |
 | BHV-0018 | `SettingsRegistryError` on `get()` for unknown namespace |
 | BHV-0033 | `TemplateRegistryError` on duplicate template namespace registration |
+
+
+---
+
+## See also
+
+- [Core Types](../reference/types.md) — types involved in error scenarios
+- [Settings API](../reference/settings-api.md) — settings functions that raise these exceptions

@@ -32,6 +32,13 @@ color-scheme version
 
 Prints the installed version of the `color-scheme-orchestrator` package. No options.
 
+### Example
+
+```bash
+$ color-scheme version
+color-scheme-orchestrator version 0.1.0
+```
+
 ---
 
 ## `color-scheme generate`
@@ -260,3 +267,12 @@ defaults.
 | BHV-0034 | Successful build shows "Built successfully" and summary |
 | BHV-0035 | Failed build shows "Build failed", exits 1 |
 | BHV-0036 | Registry trailing slash is stripped |
+
+
+---
+
+## See also
+
+- [Install Backend Images](../how-to/install-backends.md) — step-by-step guide for building container images
+- [Use Dry-Run Mode](../how-to/use-dry-run.md) — preview install/uninstall without running
+- [Architecture and Design](../explanation/architecture.md) — container model explanation

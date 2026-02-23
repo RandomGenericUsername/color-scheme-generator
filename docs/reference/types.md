@@ -221,3 +221,11 @@ from color_scheme.config.enums import ColorFormat
 | BHV-0014 | `adjust_saturation(1.0)` returns same hex; other factors change hex |
 | BHV-0015 | `ColorScheme` requires exactly 16 colors |
 | BHV-0016 | `GeneratorConfig.from_settings` populates all fields; `color_count == 16` |
+
+
+---
+
+## See also
+
+- [color-scheme-core CLI reference](../reference/cli-core.md) — how ColorFormat and Backend are used in commands
+- [Exceptions reference](../reference/exceptions.md) — errors raised during generation

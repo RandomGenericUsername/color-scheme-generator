@@ -48,8 +48,8 @@ The first backend whose binary is present in PATH is selected and used. This mea
 that if `wallust` is installed, it always wins over `pywal`. To use a specific backend,
 pass `-b pywal` or `-b custom` explicitly.
 
-This order is enforced in code (`factory.py`) and confirmed by tests: when all three
-backends are available, `auto_detect()` returns `Backend.WALLUST`.
+This order is enforced in code and confirmed by tests: when all three backends are
+available, `auto_detect()` returns `Backend.WALLUST`.
 
 ### The 16-color constraint
 
@@ -141,3 +141,12 @@ The confirmation prompt exists to prevent accidental data loss in interactive se
 Dry-run mode is explicitly a preview mode — its intent is to show what would happen, not
 to do it. Showing a confirmation for an action that will never run would be misleading.
 Bypassing it also makes dry-run useful in non-interactive scripts.
+
+
+---
+
+## See also
+
+- [Getting Started tutorial](../tutorials/getting-started.md) — see the CLIs in action
+- [color-scheme-core CLI reference](../reference/cli-core.md) — detailed command reference
+- [color-scheme CLI reference](../reference/cli-orchestrator.md) — orchestrator command reference

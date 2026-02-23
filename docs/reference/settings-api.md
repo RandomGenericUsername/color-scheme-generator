@@ -154,6 +154,30 @@ new_config = apply_overrides(config, {
 
 ---
 
+## reset
+
+```python
+reset() -> None
+```
+
+Fully resets the settings system to its uninitialized state. Clears the cached config,
+the registered unified model, and the loader path kwargs. After calling `reset()`, you
+must call `configure()` again before `load_config()` will succeed.
+
+**For use in tests only.** Differs from `reload_config()` in that it also clears the
+unified model and path configuration, not just the config cache.
+
+```python
+from color_scheme_settings import reset, configure, load_config
+
+reset()
+# system is now as if it was never configured
+configure(MyModel)
+config = load_config()
+```
+
+---
+
 ## SchemaRegistry
 
 Class for per-namespace schema registration. Each package registers its own namespace,
@@ -342,3 +366,11 @@ Result: `formats == ["json", "sh"]`.
 | BHV-0022 | `load_config()` caches result; second call returns same object |
 | BHV-0031 | `COLORSCHEME_SECTION__KEY` maps to `section.key` |
 | BHV-0032 | `COLOR_SCHEME_TEMPLATES` maps to `templates.directory` |
+
+
+---
+
+## See also
+
+- [Configure Settings](../how-to/configure-settings.md) — how to set config values at each layer
+- [Architecture and Design](../explanation/architecture.md) — settings layers mental model
