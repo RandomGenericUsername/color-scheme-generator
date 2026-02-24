@@ -53,9 +53,12 @@ class TestLoadToml:
 class TestSettingsLoaderPackageLayer:
     """Tests for discovering package-level settings files."""
 
-    def test_discovers_package_defaults(self, core_defaults_toml: Path):
+    def test_discovers_package_defaults(self, tmp_path: Path, core_defaults_toml: Path):
         SchemaRegistry.register("core", MockCoreConfig, core_defaults_toml)
-        loader = SettingsLoader(project_root=None, user_config_path=None)
+        loader = SettingsLoader(
+            project_root=None,
+            user_config_path=tmp_path / "no-user-config.toml",
+        )
         layers = loader.discover_layers()
         core_layers = [layer for layer in layers if layer.namespace == "core"]
         assert len(core_layers) == 1
@@ -64,7 +67,10 @@ class TestSettingsLoaderPackageLayer:
 
     def test_missing_package_file_skipped(self, tmp_path: Path):
         SchemaRegistry.register("core", MockCoreConfig, tmp_path / "nonexistent.toml")
-        loader = SettingsLoader(project_root=None, user_config_path=None)
+        loader = SettingsLoader(
+            project_root=None,
+            user_config_path=tmp_path / "no-user-config.toml",
+        )
         layers = loader.discover_layers()
         assert len(layers) == 0
 

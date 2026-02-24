@@ -188,7 +188,11 @@ directory = "/tmp/test/output"
 directory = "/tmp/test/templates"
 """)
 
-        configure(TestConfig, project_root=project_dir)
+        configure(
+            TestConfig,
+            project_root=project_dir,
+            user_config_path=tmp_path / "no-user-config.toml",
+        )
         config = get_config()
 
         assert isinstance(config.core.output.directory, Path)
