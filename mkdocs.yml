@@ -20,8 +20,10 @@ theme:
 exclude_docs: |
   archive/
   audit-*.md
+  plans/
 
 nav:
+  - Home: index.md
   - Tutorial:
     - Getting Started: tutorials/getting-started.md
   - How-To:
