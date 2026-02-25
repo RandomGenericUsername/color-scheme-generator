@@ -13,10 +13,10 @@ organizes content into four types based on what a reader needs:
 
 | Type | Directory | When to read it |
 |------|-----------|-----------------|
-| **Tutorial** | [`tutorials/`](tutorials/) | Learning — follow a complete worked example from start to finish |
-| **How-to** | [`how-to/`](how-to/) | Doing — find step-by-step instructions for a specific task |
-| **Reference** | [`reference/`](reference/) | Looking up — find exact command syntax, options, types, and error details |
-| **Explanation** | [`explanation/`](explanation/) | Understanding — read about the design, rationale, and mental models |
+| **Tutorial** | [`tutorials/`](tutorials/getting-started.md) | Learning — follow a complete worked example from start to finish |
+| **How-to** | [`how-to/`](how-to/configure-settings.md) | Doing — find step-by-step instructions for a specific task |
+| **Reference** | [`reference/`](reference/cli-core.md) | Looking up — find exact command syntax, options, types, and error details |
+| **Explanation** | [`explanation/`](explanation/architecture.md) | Understanding — read about the design, rationale, and mental models |
 
 ---
 
