@@ -1,0 +1,41 @@
+site_name: Color Scheme Generator
+docs_dir: docs
+theme:
+  name: material
+  palette:
+    - scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.top
+    - search.highlight
+
+exclude_docs: |
+  archive/
+  audit-*.md
+
+nav:
+  - Tutorial:
+    - Getting Started: tutorials/getting-started.md
+  - How-To:
+    - Configure Settings: how-to/configure-settings.md
+    - Install Backends: how-to/install-backends.md
+    - Use Dry Run: how-to/use-dry-run.md
+    - Integrate with Shell: how-to/integrate-shell.md
+    - Create Templates: how-to/create-templates.md
+    - Troubleshoot Errors: how-to/troubleshoot-errors.md
+  - Reference:
+    - CLI (color-scheme-core): reference/cli-core.md
+    - CLI (color-scheme): reference/cli-orchestrator.md
+    - Settings API: reference/settings-api.md
+    - Exceptions: reference/exceptions.md
+    - Types: reference/types.md
+  - Explanation:
+    - Architecture: explanation/architecture.md
