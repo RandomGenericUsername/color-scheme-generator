@@ -389,7 +389,7 @@ dev = [
     { name = "bandit", specifier = ">=1.8.6" },
     { name = "black", specifier = ">=26.0.0" },
     { name = "isort", specifier = ">=7.0.0" },
-    { name = "mkdocs-material" },
+    { name = "mkdocs-material", specifier = ">=9.5,<10" },
     { name = "mypy", specifier = ">=1.19.0" },
     { name = "pre-commit", specifier = ">=3.8.0" },
     { name = "pytest", specifier = ">=9.0.0" },
