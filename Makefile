@@ -1,4 +1,4 @@
-.PHONY: help dev lint format build install-core install-orchestrator install-settings install-templates test-all test-run pipeline lint-templates format-templates security-templates test-templates push clean
+.PHONY: help dev lint format build install-core install-orchestrator install-settings install-templates test-all test-run pipeline lint-templates format-templates security-templates test-templates push clean docs-serve docs-build
 
 # Variables
 PYTHON_VERSION := 3.12
@@ -414,6 +414,13 @@ push: ## Run GitHub Actions workflows locally (add SMOKE=true for smoke tests)
 	echo -e "$(GREEN)Search: grep 'PASSED\|FAILED' $$LOG_FILE$(NC)"; \
 	echo -e ""; \
 	exit $$EXIT_CODE
+
+##@ Documentation
+docs-serve: ## Serve docs locally with live reload (http://127.0.0.1:8000)
+	uv run mkdocs serve
+
+docs-build: ## Build static docs site to site/ (--strict fails on broken links)
+	uv run mkdocs build --strict
 
 ##@ Cleanup
 clean: ## Remove build artifacts and caches
