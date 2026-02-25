@@ -10,6 +10,7 @@ SETTINGS_DIR := $(PACKAGES_DIR)/settings
 TEMPLATES_DIR := $(PACKAGES_DIR)/templates
 TOOLS_DIR := tools
 DEV_DIR := $(TOOLS_DIR)/dev
+DOCS_PORT ?= 8000
 
 # Color output
 BLUE := \033[0;34m
@@ -416,8 +417,9 @@ push: ## Run GitHub Actions workflows locally (add SMOKE=true for smoke tests)
 	exit $$EXIT_CODE
 
 ##@ Documentation
-docs-serve: ## Serve docs locally with live reload (http://127.0.0.1:8000)
-	uv run mkdocs serve
+docs-serve: ## Serve docs locally with live reload (http://127.0.0.1:$(DOCS_PORT))
+	@echo -e "$(BLUE)Serving docs on http://127.0.0.1:$(DOCS_PORT)...$(NC)"
+	uv run mkdocs serve -a 127.0.0.1:$(DOCS_PORT)
 
 docs-build: ## Build static docs site to site/ (--strict fails on broken links)
 	uv run mkdocs build --strict
