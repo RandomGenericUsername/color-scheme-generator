@@ -300,88 +300,99 @@ class TestGenerateDryRun:
 
 
 class TestShowDelegation:
-    """Tests for show command delegation to core (lines 267-278)."""
+    """Tests for show command delegation to ContainerManager."""
 
-    @patch("subprocess.run")
-    def test_show_delegates_to_core_show(self, mock_run):
-        """Verify core's show command is invoked via subprocess (lines 274-278)."""
-        from unittest.mock import MagicMock
+    @patch("color_scheme_orchestrator.cli.main.ContainerManager.run_show")
+    def test_show_delegates_to_container_manager(self, mock_run_show):
+        """Verify show command routes to ContainerManager.run_show."""
+        import tempfile
+        from pathlib import Path
 
-        result = MagicMock()
-        result.returncode = 0
-        mock_run.return_value = result
+        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
+            test_image = Path(f.name)
 
-        runner.invoke(app, ["show", "/tmp/image.jpg"])
+        try:
+            runner.invoke(app, ["show", str(test_image)])
+            assert mock_run_show.called
+        finally:
+            test_image.unlink()
 
-        # The delegation happens, verify subprocess.run was called
-        assert mock_run.called
-        # Check that it's calling the core show command
-        call_args = mock_run.call_args[0][0]
-        assert call_args[0] == "color-scheme-core"
-        assert call_args[1] == "show"
-        assert "/tmp/image.jpg" in call_args
+    @patch("color_scheme_orchestrator.cli.main.ContainerManager.run_show")
+    def test_show_passes_image_path_to_container(self, mock_run_show):
+        """Verify image path is passed to run_show."""
+        import tempfile
+        from pathlib import Path
 
-    @patch("subprocess.run")
-    def test_show_passes_image_path_to_core(self, mock_run):
-        """Verify image path is passed to core's show."""
-        from unittest.mock import MagicMock
+        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
+            test_image = Path(f.name)
 
-        result = MagicMock()
-        result.returncode = 0
-        mock_run.return_value = result
+        try:
+            runner.invoke(app, ["show", str(test_image)])
+            assert mock_run_show.called
+            call_kwargs = mock_run_show.call_args[1]
+            assert call_kwargs["image_path"] == test_image
+        finally:
+            test_image.unlink()
 
-        runner.invoke(app, ["show", "/tmp/image.jpg"])
+    @patch("color_scheme_orchestrator.cli.main.ContainerManager.run_show")
+    def test_show_passes_backend_to_container(self, mock_run_show):
+        """Verify backend option is forwarded in cli_args to run_show."""
+        import tempfile
+        from pathlib import Path
 
-        # Verify the call happened with image path
-        assert mock_run.called
-        call_args = mock_run.call_args[0][0]
-        assert "/tmp/image.jpg" in call_args
+        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
+            test_image = Path(f.name)
 
-    @patch("subprocess.run")
-    def test_show_passes_backend_to_core(self, mock_run):
-        """Verify backend option is passed to core."""
-        from unittest.mock import MagicMock
+        try:
+            runner.invoke(app, ["show", str(test_image), "--backend", "pywal"])
+            assert mock_run_show.called
+            call_kwargs = mock_run_show.call_args[1]
+            cli_args = call_kwargs.get("cli_args", [])
+            assert "--backend" in cli_args
+            assert "pywal" in cli_args
+        finally:
+            test_image.unlink()
 
-        result = MagicMock()
-        result.returncode = 0
-        mock_run.return_value = result
+    @patch("color_scheme_orchestrator.cli.main.ContainerManager.run_show")
+    def test_show_passes_saturation_to_container(self, mock_run_show):
+        """Verify saturation option is forwarded in cli_args to run_show."""
+        import tempfile
+        from pathlib import Path
 
-        runner.invoke(app, ["show", "/tmp/image.jpg", "--backend", "pywal"])
+        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
+            test_image = Path(f.name)
 
-        assert mock_run.called
-        call_args = mock_run.call_args[0][0]
-        assert "--backend" in call_args
-        assert "pywal" in call_args
-
-    @patch("subprocess.run")
-    def test_show_passes_saturation_to_core(self, mock_run):
-        """Verify saturation option is passed to core."""
-        from unittest.mock import MagicMock
-
-        result = MagicMock()
-        result.returncode = 0
-        mock_run.return_value = result
-
-        runner.invoke(app, ["show", "/tmp/image.jpg", "--saturation", "1.2"])
-
-        assert mock_run.called
-        call_args = mock_run.call_args[0][0]
-        assert "--saturation" in call_args
-        assert "1.2" in call_args
+        try:
+            runner.invoke(app, ["show", str(test_image), "--saturation", "1.2"])
+            assert mock_run_show.called
+            call_kwargs = mock_run_show.call_args[1]
+            cli_args = call_kwargs.get("cli_args", [])
+            assert "--saturation" in cli_args
+            assert "1.2" in cli_args
+        finally:
+            test_image.unlink()
 
 
 class TestShowErrorHandling:
-    """Tests for show error handling (lines 280-282)."""
+    """Tests for show error handling."""
 
-    @patch("subprocess.run")
-    def test_show_handles_core_error(self, mock_run):
-        """Verify errors from core are caught (lines 280-282)."""
-        mock_run.side_effect = Exception("Core error")
+    @patch("color_scheme_orchestrator.cli.main.ContainerManager.run_show")
+    def test_show_handles_container_error(self, mock_run_show):
+        """Verify RuntimeError from container is caught and reported."""
+        import tempfile
+        from pathlib import Path
 
-        result = runner.invoke(app, ["show", "/tmp/image.jpg"])
+        mock_run_show.side_effect = RuntimeError("Container error")
 
-        assert result.exit_code == 1
-        assert "Error:" in result.stdout or "error" in result.stdout.lower()
+        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
+            test_image = Path(f.name)
+
+        try:
+            result = runner.invoke(app, ["show", str(test_image)])
+            assert result.exit_code == 1
+            assert "Error:" in result.stdout or "error" in result.stdout.lower()
+        finally:
+            test_image.unlink()
 
 
 class TestShowDryRun:

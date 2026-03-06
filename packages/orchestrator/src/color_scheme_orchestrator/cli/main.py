@@ -267,28 +267,41 @@ def show(
         # Exit successfully without executing
         raise typer.Exit(0)
 
-    # Delegate to core - it runs on host, no container needed
-    import subprocess
-
     try:
-        # Build command to invoke core's show through subprocess
-        # Invokes the Typer command instead of calling the function directly
-        cmd = ["color-scheme-core", "show", str(image_path)]
+        config = cast(UnifiedConfig, get_config())
 
-        if backend is not None:
-            cmd.extend(["--backend", backend.value])
+        if not image_path.exists():
+            console.print(f"[red]Error:[/red] Image file not found: {image_path}")
+            raise typer.Exit(1)
 
+        if not image_path.is_file():
+            console.print(f"[red]Error:[/red] Path is not a file: {image_path}")
+            raise typer.Exit(1)
+
+        if backend is None:
+            backend = Backend(config.core.generation.default_backend)
+
+        container_args: list[str] = []
+        container_args.extend(["--backend", backend.value])
         if saturation is not None:
-            cmd.extend(["--saturation", str(saturation)])
+            container_args.extend(["--saturation", str(saturation)])
 
-        # Run the core command in a subprocess
-        result = subprocess.run(cmd, check=False)
+        manager = ContainerManager(config)
+        manager.run_show(
+            backend=backend,
+            image_path=image_path,
+            cli_args=container_args,
+        )
 
-        if result.returncode != 0:
-            raise typer.Exit(result.returncode)
+    except typer.Exit:
+        raise
+
+    except RuntimeError as e:
+        console.print(f"[red]Container error:[/red] {str(e)}")
+        raise typer.Exit(1) from None
 
     except Exception as e:
-        console.print(f"[red]Error:[/red] {str(e)}")
+        console.print(f"[red]Unexpected error:[/red] {str(e)}")
         raise typer.Exit(1) from None
 
 
