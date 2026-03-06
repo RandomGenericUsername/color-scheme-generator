@@ -2,6 +2,7 @@
 
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 from color_scheme.config.enums import Backend
@@ -138,4 +139,53 @@ class ContainerManager:
             raise RuntimeError(
                 f"Container execution failed with exit code {result.returncode}: "
                 f"{result.stderr}"
+            )
+
+    def run_show(
+        self,
+        backend: Backend,
+        image_path: Path,
+        cli_args: list[str] | None = None,
+    ) -> None:
+        """Execute show command in container.
+
+        Stdout flows directly to the terminal. Allocates a pseudo-TTY (-t)
+        only when the host stdout is a terminal, so Rich inside the container
+        renders color tables interactively and falls back to a plain bullet
+        list when piped or scripted.
+
+        Args:
+            backend: Backend to use
+            image_path: Path to source image
+            cli_args: Additional CLI arguments to pass
+
+        Raises:
+            RuntimeError: If container execution fails
+        """
+        if cli_args is None:
+            cli_args = []
+
+        image = self.get_image_name(backend)
+        image_mount = f"{image_path.as_posix()}:/input/image.png:ro"
+
+        cmd = [self.engine, "run", "--rm"]
+
+        if sys.stdout.isatty():
+            cmd.append("-t")
+
+        user_id = os.getuid()
+        group_id = os.getgid()
+        cmd.extend(["--user", f"{user_id}:{group_id}"])
+
+        cmd.extend(["-v", image_mount])
+        cmd.append(image)
+
+        cmd.extend(["show", "/input/image.png"])
+        cmd.extend(cli_args)
+
+        result = subprocess.run(cmd)
+
+        if result.returncode != 0:
+            raise RuntimeError(
+                f"Container execution failed with exit code {result.returncode}"
             )

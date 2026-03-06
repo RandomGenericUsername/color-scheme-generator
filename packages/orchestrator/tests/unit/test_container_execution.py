@@ -122,3 +122,126 @@ class TestContainerExecution:
                 image_path=image_path,
                 output_dir=output_dir,
             )
+
+
+class TestContainerShow:
+    """Tests for run_show container execution."""
+
+    @patch("color_scheme_orchestrator.container.manager.sys")
+    @patch("subprocess.run")
+    def test_run_show_builds_docker_command(self, mock_run, mock_sys):
+        """Test that run_show constructs correct docker show command."""
+        mock_sys.stdout.isatty.return_value = False
+        config = UnifiedConfig(
+            core=AppConfig(),
+            orchestrator=ContainerSettings(engine="docker"),
+        )
+        manager = ContainerManager(config)
+        mock_run.return_value = Mock(returncode=0)
+
+        manager.run_show(
+            backend=Backend.CUSTOM,
+            image_path=Path("/tmp/test.png"),
+        )
+
+        mock_run.assert_called_once()
+        call_args = mock_run.call_args[0][0]
+        assert call_args[0] == "docker"
+        assert "run" in call_args
+        assert "--rm" in call_args
+        assert "color-scheme-custom:latest" in call_args
+        assert "show" in call_args
+        assert "/input/image.png" in call_args
+
+    @patch("color_scheme_orchestrator.container.manager.sys")
+    @patch("subprocess.run")
+    def test_run_show_no_output_mount(self, mock_run, mock_sys):
+        """Test that run_show does not add an /output volume mount."""
+        mock_sys.stdout.isatty.return_value = False
+        config = UnifiedConfig(core=AppConfig(), orchestrator=ContainerSettings())
+        manager = ContainerManager(config)
+        mock_run.return_value = Mock(returncode=0)
+
+        manager.run_show(
+            backend=Backend.CUSTOM,
+            image_path=Path("/tmp/test.png"),
+        )
+
+        call_args = mock_run.call_args[0][0]
+        v_mounts = [
+            call_args[i + 1]
+            for i, arg in enumerate(call_args)
+            if arg == "-v"
+        ]
+        assert not any("/output" in m for m in v_mounts)
+
+    @patch("color_scheme_orchestrator.container.manager.sys")
+    @patch("subprocess.run")
+    def test_run_show_no_templates_mount(self, mock_run, mock_sys):
+        """Test that run_show does not add a /templates volume mount."""
+        mock_sys.stdout.isatty.return_value = False
+        config = UnifiedConfig(core=AppConfig(), orchestrator=ContainerSettings())
+        manager = ContainerManager(config)
+        mock_run.return_value = Mock(returncode=0)
+
+        manager.run_show(
+            backend=Backend.CUSTOM,
+            image_path=Path("/tmp/test.png"),
+        )
+
+        call_args = mock_run.call_args[0][0]
+        v_mounts = [
+            call_args[i + 1]
+            for i, arg in enumerate(call_args)
+            if arg == "-v"
+        ]
+        assert not any("/templates" in m for m in v_mounts)
+
+    @patch("color_scheme_orchestrator.container.manager.sys")
+    @patch("subprocess.run")
+    def test_run_show_adds_tty_flag_when_interactive(self, mock_run, mock_sys):
+        """Test that -t is added to docker command when stdout is a TTY."""
+        mock_sys.stdout.isatty.return_value = True
+        config = UnifiedConfig(core=AppConfig(), orchestrator=ContainerSettings())
+        manager = ContainerManager(config)
+        mock_run.return_value = Mock(returncode=0)
+
+        manager.run_show(
+            backend=Backend.CUSTOM,
+            image_path=Path("/tmp/test.png"),
+        )
+
+        call_args = mock_run.call_args[0][0]
+        assert "-t" in call_args
+
+    @patch("color_scheme_orchestrator.container.manager.sys")
+    @patch("subprocess.run")
+    def test_run_show_no_tty_flag_when_non_interactive(self, mock_run, mock_sys):
+        """Test that -t is absent when stdout is not a TTY."""
+        mock_sys.stdout.isatty.return_value = False
+        config = UnifiedConfig(core=AppConfig(), orchestrator=ContainerSettings())
+        manager = ContainerManager(config)
+        mock_run.return_value = Mock(returncode=0)
+
+        manager.run_show(
+            backend=Backend.CUSTOM,
+            image_path=Path("/tmp/test.png"),
+        )
+
+        call_args = mock_run.call_args[0][0]
+        assert "-t" not in call_args
+
+    @patch("color_scheme_orchestrator.container.manager.sys")
+    @patch("subprocess.run")
+    def test_run_show_raises_on_failure(self, mock_run, mock_sys):
+        """Test that non-zero exit code raises RuntimeError."""
+        mock_sys.stdout.isatty.return_value = False
+        config = UnifiedConfig(core=AppConfig(), orchestrator=ContainerSettings())
+        manager = ContainerManager(config)
+        mock_run.return_value = Mock(returncode=1)
+
+        with pytest.raises(RuntimeError, match="Container execution failed"):
+            manager.run_show(
+                backend=Backend.PYWAL,
+                image_path=Path("/tmp/test.png"),
+            )
