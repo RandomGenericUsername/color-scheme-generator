@@ -375,11 +375,9 @@ def show(
         factory = BackendFactory(config.core)
 
         # Auto-detect backend if not specified
+        auto_detected = backend is None
         if backend is None:
             backend = factory.auto_detect()
-            console.print(f"[cyan]Auto-detected backend:[/cyan] {backend.value}")
-        else:
-            console.print(f"[cyan]Using backend:[/cyan] {backend.value}")
 
         # Build GeneratorConfig with overrides
         overrides = {}
@@ -388,11 +386,8 @@ def show(
 
         generator_config = GeneratorConfig.from_settings(config.core, **overrides)
 
-        # Create generator
+        # Create generator and extract colors
         generator = factory.create(backend)
-
-        # Generate color scheme
-        console.print(f"[cyan]Extracting colors from:[/cyan] {image_path}")
         color_scheme = generator.generate(image_path, generator_config)
 
         # Apply saturation adjustment if specified
@@ -401,8 +396,6 @@ def show(
             and generator_config.saturation_adjustment != 1.0
         ):
             sat = generator_config.saturation_adjustment
-            console.print(f"[cyan]Adjusting saturation:[/cyan] {sat}")
-            # Adjust all colors
             color_scheme.background = color_scheme.background.adjust_saturation(sat)
             color_scheme.foreground = color_scheme.foreground.adjust_saturation(sat)
             color_scheme.cursor = color_scheme.cursor.adjust_saturation(sat)
@@ -410,87 +403,108 @@ def show(
                 c.adjust_saturation(sat) for c in color_scheme.colors
             ]
 
-        # Display color scheme information
-        console.print()
+        if not console.is_terminal:
+            # Non-TTY: pure data bullet list, no preamble, no Rich markup
+            print(f"backend: {backend.value}")
+            if (
+                generator_config.saturation_adjustment is not None
+                and generator_config.saturation_adjustment != 1.0
+            ):
+                print(f"saturation: {generator_config.saturation_adjustment}")
+            print(f"background: {color_scheme.background.hex}")
+            print(f"foreground: {color_scheme.foreground.hex}")
+            print(f"cursor: {color_scheme.cursor.hex}")
+            for i, color in enumerate(color_scheme.colors):
+                print(f"color{i}: {color.hex}")
+        else:
+            # TTY: full preamble + Rich tables
+            if auto_detected:
+                console.print(f"[cyan]Auto-detected backend:[/cyan] {backend.value}")
+            else:
+                console.print(f"[cyan]Using backend:[/cyan] {backend.value}")
 
-        # Create info panel
-        info_lines = [
-            f"[cyan]Source Image:[/cyan] {image_path}",
-            f"[cyan]Backend:[/cyan] {backend.value}",
-        ]
-        if (
-            generator_config.saturation_adjustment is not None
-            and generator_config.saturation_adjustment != 1.0
-        ):
-            info_lines.append(
-                f"[cyan]Saturation:[/cyan] {generator_config.saturation_adjustment}"
+            console.print(f"[cyan]Extracting colors from:[/cyan] {image_path}")
+
+            if (
+                generator_config.saturation_adjustment is not None
+                and generator_config.saturation_adjustment != 1.0
+            ):
+                console.print(
+                    f"[cyan]Adjusting saturation:[/cyan] {generator_config.saturation_adjustment}"
+                )
+
+            console.print()
+
+            info_lines = [
+                f"[cyan]Source Image:[/cyan] {image_path}",
+                f"[cyan]Backend:[/cyan] {backend.value}",
+            ]
+            if (
+                generator_config.saturation_adjustment is not None
+                and generator_config.saturation_adjustment != 1.0
+            ):
+                info_lines.append(
+                    f"[cyan]Saturation:[/cyan] {generator_config.saturation_adjustment}"
+                )
+
+            info_panel = Panel(
+                "\n".join(info_lines),
+                title="Color Scheme Information",
+                border_style="cyan",
             )
+            console.print(info_panel)
+            console.print()
 
-        info_panel = Panel(
-            "\n".join(info_lines),
-            title="Color Scheme Information",
-            border_style="cyan",
-        )
-        console.print(info_panel)
-        console.print()
+            special_table = Table(title="Special Colors", show_header=True)
+            special_table.add_column("Color", style="cyan")
+            special_table.add_column("Preview", width=10)
+            special_table.add_column("Hex", style="white")
+            special_table.add_column("RGB", style="white")
 
-        # Create table for special colors
-        special_table = Table(title="Special Colors", show_header=True)
-        special_table.add_column("Color", style="cyan")
-        special_table.add_column("Preview", width=10)
-        special_table.add_column("Hex", style="white")
-        special_table.add_column("RGB", style="white")
+            for name, color in [
+                ("Background", color_scheme.background),
+                ("Foreground", color_scheme.foreground),
+                ("Cursor", color_scheme.cursor),
+            ]:
+                preview = f"[on {color.hex}]          [/]"
+                rgb_str = f"rgb({color.rgb[0]}, {color.rgb[1]}, {color.rgb[2]})"
+                special_table.add_row(name, preview, color.hex, rgb_str)
 
-        # Add special colors
-        special_colors = [
-            ("Background", color_scheme.background),
-            ("Foreground", color_scheme.foreground),
-            ("Cursor", color_scheme.cursor),
-        ]
+            console.print(special_table)
+            console.print()
 
-        for name, color in special_colors:
-            preview = f"[on {color.hex}]          [/]"
-            rgb_str = f"rgb({color.rgb[0]}, {color.rgb[1]}, {color.rgb[2]})"
-            special_table.add_row(name, preview, color.hex, rgb_str)
+            terminal_table = Table(title="Terminal Colors (ANSI)", show_header=True)
+            terminal_table.add_column("Index", style="cyan", width=6)
+            terminal_table.add_column("Name", style="cyan")
+            terminal_table.add_column("Preview", width=10)
+            terminal_table.add_column("Hex", style="white")
+            terminal_table.add_column("RGB", style="white")
 
-        console.print(special_table)
-        console.print()
+            color_names = [
+                "Black",
+                "Red",
+                "Green",
+                "Yellow",
+                "Blue",
+                "Magenta",
+                "Cyan",
+                "White",
+                "Bright Black",
+                "Bright Red",
+                "Bright Green",
+                "Bright Yellow",
+                "Bright Blue",
+                "Bright Magenta",
+                "Bright Cyan",
+                "Bright White",
+            ]
 
-        # Create table for terminal colors
-        terminal_table = Table(title="Terminal Colors (ANSI)", show_header=True)
-        terminal_table.add_column("Index", style="cyan", width=6)
-        terminal_table.add_column("Name", style="cyan")
-        terminal_table.add_column("Preview", width=10)
-        terminal_table.add_column("Hex", style="white")
-        terminal_table.add_column("RGB", style="white")
+            for idx, (name, color) in enumerate(zip(color_names, color_scheme.colors)):
+                preview = f"[on {color.hex}]          [/]"
+                rgb_str = f"rgb({color.rgb[0]}, {color.rgb[1]}, {color.rgb[2]})"
+                terminal_table.add_row(str(idx), name, preview, color.hex, rgb_str)
 
-        # ANSI color names
-        color_names = [
-            "Black",
-            "Red",
-            "Green",
-            "Yellow",
-            "Blue",
-            "Magenta",
-            "Cyan",
-            "White",
-            "Bright Black",
-            "Bright Red",
-            "Bright Green",
-            "Bright Yellow",
-            "Bright Blue",
-            "Bright Magenta",
-            "Bright Cyan",
-            "Bright White",
-        ]
-
-        # Add terminal colors
-        for idx, (name, color) in enumerate(zip(color_names, color_scheme.colors)):
-            preview = f"[on {color.hex}]          [/]"
-            rgb_str = f"rgb({color.rgb[0]}, {color.rgb[1]}, {color.rgb[2]})"
-            terminal_table.add_row(str(idx), name, preview, color.hex, rgb_str)
-
-        console.print(terminal_table)
+            console.print(terminal_table)
 
     except InvalidImageError as e:
         console.print(f"[red]Error:[/red] Invalid image: {e.reason}")
