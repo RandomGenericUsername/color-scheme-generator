@@ -172,6 +172,11 @@ class ContainerManager:
 
         if sys.stdout.isatty():
             cmd.append("-t")
+            for var in ("TERM", "COLORTERM"):
+                val = os.environ.get(var)
+                if val:
+                    cmd.extend(["-e", f"{var}={val}"])
+            cmd.extend(["-e", "FORCE_COLOR=1"])
 
         user_id = os.getuid()
         group_id = os.getgid()

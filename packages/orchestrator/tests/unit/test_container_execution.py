@@ -231,6 +231,57 @@ class TestContainerShow:
         call_args = mock_run.call_args[0][0]
         assert "-t" not in call_args
 
+    @patch("color_scheme_orchestrator.container.manager.os")
+    @patch("color_scheme_orchestrator.container.manager.sys")
+    @patch("subprocess.run")
+    def test_run_show_forwards_color_env_vars_when_interactive(
+        self, mock_run, mock_sys, mock_os
+    ):
+        """Test that TERM, COLORTERM, and FORCE_COLOR are forwarded when interactive."""
+        mock_sys.stdout.isatty.return_value = True
+        mock_os.environ.get.side_effect = lambda k: {
+            "TERM": "xterm-256color",
+            "COLORTERM": "truecolor",
+        }.get(k)
+        mock_os.getuid.return_value = 1000
+        mock_os.getgid.return_value = 1000
+
+        config = UnifiedConfig(core=AppConfig(), orchestrator=ContainerSettings())
+        manager = ContainerManager(config)
+        mock_run.return_value = Mock(returncode=0)
+
+        manager.run_show(
+            backend=Backend.CUSTOM,
+            image_path=Path("/tmp/test.png"),
+        )
+
+        call_args = mock_run.call_args[0][0]
+        e_pairs = [
+            call_args[i + 1]
+            for i, arg in enumerate(call_args)
+            if arg == "-e"
+        ]
+        assert "TERM=xterm-256color" in e_pairs
+        assert "COLORTERM=truecolor" in e_pairs
+        assert "FORCE_COLOR=1" in e_pairs
+
+    @patch("color_scheme_orchestrator.container.manager.sys")
+    @patch("subprocess.run")
+    def test_run_show_no_color_env_vars_when_non_interactive(self, mock_run, mock_sys):
+        """Test that color env vars are not forwarded when non-interactive."""
+        mock_sys.stdout.isatty.return_value = False
+        config = UnifiedConfig(core=AppConfig(), orchestrator=ContainerSettings())
+        manager = ContainerManager(config)
+        mock_run.return_value = Mock(returncode=0)
+
+        manager.run_show(
+            backend=Backend.CUSTOM,
+            image_path=Path("/tmp/test.png"),
+        )
+
+        call_args = mock_run.call_args[0][0]
+        assert "-e" not in call_args
+
     @patch("color_scheme_orchestrator.container.manager.sys")
     @patch("subprocess.run")
     def test_run_show_raises_on_failure(self, mock_run, mock_sys):
