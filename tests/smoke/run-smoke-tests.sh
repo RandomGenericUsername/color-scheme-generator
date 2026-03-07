@@ -754,13 +754,6 @@ test_orchestrator_cli_basic() {
     else
         test_failed
     fi
-
-    print_test "color-scheme show"
-    if color-scheme show "$TEST_IMAGE" > /dev/null 2>&1; then
-        test_passed
-    else
-        test_failed
-    fi
 }
 
 test_orchestrator_container_workflow() {
@@ -828,6 +821,19 @@ test_orchestrator_container_workflow() {
             add_detail "• Containerized generate: $custom_out/colors.json"
         else
             test_failed "Containerized generate failed" "$gen_cmd" "$gen_output"
+        fi
+
+        print_test "Show with custom (containerized)"
+        local show_cmd="color-scheme show $TEST_IMAGE --backend custom"
+        local show_output
+        show_output=$(eval "$show_cmd" 2>&1)
+        local show_exit=$?
+
+        if [ $show_exit -eq 0 ]; then
+            test_passed
+            add_detail "• Containerized show: succeeded"
+        else
+            test_failed "Containerized show failed" "$show_cmd" "$show_output"
         fi
 
         print_test "Uninstall custom backend"
