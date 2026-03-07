@@ -28,7 +28,7 @@ class ColorSchemeGenerator(ABC):
             ColorExtractionError: If color extraction fails
             BackendNotAvailableError: If backend is not available
         """
-        pass  # pragma: no cover
+        pass
 
     @abstractmethod
     def is_available(self) -> bool:
@@ -37,7 +37,7 @@ class ColorSchemeGenerator(ABC):
         Returns:
             True if backend is available, False otherwise
         """
-        pass  # pragma: no cover
+        pass
 
     @property
     @abstractmethod
@@ -47,7 +47,7 @@ class ColorSchemeGenerator(ABC):
         Returns:
             Backend name (e.g., "pywal", "wallust", "custom")
         """
-        pass  # pragma: no cover
+        pass
 
     def ensure_available(self) -> None:
         """Ensure backend is available, raise error if not.
