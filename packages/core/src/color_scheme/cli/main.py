@@ -99,6 +99,11 @@ def generate(
         "-n",
         help="Show what would be done without executing",
     ),
+    no_summary: bool = typer.Option(
+        False,
+        "--no-summary",
+        help="Suppress the success message and generated files table",
+    ),
 ) -> None:
     """Generate color scheme from an image.
 
@@ -225,18 +230,19 @@ def generate(
         )
 
         # Display success message with file list
-        console.print("\n[green]Generated color scheme successfully![/green]\n")
+        if not no_summary:
+            console.print("\n[green]Generated color scheme successfully![/green]\n")
 
-        # Create table of generated files
-        table = Table(title="Generated Files")
-        table.add_column("Format", style="cyan")
-        table.add_column("File Path", style="green")
+            # Create table of generated files
+            table = Table(title="Generated Files")
+            table.add_column("Format", style="cyan")
+            table.add_column("File Path", style="green")
 
-        for fmt in generator_config.formats:
-            file_path = generator_config.output_dir / f"colors.{fmt.value}"
-            table.add_row(fmt.value, str(file_path))
+            for fmt in generator_config.formats:
+                file_path = generator_config.output_dir / f"colors.{fmt.value}"
+                table.add_row(fmt.value, str(file_path))
 
-        console.print(table)
+            console.print(table)
 
     except InvalidImageError as e:
         console.print(f"[red]Error:[/red] Invalid image: {e.reason}")
@@ -480,24 +486,7 @@ def show(
             terminal_table.add_column("Hex", style="white")
             terminal_table.add_column("RGB", style="white")
 
-            color_names = [
-                "Black",
-                "Red",
-                "Green",
-                "Yellow",
-                "Blue",
-                "Magenta",
-                "Cyan",
-                "White",
-                "Bright Black",
-                "Bright Red",
-                "Bright Green",
-                "Bright Yellow",
-                "Bright Blue",
-                "Bright Magenta",
-                "Bright Cyan",
-                "Bright White",
-            ]
+            color_names = [f"color {i}" for i in range(16)]
 
             for idx, (name, color) in enumerate(zip(color_names, color_scheme.colors)):
                 preview = f"[on {color.hex}]          [/]"

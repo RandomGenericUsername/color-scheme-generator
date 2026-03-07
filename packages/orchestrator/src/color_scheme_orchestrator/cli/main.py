@@ -7,6 +7,7 @@ import typer
 from color_scheme.config.enums import Backend, ColorFormat
 from color_scheme_settings import configure, get_config
 from rich.console import Console
+from rich.table import Table
 
 from color_scheme_orchestrator.cli.commands import install, uninstall
 from color_scheme_orchestrator.config.unified import UnifiedConfig
@@ -169,6 +170,9 @@ def generate(
         if saturation is not None:
             container_args.extend(["--saturation", str(saturation)])
 
+        # Suppress core's summary (paths are container-internal; orchestrator prints real paths)
+        container_args.append("--no-summary")
+
         # Create container manager
         manager = ContainerManager(config)
 
@@ -183,7 +187,19 @@ def generate(
             cli_args=container_args,
         )
 
-        console.print("\n[green]Color scheme generated successfully![/green]")
+        # Resolve which formats were generated (CLI arg or config default)
+        resolved_formats = formats if formats else [
+            ColorFormat(f) for f in config.core.output.formats
+        ]
+
+        console.print("\n[green]Color scheme generated successfully![/green]\n")
+
+        table = Table(title="Generated Files")
+        table.add_column("Format", style="cyan")
+        table.add_column("File Path", style="green")
+        for fmt in resolved_formats:
+            table.add_row(fmt.value, str(output_dir / f"colors.{fmt.value}"))
+        console.print(table)
 
     except typer.Exit:
         # Re-raise typer.Exit without catching it

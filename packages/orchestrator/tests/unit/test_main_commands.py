@@ -141,6 +141,7 @@ class TestGenerateCliArgs:
         mock_config = MagicMock()
         mock_config.core.generation.default_backend = "pywal"
         mock_config.core.output.directory = Path("/tmp/output")
+        mock_config.core.output.formats = ["json"]
         mock_get_config.return_value = mock_config
 
         result = runner.invoke(app, ["generate", "/tmp/image.jpg"])
@@ -150,6 +151,28 @@ class TestGenerateCliArgs:
         cli_args = call_kwargs["cli_args"]
         assert "--output-dir" in cli_args
         assert "/output" in cli_args
+
+    @patch("color_scheme_orchestrator.cli.main.get_config")
+    @patch("color_scheme_orchestrator.container.manager.ContainerManager.run_generate")
+    @patch("pathlib.Path.mkdir")
+    @patch("pathlib.Path.is_file", return_value=True)
+    @patch("pathlib.Path.exists", return_value=True)
+    def test_generate_no_summary_forwarded(
+        self, mock_exists, mock_is_file, mock_mkdir, mock_run, mock_get_config
+    ):
+        """Verify --no-summary is always forwarded to the container."""
+        mock_config = MagicMock()
+        mock_config.core.generation.default_backend = "pywal"
+        mock_config.core.output.directory = Path("/tmp/output")
+        mock_config.core.output.formats = ["json"]
+        mock_get_config.return_value = mock_config
+
+        result = runner.invoke(app, ["generate", "/tmp/image.jpg"])
+
+        assert result.exit_code == 0
+        call_kwargs = mock_run.call_args[1]
+        cli_args = call_kwargs["cli_args"]
+        assert "--no-summary" in cli_args
 
     @patch("color_scheme_orchestrator.cli.main.get_config")
     @patch("color_scheme_orchestrator.container.manager.ContainerManager.run_generate")
@@ -267,12 +290,38 @@ class TestGenerateContainerExecution:
         mock_config = MagicMock()
         mock_config.core.generation.default_backend = "pywal"
         mock_config.core.output.directory = Path("/tmp/output")
+        mock_config.core.output.formats = ["json"]
         mock_get_config.return_value = mock_config
 
         result = runner.invoke(app, ["generate", "/tmp/image.jpg"])
 
         assert result.exit_code == 0
         assert "Color scheme generated successfully!" in result.stdout
+
+    @patch("color_scheme_orchestrator.cli.main.get_config")
+    @patch("color_scheme_orchestrator.container.manager.ContainerManager.run_generate")
+    @patch("pathlib.Path.mkdir")
+    @patch("pathlib.Path.is_file", return_value=True)
+    @patch("pathlib.Path.exists", return_value=True)
+    def test_generate_table_shows_host_paths(
+        self, mock_exists, mock_is_file, mock_mkdir, mock_run, mock_get_config
+    ):
+        """Verify the generated files table uses real host paths, not /output."""
+        mock_config = MagicMock()
+        mock_config.core.generation.default_backend = "pywal"
+        mock_config.core.output.directory = Path("/tmp/output")
+        mock_config.core.output.formats = ["json", "css"]
+        mock_get_config.return_value = mock_config
+
+        result = runner.invoke(
+            app,
+            ["generate", "/tmp/image.jpg", "--output-dir", "/tmp/colors"],
+        )
+
+        assert result.exit_code == 0
+        # Table must show real host path, not container-internal /output
+        assert "/tmp/colors" in result.stdout
+        assert "/output/colors" not in result.stdout
 
 
 class TestGenerateDryRun:
