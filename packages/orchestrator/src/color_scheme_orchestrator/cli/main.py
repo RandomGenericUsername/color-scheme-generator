@@ -170,7 +170,8 @@ def generate(
         if saturation is not None:
             container_args.extend(["--saturation", str(saturation)])
 
-        # Suppress core's summary (paths are container-internal; orchestrator prints real paths)
+        # Suppress core's summary — paths are container-internal;
+        # orchestrator prints real paths instead.
         container_args.append("--no-summary")
 
         # Create container manager
@@ -188,9 +189,9 @@ def generate(
         )
 
         # Resolve which formats were generated (CLI arg or config default)
-        resolved_formats = formats if formats else [
-            ColorFormat(f) for f in config.core.output.formats
-        ]
+        resolved_formats = (
+            formats if formats else [ColorFormat(f) for f in config.core.output.formats]
+        )
 
         console.print("\n[green]Color scheme generated successfully![/green]\n")
 

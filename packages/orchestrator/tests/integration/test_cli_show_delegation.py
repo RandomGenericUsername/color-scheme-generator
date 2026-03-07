@@ -2,7 +2,7 @@
 
 import tempfile
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 from typer.testing import CliRunner
 
@@ -51,9 +51,7 @@ class TestShowDelegation:
 
         try:
             with patch("subprocess.run") as mock_subprocess:
-                runner.invoke(
-                    app, ["show", str(test_image), "--backend", "custom"]
-                )
+                runner.invoke(app, ["show", str(test_image), "--backend", "custom"])
                 for call in mock_subprocess.call_args_list:
                     args = call[0][0] if call[0] else []
                     assert "color-scheme-core" not in args

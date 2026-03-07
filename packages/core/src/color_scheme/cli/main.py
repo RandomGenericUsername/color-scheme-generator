@@ -208,7 +208,8 @@ def generate(
         generator = factory.create(backend)
 
         # Generate color scheme
-        console.print(f"[cyan]Extracting colors from:[/cyan] {display_image_path or image_path}")
+        shown_image = display_image_path or image_path
+        console.print(f"[cyan]Extracting colors from:[/cyan] {shown_image}")
         color_scheme = generator.generate(image_path, generator_config)
 
         # Apply saturation adjustment if specified
@@ -233,7 +234,8 @@ def generate(
         if generator_config.formats is None:
             raise ValueError("formats must be configured for generate command")
         console.print(
-            f"[cyan]Writing output files to:[/cyan] {display_output_dir or generator_config.output_dir}"
+            f"[cyan]Writing output files to:[/cyan] "
+            f"{display_output_dir or generator_config.output_dir}"
         )
         output_manager.write_outputs(
             color_scheme,
@@ -447,14 +449,16 @@ def show(
             else:
                 console.print(f"[cyan]Using backend:[/cyan] {backend.value}")
 
-            console.print(f"[cyan]Extracting colors from:[/cyan] {display_image_path or image_path}")
+            shown_image = display_image_path or image_path
+            console.print(f"[cyan]Extracting colors from:[/cyan] {shown_image}")
 
             if (
                 generator_config.saturation_adjustment is not None
                 and generator_config.saturation_adjustment != 1.0
             ):
                 console.print(
-                    f"[cyan]Adjusting saturation:[/cyan] {generator_config.saturation_adjustment}"
+                    "[cyan]Adjusting saturation:[/cyan] "
+                    f"{generator_config.saturation_adjustment}"
                 )
 
             console.print()

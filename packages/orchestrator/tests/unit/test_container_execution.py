@@ -293,11 +293,7 @@ class TestContainerShow:
         )
 
         call_args = mock_run.call_args[0][0]
-        v_mounts = [
-            call_args[i + 1]
-            for i, arg in enumerate(call_args)
-            if arg == "-v"
-        ]
+        v_mounts = [call_args[i + 1] for i, arg in enumerate(call_args) if arg == "-v"]
         assert not any("/output" in m for m in v_mounts)
 
     @patch("color_scheme_orchestrator.container.manager.sys")
@@ -315,11 +311,7 @@ class TestContainerShow:
         )
 
         call_args = mock_run.call_args[0][0]
-        v_mounts = [
-            call_args[i + 1]
-            for i, arg in enumerate(call_args)
-            if arg == "-v"
-        ]
+        v_mounts = [call_args[i + 1] for i, arg in enumerate(call_args) if arg == "-v"]
         assert not any("/templates" in m for m in v_mounts)
 
     @patch("color_scheme_orchestrator.container.manager.sys")
@@ -381,11 +373,7 @@ class TestContainerShow:
         )
 
         call_args = mock_run.call_args[0][0]
-        e_pairs = [
-            call_args[i + 1]
-            for i, arg in enumerate(call_args)
-            if arg == "-e"
-        ]
+        e_pairs = [call_args[i + 1] for i, arg in enumerate(call_args) if arg == "-e"]
         assert "TERM=xterm-256color" in e_pairs
         assert "COLORTERM=truecolor" in e_pairs
         assert "FORCE_COLOR=1" in e_pairs
