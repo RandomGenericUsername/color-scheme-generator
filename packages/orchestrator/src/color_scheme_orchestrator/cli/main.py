@@ -40,29 +40,29 @@ def version():
 
 @app.command()
 def generate(
-    image_path: Path = typer.Argument(  # noqa: B008
+    image_path: Path = typer.Argument(
         ...,
         help="Path to source image",
     ),
-    output_dir: Path | None = typer.Option(  # noqa: B008
+    output_dir: Path | None = typer.Option(
         None,
         "--output-dir",
         "-o",
         help="Output directory for color scheme files",
     ),
-    backend: Backend | None = typer.Option(  # noqa: B008
+    backend: Backend | None = typer.Option(
         None,
         "--backend",
         "-b",
         help="Backend to use for color extraction",
     ),
-    formats: list[ColorFormat] | None = typer.Option(  # noqa: B008
+    formats: list[ColorFormat] | None = typer.Option(
         None,
         "--format",
         "-f",
         help="Output format(s) to generate (can be specified multiple times)",
     ),
-    saturation: float | None = typer.Option(  # noqa: B008
+    saturation: float | None = typer.Option(
         None,
         "--saturation",
         "-s",
@@ -70,7 +70,7 @@ def generate(
         max=2.0,
         help="Saturation adjustment factor (0.0-2.0)",
     ),
-    dry_run: bool = typer.Option(  # noqa: B008
+    dry_run: bool = typer.Option(
         False,
         "--dry-run",
         "-n",
@@ -217,17 +217,17 @@ def generate(
 
 @app.command()
 def show(
-    image_path: Path = typer.Argument(  # noqa: B008
+    image_path: Path = typer.Argument(
         ...,
         help="Path to source image",
     ),
-    backend: Backend | None = typer.Option(  # noqa: B008
+    backend: Backend | None = typer.Option(
         None,
         "--backend",
         "-b",
         help="Backend to use for color extraction (auto-detects if not specified)",
     ),
-    saturation: float | None = typer.Option(  # noqa: B008
+    saturation: float | None = typer.Option(
         None,
         "--saturation",
         "-s",
@@ -235,7 +235,7 @@ def show(
         max=2.0,
         help="Saturation adjustment factor (0.0-2.0)",
     ),
-    dry_run: bool = typer.Option(  # noqa: B008
+    dry_run: bool = typer.Option(
         False,
         "--dry-run",
         "-n",

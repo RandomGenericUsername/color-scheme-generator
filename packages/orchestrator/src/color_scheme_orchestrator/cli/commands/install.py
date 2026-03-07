@@ -19,19 +19,19 @@ DOCKERFILE_MAP = {
 
 
 def install(
-    backend: Backend | None = typer.Argument(  # noqa: B008
+    backend: Backend | None = typer.Argument(
         None,
         help="Backend to install (pywal, wallust, or custom). "
         "If not specified, installs all backends.",
     ),
-    engine: str | None = typer.Option(  # noqa: B008
+    engine: str | None = typer.Option(
         None,
         "--engine",
         "-e",
         help="Container engine to use (docker or podman). "
         "Uses config default if not specified.",
     ),
-    dry_run: bool = typer.Option(  # noqa: B008
+    dry_run: bool = typer.Option(
         False,
         "--dry-run",
         "-n",

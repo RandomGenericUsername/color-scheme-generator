@@ -194,14 +194,16 @@ class ContainerManager:
         stderr_lines: list[str] = []
 
         def _drain_stderr() -> None:
-            assert proc.stderr is not None  # noqa: S101
+            if proc.stderr is None:
+                raise RuntimeError("stderr pipe unexpectedly None")
             for line in proc.stderr:
                 stderr_lines.append(line)
 
         stderr_thread = threading.Thread(target=_drain_stderr, daemon=True)
         stderr_thread.start()
 
-        assert proc.stdout is not None  # noqa: S101
+        if proc.stdout is None:
+            raise RuntimeError("stdout pipe unexpectedly None")
         for line in proc.stdout:
             print(line, end="", flush=True)
 

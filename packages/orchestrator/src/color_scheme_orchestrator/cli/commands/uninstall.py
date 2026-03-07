@@ -10,25 +10,25 @@ console = Console()
 
 
 def uninstall(
-    backend: Backend | None = typer.Argument(  # noqa: B008
+    backend: Backend | None = typer.Argument(
         None,
         help="Backend to uninstall (pywal, wallust, or custom). "
         "If not specified, removes all backends.",
     ),
-    yes: bool = typer.Option(  # noqa: B008
+    yes: bool = typer.Option(
         False,
         "--yes",
         "-y",
         help="Skip confirmation prompt",
     ),
-    engine: str | None = typer.Option(  # noqa: B008
+    engine: str | None = typer.Option(
         None,
         "--engine",
         "-e",
         help="Container engine to use (docker or podman). "
         "Uses config default if not specified.",
     ),
-    dry_run: bool = typer.Option(  # noqa: B008
+    dry_run: bool = typer.Option(
         False,
         "--dry-run",
         "-n",
