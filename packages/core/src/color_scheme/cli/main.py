@@ -104,6 +104,18 @@ def generate(
         "--no-summary",
         help="Suppress the success message and generated files table",
     ),
+    display_image_path: str | None = typer.Option(
+        None,
+        "--display-image-path",
+        help="Override the image path shown in status messages (used by orchestrator)",
+        hidden=True,
+    ),
+    display_output_dir: str | None = typer.Option(
+        None,
+        "--display-output-dir",
+        help="Override the output dir shown in status messages (used by orchestrator)",
+        hidden=True,
+    ),
 ) -> None:
     """Generate color scheme from an image.
 
@@ -196,7 +208,7 @@ def generate(
         generator = factory.create(backend)
 
         # Generate color scheme
-        console.print(f"[cyan]Extracting colors from:[/cyan] {image_path}")
+        console.print(f"[cyan]Extracting colors from:[/cyan] {display_image_path or image_path}")
         color_scheme = generator.generate(image_path, generator_config)
 
         # Apply saturation adjustment if specified
@@ -221,7 +233,7 @@ def generate(
         if generator_config.formats is None:
             raise ValueError("formats must be configured for generate command")
         console.print(
-            f"[cyan]Writing output files to:[/cyan] {generator_config.output_dir}"
+            f"[cyan]Writing output files to:[/cyan] {display_output_dir or generator_config.output_dir}"
         )
         output_manager.write_outputs(
             color_scheme,
@@ -316,6 +328,12 @@ def show(
         "--dry-run",
         "-n",
         help="Show what would be done without executing",
+    ),
+    display_image_path: str | None = typer.Option(
+        None,
+        "--display-image-path",
+        help="Override the image path shown in status messages (used by orchestrator)",
+        hidden=True,
     ),
 ) -> None:
     """Display color scheme from an image in the terminal.
@@ -429,7 +447,7 @@ def show(
             else:
                 console.print(f"[cyan]Using backend:[/cyan] {backend.value}")
 
-            console.print(f"[cyan]Extracting colors from:[/cyan] {image_path}")
+            console.print(f"[cyan]Extracting colors from:[/cyan] {display_image_path or image_path}")
 
             if (
                 generator_config.saturation_adjustment is not None
@@ -442,7 +460,7 @@ def show(
             console.print()
 
             info_lines = [
-                f"[cyan]Source Image:[/cyan] {image_path}",
+                f"[cyan]Source Image:[/cyan] {display_image_path or image_path}",
                 f"[cyan]Backend:[/cyan] {backend.value}",
             ]
             if (

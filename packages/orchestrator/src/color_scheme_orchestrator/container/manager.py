@@ -141,6 +141,10 @@ class ContainerManager:
         # (ENTRYPOINT already has "color-scheme")
         cmd.extend(["generate", "/input/image.png"])
 
+        # Inject display-path overrides so the core shows real host paths
+        cmd.extend(["--display-image-path", image_path.as_posix()])
+        cmd.extend(["--display-output-dir", output_dir.as_posix()])
+
         # Add CLI arguments
         cmd.extend(cli_args)
 
@@ -320,6 +324,7 @@ class ContainerManager:
         cmd.append(image)
 
         cmd.extend(["show", "/input/image.png"])
+        cmd.extend(["--display-image-path", image_path.as_posix()])
         cmd.extend(cli_args)
 
         result = subprocess.run(cmd)
