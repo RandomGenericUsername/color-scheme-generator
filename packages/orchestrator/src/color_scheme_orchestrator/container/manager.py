@@ -1,8 +1,11 @@
 """Container manager for orchestrating color extraction in containers."""
 
 import os
+import pty
+import select
 import subprocess
 import sys
+import threading
 from pathlib import Path
 
 from color_scheme.config.enums import Backend
@@ -88,6 +91,11 @@ class ContainerManager:
     ) -> None:
         """Execute generate command in container.
 
+        Streams container output directly to the terminal. Allocates a
+        pseudo-TTY (-t) only when the host stdout is a terminal so Rich
+        inside the container renders colours and tables interactively,
+        and falls back to plain line streaming when piped or scripted.
+
         Args:
             backend: Backend to use
             image_path: Path to source image
@@ -109,6 +117,14 @@ class ContainerManager:
         # Construct docker/podman command
         cmd = [self.engine, "run", "--rm"]
 
+        if sys.stdout.isatty():
+            cmd.append("-t")
+            for var in ("TERM", "COLORTERM"):
+                val = os.environ.get(var)
+                if val:
+                    cmd.extend(["-e", f"{var}={val}"])
+            cmd.extend(["-e", "FORCE_COLOR=1"])
+
         # Run as current user to avoid permission issues with volume mounts
         user_id = os.getuid()
         group_id = os.getgid()
@@ -128,18 +144,136 @@ class ContainerManager:
         # Add CLI arguments
         cmd.extend(cli_args)
 
-        # Execute container
-        result = subprocess.run(
+        # Execute container with streaming output
+        result = self._run_streaming(cmd)
+
+        if result.returncode != 0:
+            error_msg = f"Container execution failed with exit code {result.returncode}"
+            if result.stderr:
+                error_msg += f": {result.stderr}"
+            raise RuntimeError(error_msg)
+
+    def _run_streaming(self, cmd: list[str]) -> subprocess.CompletedProcess[str]:
+        """Run a command, streaming output live.
+
+        Uses PTY when -t flag is present (for Rich colours and animations),
+        otherwise uses PIPE for plain line streaming.
+
+        Args:
+            cmd: Command and arguments to execute.
+
+        Returns:
+            CompletedProcess with returncode and stderr (if available).
+            stdout is streamed directly to the terminal.
+        """
+        if "-t" in cmd:
+            return self._run_streaming_pty(cmd)
+        return self._run_streaming_pipe(cmd)
+
+    def _run_streaming_pipe(self, cmd: list[str]) -> subprocess.CompletedProcess[str]:
+        """PIPE-based streaming.
+
+        Args:
+            cmd: Command and arguments to execute.
+
+        Returns:
+            CompletedProcess with returncode and accumulated stderr.
+            stdout is streamed directly to the terminal.
+        """
+        proc = subprocess.Popen(  # nosec: B603
             cmd,
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True,
         )
 
-        if result.returncode != 0:
-            raise RuntimeError(
-                f"Container execution failed with exit code {result.returncode}: "
-                f"{result.stderr}"
-            )
+        stderr_lines: list[str] = []
+
+        def _drain_stderr() -> None:
+            assert proc.stderr is not None  # noqa: S101
+            for line in proc.stderr:
+                stderr_lines.append(line)
+
+        stderr_thread = threading.Thread(target=_drain_stderr, daemon=True)
+        stderr_thread.start()
+
+        assert proc.stdout is not None  # noqa: S101
+        for line in proc.stdout:
+            print(line, end="", flush=True)
+
+        proc.wait()
+        stderr_thread.join()
+
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=proc.returncode,
+            stdout="",
+            stderr="".join(stderr_lines),
+        )
+
+    def _run_streaming_pty(self, cmd: list[str]) -> subprocess.CompletedProcess[str]:
+        """PTY-based streaming for Rich colours and animations.
+
+        When -t flag is present, use PTY so Rich inside the container
+        detects a terminal and renders colours, tables, and animations.
+        stdout and stderr are merged in PTY mode.
+
+        Args:
+            cmd: Command and arguments to execute.
+
+        Returns:
+            CompletedProcess with returncode. stderr is empty (merged into
+            the PTY stream, already visible on the terminal).
+        """
+        master_fd, slave_fd = pty.openpty()
+
+        proc = subprocess.Popen(  # nosec: B603
+            cmd,
+            stdin=slave_fd,
+            stdout=slave_fd,
+            stderr=slave_fd,
+        )
+        os.close(slave_fd)
+
+        while True:
+            try:
+                r, _, _ = select.select([master_fd], [], [], 0.1)
+            except (ValueError, OSError):
+                break
+
+            if r:
+                try:
+                    chunk = os.read(master_fd, 1024)
+                except OSError:
+                    break
+
+                if not chunk:
+                    break
+
+                sys.stdout.buffer.write(chunk)
+                sys.stdout.flush()
+
+            elif proc.poll() is not None:
+                # Process finished — do one final read to flush remaining output
+                try:
+                    chunk = os.read(master_fd, 1024)
+                    if chunk:
+                        sys.stdout.buffer.write(chunk)
+                        sys.stdout.flush()
+                except OSError:
+                    pass
+                break
+
+        proc.wait()
+        os.close(master_fd)
+
+        # PTY mode: stderr is merged into the PTY stream, not separately available
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=proc.returncode,
+            stdout="",
+            stderr="",
+        )
 
     def run_show(
         self,
