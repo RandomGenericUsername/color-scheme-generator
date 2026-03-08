@@ -7,6 +7,7 @@ import typer
 from color_scheme.config.enums import Backend, ColorFormat
 from color_scheme_settings import configure, get_config
 from rich.console import Console
+from rich.table import Table
 
 from color_scheme_orchestrator.cli.commands import install, uninstall
 from color_scheme_orchestrator.config.unified import UnifiedConfig
@@ -39,29 +40,29 @@ def version():
 
 @app.command()
 def generate(
-    image_path: Path = typer.Argument(  # noqa: B008
+    image_path: Path = typer.Argument(
         ...,
         help="Path to source image",
     ),
-    output_dir: Path | None = typer.Option(  # noqa: B008
+    output_dir: Path | None = typer.Option(
         None,
         "--output-dir",
         "-o",
         help="Output directory for color scheme files",
     ),
-    backend: Backend | None = typer.Option(  # noqa: B008
+    backend: Backend | None = typer.Option(
         None,
         "--backend",
         "-b",
         help="Backend to use for color extraction",
     ),
-    formats: list[ColorFormat] | None = typer.Option(  # noqa: B008
+    formats: list[ColorFormat] | None = typer.Option(
         None,
         "--format",
         "-f",
         help="Output format(s) to generate (can be specified multiple times)",
     ),
-    saturation: float | None = typer.Option(  # noqa: B008
+    saturation: float | None = typer.Option(
         None,
         "--saturation",
         "-s",
@@ -69,7 +70,7 @@ def generate(
         max=2.0,
         help="Saturation adjustment factor (0.0-2.0)",
     ),
-    dry_run: bool = typer.Option(  # noqa: B008
+    dry_run: bool = typer.Option(
         False,
         "--dry-run",
         "-n",
@@ -169,6 +170,10 @@ def generate(
         if saturation is not None:
             container_args.extend(["--saturation", str(saturation)])
 
+        # Suppress core's summary — paths are container-internal;
+        # orchestrator prints real paths instead.
+        container_args.append("--no-summary")
+
         # Create container manager
         manager = ContainerManager(config)
 
@@ -183,7 +188,19 @@ def generate(
             cli_args=container_args,
         )
 
-        console.print("\n[green]Color scheme generated successfully![/green]")
+        # Resolve which formats were generated (CLI arg or config default)
+        resolved_formats = (
+            formats if formats else [ColorFormat(f) for f in config.core.output.formats]
+        )
+
+        console.print("\n[green]Color scheme generated successfully![/green]\n")
+
+        table = Table(title="Generated Files")
+        table.add_column("Format", style="cyan")
+        table.add_column("File Path", style="green")
+        for fmt in resolved_formats:
+            table.add_row(fmt.value, str(output_dir / f"colors.{fmt.value}"))
+        console.print(table)
 
     except typer.Exit:
         # Re-raise typer.Exit without catching it
@@ -200,17 +217,17 @@ def generate(
 
 @app.command()
 def show(
-    image_path: Path = typer.Argument(  # noqa: B008
+    image_path: Path = typer.Argument(
         ...,
         help="Path to source image",
     ),
-    backend: Backend | None = typer.Option(  # noqa: B008
+    backend: Backend | None = typer.Option(
         None,
         "--backend",
         "-b",
         help="Backend to use for color extraction (auto-detects if not specified)",
     ),
-    saturation: float | None = typer.Option(  # noqa: B008
+    saturation: float | None = typer.Option(
         None,
         "--saturation",
         "-s",
@@ -218,7 +235,7 @@ def show(
         max=2.0,
         help="Saturation adjustment factor (0.0-2.0)",
     ),
-    dry_run: bool = typer.Option(  # noqa: B008
+    dry_run: bool = typer.Option(
         False,
         "--dry-run",
         "-n",
@@ -267,28 +284,41 @@ def show(
         # Exit successfully without executing
         raise typer.Exit(0)
 
-    # Delegate to core - it runs on host, no container needed
-    import subprocess
-
     try:
-        # Build command to invoke core's show through subprocess
-        # Invokes the Typer command instead of calling the function directly
-        cmd = ["color-scheme-core", "show", str(image_path)]
+        config = cast(UnifiedConfig, get_config())
 
-        if backend is not None:
-            cmd.extend(["--backend", backend.value])
+        if not image_path.exists():
+            console.print(f"[red]Error:[/red] Image file not found: {image_path}")
+            raise typer.Exit(1)
 
+        if not image_path.is_file():
+            console.print(f"[red]Error:[/red] Path is not a file: {image_path}")
+            raise typer.Exit(1)
+
+        if backend is None:
+            backend = Backend(config.core.generation.default_backend)
+
+        container_args: list[str] = []
+        container_args.extend(["--backend", backend.value])
         if saturation is not None:
-            cmd.extend(["--saturation", str(saturation)])
+            container_args.extend(["--saturation", str(saturation)])
 
-        # Run the core command in a subprocess
-        result = subprocess.run(cmd, check=False)
+        manager = ContainerManager(config)
+        manager.run_show(
+            backend=backend,
+            image_path=image_path,
+            cli_args=container_args,
+        )
 
-        if result.returncode != 0:
-            raise typer.Exit(result.returncode)
+    except typer.Exit:
+        raise
+
+    except RuntimeError as e:
+        console.print(f"[red]Container error:[/red] {str(e)}")
+        raise typer.Exit(1) from None
 
     except Exception as e:
-        console.print(f"[red]Error:[/red] {str(e)}")
+        console.print(f"[red]Unexpected error:[/red] {str(e)}")
         raise typer.Exit(1) from None
 
 

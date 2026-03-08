@@ -81,3 +81,15 @@ Current version: **v0.1.0**
 ## License
 
 MIT
+
+## 📚 TTY Interactivity Reference
+
+This project includes comprehensive reference documentation for implementing TTY interactivity with live Rich progress bars. See [`docs/tty-reference/`](docs/tty-reference/) for complete implementation guide based on proven working code.
+
+**Quick links:**
+- [Quick Reference Card](docs/tty-reference/QUICK_REFERENCE.md) - One-page overview
+- [Implementation Checklist](docs/tty-reference/CHECKLIST.md) - Step-by-step guide
+- [Working Code Examples](docs/tty-reference/CODE_EXAMPLES.md) - Copy-paste ready
+- [Full Documentation Index](docs/tty-reference/INDEX.md) - All resources
+
+**What you get:** Live animated progress bars in terminals, automatic fallback to simple output in CI/pipes, fully tested implementation pattern.

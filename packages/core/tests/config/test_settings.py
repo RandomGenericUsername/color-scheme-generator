@@ -1,5 +1,6 @@
 """Tests for settings integration with color_scheme_settings package."""
 
+import importlib
 from pathlib import Path
 
 import pytest
@@ -62,14 +63,14 @@ class TestCoreSchemaRegistration:
     def test_core_schema_registered(self):
         """Test that core schema is registered on import."""
         # Import triggers registration
-        from color_scheme.config import AppConfig  # noqa: F401
+        importlib.import_module("color_scheme.config")
 
         namespaces = SchemaRegistry.all_namespaces()
         assert "core" in namespaces
 
     def test_core_schema_has_correct_model(self):
         """Test that core schema uses AppConfig model."""
-        from color_scheme.config import AppConfig  # noqa: F401
+        importlib.import_module("color_scheme.config")
 
         entry = SchemaRegistry.get("core")
         assert entry.model is AppConfig

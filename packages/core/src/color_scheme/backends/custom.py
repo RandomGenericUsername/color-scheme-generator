@@ -5,7 +5,7 @@ from pathlib import Path
 
 import numpy as np
 from PIL import Image
-from sklearn.cluster import KMeans  # type: ignore[import-untyped]
+from sklearn.cluster import KMeans
 
 from color_scheme.config.config import AppConfig
 from color_scheme.config.enums import ColorAlgorithm

@@ -110,3 +110,22 @@ class TestCLIGenerate:
 
         assert result.exit_code == 1
         assert "Error" in result.stdout or "error" in result.stdout.lower()
+
+    def test_generate_no_summary_suppresses_table(self, runner, test_image, tmp_path):
+        """Test that --no-summary suppresses the success message and file table."""
+        result = runner.invoke(
+            app,
+            [
+                "generate",
+                str(test_image),
+                "--output-dir",
+                str(tmp_path),
+                "--backend",
+                "custom",
+                "--no-summary",
+            ],
+        )
+
+        assert result.exit_code == 0
+        assert "Generated color scheme" not in result.stdout
+        assert "Generated Files" not in result.stdout
