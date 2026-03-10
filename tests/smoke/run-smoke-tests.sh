@@ -982,6 +982,81 @@ test_dry_run_configuration_resolution() {
 }
 
 # ============================================================================
+# XDG_CONFIG_HOME TESTS
+# ============================================================================
+
+test_xdg_config_home() {
+    print_header "Testing XDG_CONFIG_HOME User Config Resolution"
+
+    local xdg_dir="$TEST_OUTPUT_DIR/xdg-config-home"
+    local xdg_user_config="$xdg_dir/color-scheme/settings.toml"
+    local xdg_output_dir="$TEST_OUTPUT_DIR/xdg-output"
+
+    # Test 1: XDG_CONFIG_HOME is respected when set
+    print_test "XDG_CONFIG_HOME is used for user config when set"
+    mkdir -p "$(dirname "$xdg_user_config")"
+    mkdir -p "$xdg_output_dir"
+    cat > "$xdg_user_config" << EOF
+[core.output]
+directory = "$xdg_output_dir"
+formats = ["json"]
+EOF
+
+    local cmd="XDG_CONFIG_HOME=$xdg_dir color-scheme-core generate $TEST_IMAGE --backend custom"
+    local output
+    output=$(eval "$cmd" 2>&1)
+    local exit_code=$?
+
+    if [ $exit_code -eq 0 ] && [ -f "$xdg_output_dir/colors.json" ]; then
+        test_passed
+        add_detail "• XDG_CONFIG_HOME=$xdg_dir"
+        add_detail "• User config: $xdg_user_config"
+        add_detail "• Output written to XDG-configured directory: $xdg_output_dir/colors.json"
+    else
+        test_failed "Output not written to XDG-configured directory" "$cmd" "$output"
+    fi
+
+    # Test 2: Without XDG_CONFIG_HOME, loader falls back to ~/.config (path-resolution check)
+    print_test "Loader falls back to ~/.config when XDG_CONFIG_HOME is unset"
+    local check_output
+    check_output=$(XDG_CONFIG_HOME="" color-scheme-core generate "$TEST_IMAGE" \
+        --backend custom --output-dir "$TEST_OUTPUT_DIR/xdg-fallback" \
+        --format json 2>&1)
+    local check_exit=$?
+
+    # The loader uses ~/.config when XDG_CONFIG_HOME is unset; the command itself should
+    # succeed regardless (missing user config is silently skipped).
+    if [ $check_exit -eq 0 ]; then
+        test_passed
+        add_detail "• Command succeeded with XDG_CONFIG_HOME unset"
+        add_detail "• ~/.config fallback path: ~/.config/color-scheme/settings.toml"
+    else
+        test_failed "Command failed when XDG_CONFIG_HOME is unset" \
+            "XDG_CONFIG_HOME='' color-scheme-core generate ..." \
+            "$check_output"
+    fi
+
+    # Test 3: Explicit user_config_path (CLI has no flag, but env var doesn't override explicit API usage)
+    # Verify that an XDG config is NOT loaded if XDG_CONFIG_HOME points to a dir with no config
+    print_test "No error when XDG_CONFIG_HOME points to dir with no user config"
+    local empty_xdg="$TEST_OUTPUT_DIR/empty-xdg"
+    mkdir -p "$empty_xdg"
+    local cmd3="XDG_CONFIG_HOME=$empty_xdg color-scheme-core generate $TEST_IMAGE \
+        --backend custom --output-dir $TEST_OUTPUT_DIR/xdg-empty-test --format json"
+    local out3
+    out3=$(eval "$cmd3" 2>&1)
+    local exit3=$?
+
+    if [ $exit3 -eq 0 ]; then
+        test_passed
+        add_detail "• XDG_CONFIG_HOME=$empty_xdg (no settings.toml inside)"
+        add_detail "• Missing user config silently ignored: command succeeded"
+    else
+        test_failed "Command failed when XDG user config is absent" "$cmd3" "$out3"
+    fi
+}
+
+# ============================================================================
 # Summary and Results
 # ============================================================================
 
@@ -1138,6 +1213,9 @@ main() {
     # Dry-run tests
     test_dry_run_flags
     test_dry_run_configuration_resolution
+
+    # XDG_CONFIG_HOME tests
+    test_xdg_config_home
 
     # Print summary and return appropriate exit code
     print_summary

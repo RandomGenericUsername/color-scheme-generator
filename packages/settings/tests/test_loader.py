@@ -128,6 +128,34 @@ class TestSettingsLoaderUserLayer:
         user_layers = [layer for layer in layers if layer.layer == "user"]
         assert len(user_layers) == 0
 
+    def test_default_path_uses_xdg_config_home(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
+        xdg_dir = tmp_path / "xdg"
+        xdg_dir.mkdir()
+        monkeypatch.setenv("XDG_CONFIG_HOME", str(xdg_dir))
+        loader = SettingsLoader()
+        expected = xdg_dir / "color-scheme" / "settings.toml"
+        assert loader.user_config_path == expected
+
+    def test_default_path_falls_back_to_home_config_when_xdg_unset(
+        self, monkeypatch: pytest.MonkeyPatch
+    ):
+        monkeypatch.delenv("XDG_CONFIG_HOME", raising=False)
+        loader = SettingsLoader()
+        expected = Path.home() / ".config" / "color-scheme" / "settings.toml"
+        assert loader.user_config_path == expected
+
+    def test_explicit_path_overrides_xdg(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
+        xdg_dir = tmp_path / "xdg"
+        xdg_dir.mkdir()
+        monkeypatch.setenv("XDG_CONFIG_HOME", str(xdg_dir))
+        explicit = tmp_path / "explicit" / "settings.toml"
+        loader = SettingsLoader(user_config_path=explicit)
+        assert loader.user_config_path == explicit
+
 
 class TestSettingsLoaderLayerOrdering:
     """Tests that layers arrive in correct priority order."""

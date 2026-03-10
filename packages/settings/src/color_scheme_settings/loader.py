@@ -1,5 +1,6 @@
 """Settings layer discovery and TOML loading."""
 
+import os
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
@@ -47,12 +48,6 @@ class SettingsLoader:
     1. Package defaults -- flat sections, namespace inferred from registry
     2. Project root -- namespaced sections ([core.*], [orchestrator.*])
     3. User config -- namespaced sections ([core.*], [orchestrator.*])
-
-    Args:
-        project_root: Path to project root directory (contains settings.toml).
-                      If None, project layer is skipped.
-        user_config_path: Path to user settings file.
-                          If None, defaults to ~/.config/color-scheme/settings.toml.
     """
 
     def __init__(
@@ -61,10 +56,13 @@ class SettingsLoader:
         user_config_path: Path | None = None,
     ) -> None:
         self.project_root = project_root
+        xdg_config_home = Path(
+            os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")
+        )
         self.user_config_path = (
             user_config_path
             if user_config_path is not None
-            else Path.home() / ".config" / "color-scheme" / "settings.toml"
+            else xdg_config_home / "color-scheme" / "settings.toml"
         )
 
     def discover_layers(self) -> list[LayerSource]:

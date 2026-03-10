@@ -74,7 +74,7 @@ layer below it:
 ├──────────────────────────────────────┤
 │  COLORSCHEME_* environment variables │
 ├──────────────────────────────────────┤
-│  User config (~/.config/…)           │
+│  User config ($XDG_CONFIG_HOME/color-scheme/…)       │
 ├──────────────────────────────────────┤
 │  Project config (./settings.toml)    │
 ├──────────────────────────────────────┤

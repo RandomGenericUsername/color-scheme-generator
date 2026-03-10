@@ -66,7 +66,7 @@ return the same object identity.
 
 1. Package defaults (registered in `SchemaRegistry`)
 2. Project config (`{project_root}/settings.toml`)
-3. User config (`~/.config/color-scheme/settings.toml` or custom path)
+3. User config (`$XDG_CONFIG_HOME/color-scheme/settings.toml`, falling back to `~/.config/color-scheme/settings.toml` when `$XDG_CONFIG_HOME` is unset)
 
 **Raises:**
 - `SettingsError` — system not yet configured (call `configure()` first)
@@ -327,7 +327,7 @@ package defaults (SchemaRegistry)
     ↑ overridden by
 project settings.toml
     ↑ overridden by
-user ~/.config/color-scheme/settings.toml
+user $XDG_CONFIG_HOME/color-scheme/settings.toml (falls back to ~/.config)
     ↑ overridden by
 COLORSCHEME_* environment variables
     ↑ overridden by
@@ -366,6 +366,7 @@ Result: `formats == ["json", "sh"]`.
 | BHV-0022 | `load_config()` caches result; second call returns same object |
 | BHV-0031 | `COLORSCHEME_SECTION__KEY` maps to `section.key` |
 | BHV-0032 | `COLOR_SCHEME_TEMPLATES` maps to `templates.directory` |
+| BHV-0037 | User config path is `$XDG_CONFIG_HOME/color-scheme/settings.toml`; falls back to `~/.config/color-scheme/settings.toml` when `$XDG_CONFIG_HOME` is unset; an explicit `user_config_path` always takes precedence |
 
 
 ---

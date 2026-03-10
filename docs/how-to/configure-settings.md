@@ -17,7 +17,7 @@ Settings are resolved from five layers in priority order (lowest to highest):
 |----------|-------|--------|
 | 1 (lowest) | Package defaults | Built-in defaults bundled with each package |
 | 2 | Project config | `./settings.toml` in the current directory |
-| 3 | User config | `~/.config/color-scheme/settings.toml` |
+| 3 | User config | `$XDG_CONFIG_HOME/color-scheme/settings.toml` (falls back to `~/.config/color-scheme/settings.toml` when `$XDG_CONFIG_HOME` is unset) |
 | 4 | Environment variables | `COLORSCHEME_*` variables in the current environment |
 | 5 (highest) | CLI overrides | Passed via `get_config(overrides)` at runtime |
 
@@ -26,7 +26,10 @@ silently ignored.
 
 ### User config example
 
-Create or edit `~/.config/color-scheme/settings.toml`:
+The user config file is resolved from `$XDG_CONFIG_HOME/color-scheme/settings.toml`.
+When `$XDG_CONFIG_HOME` is not set, the loader falls back to `~/.config/color-scheme/settings.toml`.
+
+Create or edit the file at that location:
 
 ```toml
 [core.generation]
@@ -162,6 +165,7 @@ fresh = reload_config()
 | `load_config()` returns the same object on second call | BHV-0022 |
 | `COLORSCHEME_SECTION__KEY` maps to `section.key` in config | BHV-0031 |
 | `COLOR_SCHEME_TEMPLATES` maps to `templates.directory` | BHV-0032 |
+| User config resolved via `$XDG_CONFIG_HOME`; falls back to `~/.config` | BHV-0037 |
 
 
 ---
