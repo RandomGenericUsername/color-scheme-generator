@@ -11,6 +11,8 @@ import tomllib
 from pathlib import Path
 from typing import Any
 
+from color_scheme_settings.errors import SettingsFileError
+from color_scheme_settings.loader import load_toml
 from color_scheme_settings.models import (
     ConfigSource,
     ResolvedConfig,
@@ -18,6 +20,8 @@ from color_scheme_settings.models import (
     Warning,
     WarningLevel,
 )
+from color_scheme_settings.registry import SchemaRegistry
+from color_scheme_settings.transforms import parse_env_vars
 
 
 class ConfigResolver:
@@ -89,15 +93,20 @@ class ConfigResolver:
         )
 
     def _load_package_defaults(self) -> dict[str, Any]:
-        """Load package default settings.
-
-        Returns:
-            Dictionary of package defaults (empty for now, will be populated
-            from actual package settings.toml in integration)
-        """
-        # This will be integrated with the actual settings loading system
-        # For now, return empty dict as placeholder
-        return {}
+        """Load package default settings from registered TOML files."""
+        result: dict[str, Any] = {}
+        for entry in SchemaRegistry.all_entries():
+            try:
+                data = load_toml(entry.defaults_file)
+                result[entry.namespace] = data
+            except SettingsFileError as e:
+                self.warnings.append(
+                    Warning(
+                        message=f"Could not load package defaults for {entry.namespace}: {e}",
+                        level=WarningLevel.INFO,
+                    )
+                )
+        return result
 
     def _load_project_config(self) -> dict[str, Any] | None:
         """Load ./settings.toml from current working directory.
@@ -113,16 +122,10 @@ class ConfigResolver:
         try:
             with project_settings.open("rb") as f:
                 return tomllib.load(f)
-        except Exception as e:
-            self.warnings.append(
-                Warning(
-                    level=WarningLevel.WARNING,
-                    message="Failed to load project config",
-                    detail=f"File: {project_settings}",
-                    action=f"Error: {e}",
-                )
-            )
-            return None
+        except tomllib.TOMLDecodeError as e:
+            raise SettingsFileError(file_path=project_settings, reason=str(e)) from e
+        except OSError as e:
+            raise SettingsFileError(file_path=project_settings, reason=str(e)) from e
 
     def _load_user_config(self) -> dict[str, Any] | None:
         """Load ~/.config/color-scheme/settings.toml.
@@ -140,55 +143,14 @@ class ConfigResolver:
         try:
             with user_settings.open("rb") as f:
                 return tomllib.load(f)
-        except Exception as e:
-            self.warnings.append(
-                Warning(
-                    level=WarningLevel.WARNING,
-                    message="Failed to load user config",
-                    detail=f"File: {user_settings}",
-                    action=f"Error: {e}",
-                )
-            )
-            return None
+        except tomllib.TOMLDecodeError as e:
+            raise SettingsFileError(file_path=user_settings, reason=str(e)) from e
+        except OSError as e:
+            raise SettingsFileError(file_path=user_settings, reason=str(e)) from e
 
     def _collect_env_vars(self) -> dict[str, Any]:
-        """Collect COLORSCHEME_* environment variables.
-
-        Pattern: COLORSCHEME_SECTION__KEY (double underscore for nesting)
-        Example: COLORSCHEME_OUTPUT__DIRECTORY
-
-        Returns:
-            Dictionary of environment variables in config structure format
-        """
-        env_vars: dict[str, Any] = {}
-        prefix = "COLORSCHEME_"
-
-        for key, value in os.environ.items():
-            if key.startswith(prefix):
-                # Remove prefix
-                config_key = key[len(prefix) :]
-
-                # Split on double underscore
-                parts = config_key.split("__")
-
-                # Build nested dict
-                current = env_vars
-                for part in parts[:-1]:
-                    part_lower = part.lower()
-                    if part_lower not in current:
-                        current[part_lower] = {}
-                    current = current[part_lower]
-
-                # Set final value
-                current[parts[-1].lower()] = value
-
-        # Also check special variables
-        if "COLOR_SCHEME_TEMPLATES" in os.environ:
-            if "templates" not in env_vars:
-                env_vars["templates"] = {}
-            env_vars["templates"]["directory"] = os.environ["COLOR_SCHEME_TEMPLATES"]
-
-        return env_vars
+        """Collect COLORSCHEME_* environment variables using shared parser."""
+        return parse_env_vars()
 
     def _apply_precedence(
         self,

@@ -1,14 +1,28 @@
 """Tests for ConfigResolver."""
 
+import os
+import pytest
+from pathlib import Path
 from unittest.mock import patch
 
+from pydantic import BaseModel, Field
+
+from color_scheme_settings.errors import SettingsFileError
 from color_scheme_settings.models import (
     ConfigSource,
     ResolvedConfig,
     Warning,
     WarningLevel,
 )
+from color_scheme_settings.registry import SchemaRegistry
 from color_scheme_settings.resolver import ConfigResolver
+
+
+@pytest.fixture(autouse=True)
+def clean_registry():
+    SchemaRegistry.clear()
+    yield
+    SchemaRegistry.clear()
 
 
 class TestConfigResolverInit:
@@ -104,9 +118,7 @@ directory = "/tmp/output"
             os.chdir(original_cwd)
 
     def test_load_project_config_malformed_file(self, tmp_path):
-        """Test loading malformed TOML file."""
-        import os
-
+        """Test loading malformed TOML file raises SettingsFileError."""
         # Create a malformed TOML file
         config_file = tmp_path / "settings.toml"
         config_file.write_text("""
@@ -118,13 +130,8 @@ default_backend = "pywal"
         try:
             os.chdir(tmp_path)
             resolver = ConfigResolver()
-            result = resolver._load_project_config()
-            # Should handle error gracefully
-            assert result is None
-            # Should record warning
-            assert len(resolver.warnings) == 1
-            assert resolver.warnings[0].level == WarningLevel.WARNING
-            assert "Failed to load project config" in resolver.warnings[0].message
+            with pytest.raises(SettingsFileError):
+                resolver._load_project_config()
         finally:
             os.chdir(original_cwd)
 
@@ -342,35 +349,32 @@ class TestConfigResolverWarnings:
         resolver = ConfigResolver()
         assert resolver.warnings == []
 
-    def test_warnings_accumulate(self, tmp_path):
-        """Test that warnings accumulate during resolution."""
-        import os
+    def test_warnings_accumulate(self, tmp_path: Path):
+        """Warnings from _load_package_defaults accumulate on resolver."""
+        from pydantic import BaseModel
 
-        # Create malformed config file
-        config_file = tmp_path / "settings.toml"
-        config_file.write_text("[invalid toml syntax")
+        class MockConfig(BaseModel):
+            pass
 
-        original_cwd = os.getcwd()
-        try:
-            os.chdir(tmp_path)
-            resolver = ConfigResolver()
-            resolver._load_project_config()
-            # Should have at least one warning
-            assert len(resolver.warnings) >= 1
-        finally:
-            os.chdir(original_cwd)
-
-    def test_warning_structure(self):
-        """Test that warnings have proper structure."""
+        SchemaRegistry.register("core", MockConfig, tmp_path / "nonexistent.toml")
         resolver = ConfigResolver()
-        with patch("pathlib.Path.cwd"):
-            # Create a scenario that would generate a warning
-            _ = resolver._load_project_config()
-            # Check warning structure if any were created
-            for warning in resolver.warnings:
-                assert isinstance(warning, Warning)
-                assert hasattr(warning, "level")
-                assert hasattr(warning, "message")
+        resolver._load_package_defaults()
+        assert len(resolver.warnings) >= 1
+
+    def test_warning_structure(self, tmp_path: Path):
+        """Warnings from _load_package_defaults have proper structure."""
+        from pydantic import BaseModel
+
+        class MockConfig(BaseModel):
+            pass
+
+        SchemaRegistry.register("core", MockConfig, tmp_path / "nonexistent.toml")
+        resolver = ConfigResolver()
+        resolver._load_package_defaults()
+        for warning in resolver.warnings:
+            assert isinstance(warning, Warning)
+            assert hasattr(warning, "level")
+            assert hasattr(warning, "message")
 
 
 class TestConfigResolverIntegration:
@@ -393,3 +397,63 @@ class TestConfigResolverIntegration:
 
         assert resolver1.package_name != resolver2.package_name
         assert resolver1.warnings is not resolver2.warnings
+
+
+class TestLoadPackageDefaults:
+    """CRIT-02: _load_package_defaults must return real values from registry."""
+
+    def test_load_package_defaults_returns_real_values(self, tmp_path: Path):
+        toml_file = tmp_path / "settings.toml"
+        toml_file.write_text('[generation]\ndefault_backend = "pywal"\n')
+
+        class MockCoreConfig(BaseModel):
+            generation: dict = Field(default_factory=dict)
+
+        SchemaRegistry.register("core", MockCoreConfig, toml_file)
+        resolver = ConfigResolver()
+        defaults = resolver._load_package_defaults()
+        assert "core" in defaults
+        assert defaults["core"].get("generation", {}).get("default_backend") == "pywal"
+
+    def test_load_package_defaults_warns_on_missing_file(self, tmp_path: Path):
+        class MockCoreConfig(BaseModel):
+            pass
+
+        SchemaRegistry.register("core", MockCoreConfig, tmp_path / "nonexistent.toml")
+        resolver = ConfigResolver()
+        result = resolver._load_package_defaults()
+        assert result == {} or "core" not in result
+        assert len(resolver.warnings) >= 1
+
+
+class TestCollectEnvVars:
+    """CRIT-02: _collect_env_vars must delegate to parse_env_vars()."""
+
+    def test_env_vars_delegate_to_shared_parser(self):
+        resolver = ConfigResolver()
+        with patch(
+            "color_scheme_settings.resolver.parse_env_vars",
+            return_value={"output": {"directory": "/patched"}},
+        ) as mock_parse:
+            result = resolver._collect_env_vars()
+        mock_parse.assert_called_once()
+        assert result == {"output": {"directory": "/patched"}}
+
+
+class TestResolverErrorHandling:
+    """IMP-2: malformed config files must raise, not silently warn."""
+
+    def test_malformed_project_config_raises_settings_file_error(
+        self, tmp_path: Path
+    ):
+        bad_toml = tmp_path / "settings.toml"
+        bad_toml.write_text("this is not [[ valid toml")
+
+        resolver = ConfigResolver()
+        original_cwd = os.getcwd()
+        os.chdir(tmp_path)
+        try:
+            with pytest.raises(SettingsFileError):
+                resolver._load_project_config()
+        finally:
+            os.chdir(original_cwd)
