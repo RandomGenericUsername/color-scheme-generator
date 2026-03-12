@@ -16,6 +16,7 @@ def build_validated_namespace(
     namespace: str,
     model: type[BaseModel],
     data: dict[str, Any],
+    source_layer: str | None = None,
 ) -> BaseModel:
     """Validate a single namespace's merged data through its Pydantic model.
 
@@ -23,6 +24,7 @@ def build_validated_namespace(
         namespace: The namespace identifier
         model: Pydantic model class
         data: Merged settings data
+        source_layer: Which settings layer this data came from (for error attribution)
 
     Returns:
         Validated Pydantic model instance
@@ -38,6 +40,7 @@ def build_validated_namespace(
         raise SettingsValidationError(
             namespace=namespace,
             validation_error=e,
+            source_layer=source_layer,
         ) from e
 
 

@@ -1,11 +1,32 @@
 """Tests for UnifiedConfig construction and transforms."""
 
 import pytest
+from pydantic import BaseModel, Field
 
+from color_scheme_settings.errors import SettingsValidationError
 from color_scheme_settings.transforms import (
     convert_keys_to_lowercase,
     resolve_environment_variables,
 )
+from color_scheme_settings.unified import build_validated_namespace
+
+
+class StrictModel(BaseModel):
+    value: int = Field(ge=0)
+
+
+class TestValidationErrorIncludesSourceLayer:
+    """MIN-4: SettingsValidationError must include source_layer when provided."""
+
+    def test_validation_error_includes_source_layer(self):
+        with pytest.raises(SettingsValidationError) as exc_info:
+            build_validated_namespace(
+                namespace="test",
+                model=StrictModel,
+                data={"value": -1},
+                source_layer="user",
+            )
+        assert exc_info.value.source_layer == "user"
 
 
 class TestConvertKeysToLowercase:
