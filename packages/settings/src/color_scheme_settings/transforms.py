@@ -51,7 +51,7 @@ def parse_env_vars(environ: dict | None = None) -> dict[str, dict]:
 
     Returns:
         Dict mapping section name to {key: value} pairs.
-        Example: {"output": {"directory": "/tmp"}, "generation": {"default_backend": "pywal"}}
+        Example: ``{"output": {"directory": "/tmp"}, "generation": {"backend": "x"}}``
     """
     if environ is None:
         environ = dict(os.environ)
@@ -61,7 +61,7 @@ def parse_env_vars(environ: dict | None = None) -> dict[str, dict]:
 
     for key, value in environ.items():
         if key.startswith(prefix):
-            config_key = key[len(prefix):]
+            config_key = key[len(prefix) :]
             parts = config_key.split("__", 1)
             if len(parts) == 2:
                 section, field = parts[0].lower(), parts[1].lower()

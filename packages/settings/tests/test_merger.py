@@ -91,7 +91,7 @@ class TestDeepMerge:
         assert result1["section"]["key"] == "original"
 
     def test_deep_merge_unmerged_nested_not_shared_with_base(self):
-        """CRIT-03: nested dicts not touched by override must not share refs with base."""
+        """CRIT-03: untouched nested dicts must not share refs with base."""
         base = {"section": {"key": "value", "sub": {"nested": "original"}}}
         override = {"section": {"key": "changed"}}
 

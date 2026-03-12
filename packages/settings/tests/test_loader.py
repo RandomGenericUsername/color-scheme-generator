@@ -175,3 +175,59 @@ class TestSettingsLoaderLayerOrdering:
         core_layers = [layer for layer in layers if layer.namespace == "core"]
         layer_names = [layer.layer for layer in core_layers]
         assert layer_names == ["package", "project", "user"]
+
+
+class TestEnvVarLayer:
+    """CRIT-01: env-var layer must appear in discover_layers() output."""
+
+    def test_env_var_layer_present_when_set(
+        self, core_defaults_toml: Path, monkeypatch: pytest.MonkeyPatch
+    ):
+        SchemaRegistry.register("core", MockCoreConfig, core_defaults_toml)
+        monkeypatch.setenv("COLORSCHEME_LEVEL__VALUE", "DEBUG")
+        loader = SettingsLoader(project_root=None, user_config_path=None)
+        layers = loader.discover_layers()
+        env_layers = [layer for layer in layers if layer.layer == "env"]
+        assert len(env_layers) >= 1
+
+    def test_env_var_layer_absent_when_no_colorscheme_vars(
+        self, core_defaults_toml: Path, monkeypatch: pytest.MonkeyPatch
+    ):
+        SchemaRegistry.register("core", MockCoreConfig, core_defaults_toml)
+        # Patch parse_env_vars to return empty to isolate from real env
+        import color_scheme_settings.loader as loader_mod
+
+        original = getattr(loader_mod, "parse_env_vars", None)
+        loader_mod.parse_env_vars = lambda: {}
+        try:
+            loader = SettingsLoader(project_root=None, user_config_path=None)
+            layers = loader.discover_layers()
+            env_layers = [layer for layer in layers if layer.layer == "env"]
+            assert len(env_layers) == 0
+        finally:
+            if original is not None:
+                loader_mod.parse_env_vars = original
+            else:
+                del loader_mod.parse_env_vars
+
+    def test_env_var_layer_has_no_file_path(
+        self, core_defaults_toml: Path, monkeypatch: pytest.MonkeyPatch
+    ):
+        SchemaRegistry.register("core", MockCoreConfig, core_defaults_toml)
+        monkeypatch.setenv("COLORSCHEME_LEVEL__VALUE", "DEBUG")
+        loader = SettingsLoader(project_root=None, user_config_path=None)
+        layers = loader.discover_layers()
+        env_layers = [layer for layer in layers if layer.layer == "env"]
+        for layer in env_layers:
+            assert layer.file_path is None
+
+    def test_env_var_unknown_section_ignored(
+        self, core_defaults_toml: Path, monkeypatch: pytest.MonkeyPatch
+    ):
+        SchemaRegistry.register("core", MockCoreConfig, core_defaults_toml)
+        monkeypatch.setenv("COLORSCHEME_UNKNOWNSECTION__KEY", "value")
+        loader = SettingsLoader(project_root=None, user_config_path=None)
+        layers = loader.discover_layers()
+        env_layers = [layer for layer in layers if layer.layer == "env"]
+        namespaces = [layer.namespace for layer in env_layers]
+        assert "unknownsection" not in namespaces

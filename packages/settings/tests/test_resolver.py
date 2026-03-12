@@ -1,10 +1,10 @@
 """Tests for ConfigResolver."""
 
 import os
-import pytest
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
 from pydantic import BaseModel, Field
 
 from color_scheme_settings.errors import SettingsFileError
@@ -12,7 +12,6 @@ from color_scheme_settings.models import (
     ConfigSource,
     ResolvedConfig,
     Warning,
-    WarningLevel,
 )
 from color_scheme_settings.registry import SchemaRegistry
 from color_scheme_settings.resolver import ConfigResolver
@@ -443,9 +442,7 @@ class TestCollectEnvVars:
 class TestResolverErrorHandling:
     """IMP-2: malformed config files must raise, not silently warn."""
 
-    def test_malformed_project_config_raises_settings_file_error(
-        self, tmp_path: Path
-    ):
+    def test_malformed_project_config_raises_settings_file_error(self, tmp_path: Path):
         bad_toml = tmp_path / "settings.toml"
         bad_toml.write_text("this is not [[ valid toml")
 

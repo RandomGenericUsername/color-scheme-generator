@@ -104,9 +104,9 @@ class TestRegistrationBleedGuard:
         If this test fails, a previous test leaked schema registrations.
         Check that all tests using SchemaRegistry have a clean_state autouse fixture.
         """
-        assert SchemaRegistry.all_namespaces() == [], (
-            f"Registry leaked from a previous test: {SchemaRegistry.all_namespaces()}"
-        )
+        assert (
+            SchemaRegistry.all_namespaces() == []
+        ), f"Registry leaked from a previous test: {SchemaRegistry.all_namespaces()}"
 
 
 class TestFullPipeline:

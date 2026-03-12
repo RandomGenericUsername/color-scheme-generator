@@ -206,6 +206,7 @@ class TestXdgConfigHomeFunctions:
         self, monkeypatch: pytest.MonkeyPatch
     ):
         from color_scheme_settings import paths
+
         monkeypatch.setenv("XDG_CONFIG_HOME", "/tmp/test-xdg")
         result = paths.get_xdg_config_home()
         assert str(result) == "/tmp/test-xdg"
@@ -214,6 +215,7 @@ class TestXdgConfigHomeFunctions:
         self, monkeypatch: pytest.MonkeyPatch
     ):
         from color_scheme_settings import paths
+
         monkeypatch.setenv("XDG_CONFIG_HOME", "/tmp/test-xdg")
         result = paths.get_user_settings_file()
         assert str(result) == "/tmp/test-xdg/color-scheme/settings.toml"

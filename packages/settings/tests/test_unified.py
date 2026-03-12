@@ -121,7 +121,5 @@ class TestParseEnvVars:
         assert "directory" in result["output"]
 
     def test_explicit_environ_overrides_os_environ(self):
-        result = parse_env_vars(
-            environ={"COLORSCHEME_OUTPUT__DIRECTORY": "/explicit"}
-        )
+        result = parse_env_vars(environ={"COLORSCHEME_OUTPUT__DIRECTORY": "/explicit"})
         assert result == {"output": {"directory": "/explicit"}}

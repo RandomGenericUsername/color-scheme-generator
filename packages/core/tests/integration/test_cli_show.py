@@ -121,7 +121,7 @@ class TestShowSaturationAppliedOnce:
     def test_cli_does_not_call_adjust_saturation_after_backend(
         self, runner, mock_color_scheme
     ):
-        """The show command must not call adjust_saturation — the backend already did."""
+        """show must not call adjust_saturation — the backend already did."""
         mock_scheme, mock_color = mock_color_scheme
         test_image = Path(__file__).parent.parent / "fixtures" / "test_image.png"
 
@@ -132,12 +132,11 @@ class TestShowSaturationAppliedOnce:
 
             runner.invoke(
                 app,
-                ["show", str(test_image),
-                 "--backend", "custom",
-                 "--saturation", "1.5"],
+                ["show", str(test_image), "--backend", "custom", "--saturation", "1.5"],
             )
 
-        assert mock_color.adjust_saturation.call_count == 0, (
-            f"show CLI called adjust_saturation {mock_color.adjust_saturation.call_count} "
-            f"time(s) — the backend already applies saturation in generate()"
+        count = mock_color.adjust_saturation.call_count
+        assert count == 0, (
+            f"show CLI called adjust_saturation {count} time(s)"
+            f" — backend already applies it in generate()"
         )

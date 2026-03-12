@@ -32,6 +32,6 @@ class TestOrchestratorEngineDefault:
         data = load_toml(toml_path)
         # After fix: top-level key 'engine' = 'docker'
         # Before fix: only key is 'container' (a nested dict), no 'engine' at top level
-        assert data.get("engine") == "docker", (
-            f"Expected top-level engine='docker' in TOML, got: {data}"
-        )
+        assert (
+            data.get("engine") == "docker"
+        ), f"Expected top-level engine='docker' in TOML, got: {data}"

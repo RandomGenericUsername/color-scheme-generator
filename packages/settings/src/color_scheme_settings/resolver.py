@@ -102,7 +102,10 @@ class ConfigResolver:
             except SettingsFileError as e:
                 self.warnings.append(
                     Warning(
-                        message=f"Could not load package defaults for {entry.namespace}: {e}",
+                        message=(
+                            f"Could not load package defaults"
+                            f" for {entry.namespace}: {e}"
+                        ),
                         level=WarningLevel.INFO,
                     )
                 )
