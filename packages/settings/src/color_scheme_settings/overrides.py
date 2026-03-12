@@ -31,7 +31,7 @@ def apply_overrides(
     if not overrides:
         return config
 
-    config_dict = config.model_dump()
+    config_dict = config.model_dump(mode="python")
 
     for dotted_key, value in overrides.items():
         parts = dotted_key.split(".")
