@@ -8,6 +8,7 @@ from typing import Any
 
 from color_scheme_settings.errors import SettingsFileError
 from color_scheme_settings.registry import SchemaRegistry
+from color_scheme_settings.transforms import parse_env_vars
 
 
 @dataclass
@@ -119,5 +120,21 @@ class SettingsLoader:
                             data=data_lower[ns],
                         )
                     )
+
+        # Layer 4: Environment variables (COLORSCHEME_SECTION__KEY)
+        raw_env = parse_env_vars()
+        for entry in SchemaRegistry.all_entries():
+            # Only include env sections that match known model field names
+            model_sections = set(entry.model.model_fields.keys())
+            namespace_data = {k: v for k, v in raw_env.items() if k in model_sections}
+            if namespace_data:
+                layers.append(
+                    LayerSource(
+                        layer="env",
+                        namespace=entry.namespace,
+                        file_path=None,
+                        data=namespace_data,
+                    )
+                )
 
         return layers
