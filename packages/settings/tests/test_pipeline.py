@@ -209,3 +209,48 @@ class TestFullPipeline:
         config = load_config()
         assert config.core.generation.default_backend == "pywal"  # Pydantic default
         assert config.orchestrator.engine == "docker"  # Pydantic default
+
+
+class TestEnvVarLayerPipeline:
+    """CRIT-01: env-var layer must override file-based layers in full pipeline."""
+
+    def test_env_var_overrides_user_config(
+        self,
+        package_files: tuple[Path, Path],
+        user_config_file: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        core_file, orch_file = package_files
+        SchemaRegistry.register("core", PipelineCoreConfig, core_file)
+        SchemaRegistry.register("orchestrator", PipelineContainerConfig, orch_file)
+        monkeypatch.setenv("COLORSCHEME_GENERATION__SATURATION_ADJUSTMENT", "1.8")
+        configure(PipelineUnifiedConfig, user_config_path=user_config_file)
+        config = load_config()
+        assert config.core.generation.saturation_adjustment == pytest.approx(1.8)
+
+    def test_env_var_beaten_by_cli_override(
+        self,
+        package_files: tuple[Path, Path],
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        core_file, orch_file = package_files
+        SchemaRegistry.register("core", PipelineCoreConfig, core_file)
+        SchemaRegistry.register("orchestrator", PipelineContainerConfig, orch_file)
+        monkeypatch.setenv("COLORSCHEME_GENERATION__DEFAULT_BACKEND", "wallust")
+        configure(PipelineUnifiedConfig)
+        config = get_config(overrides={"core.generation.default_backend": "pywal"})
+        assert config.core.generation.default_backend == "pywal"
+
+    def test_env_var_beats_project_config(
+        self,
+        package_files: tuple[Path, Path],
+        project_root_dir: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        core_file, orch_file = package_files
+        SchemaRegistry.register("core", PipelineCoreConfig, core_file)
+        SchemaRegistry.register("orchestrator", PipelineContainerConfig, orch_file)
+        monkeypatch.setenv("COLORSCHEME_GENERATION__DEFAULT_BACKEND", "custom")
+        configure(PipelineUnifiedConfig, project_root=project_root_dir)
+        config = load_config()
+        assert config.core.generation.default_backend == "custom"
