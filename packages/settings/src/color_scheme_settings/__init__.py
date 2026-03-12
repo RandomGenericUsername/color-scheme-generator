@@ -75,7 +75,13 @@ def load_config() -> BaseModel:
 
 
 def reload_config() -> BaseModel:
-    """Force reload from all layers. Useful for testing."""
+    """Force reload from all layers.
+
+    Clears the settings cache and reloads from all configured layers.
+    Use this when runtime conditions change (e.g., config files updated
+    while the process is running). For test isolation, prefer calling
+    reset() followed by configure() instead.
+    """
     global _config
     _config = None
     return load_config()
