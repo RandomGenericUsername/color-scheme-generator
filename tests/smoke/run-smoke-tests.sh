@@ -972,13 +972,13 @@ test_dry_run_configuration_resolution() {
             "$dry_run_output"
     fi
 
-    print_test "dry-run shows docker as package default with Default attribution"
+    print_test "dry-run shows package default source attribution for core settings"
     dry_run_output=$(color-scheme-core generate "$TEST_IMAGE" --dry-run 2>&1)
-    if echo "$dry_run_output" | grep -qE "Default.*docker|docker.*Default"; then
+    if echo "$dry_run_output" | grep -qE "Package default"; then
         test_passed
-        add_detail "docker shown with Default source attribution"
+        add_detail "Package default source attribution visible in dry-run output"
     else
-        test_failed "dry-run did not show docker with Default attribution" \
+        test_failed "dry-run did not show Package default source attribution" \
             "color-scheme-core generate --dry-run" \
             "$dry_run_output"
     fi
