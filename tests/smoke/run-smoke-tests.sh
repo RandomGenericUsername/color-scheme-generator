@@ -399,20 +399,12 @@ test_settings_precedence() {
     output=$(eval "$cmd" 2>&1)
     exit_code=$?
 
-    # Check if it wrote to the env-specified dir OR the default (shows if env vars work)
     if [ -f "$env_test_dir/colors.json" ]; then
         test_passed
         add_detail "• ENV var: COLORSCHEME_OUTPUT__DIRECTORY=$env_test_dir"
         add_detail "• Result: Output written to env-specified directory"
-        add_detail "• Dynaconf env override: WORKING"
-    elif [ $exit_code -eq 0 ]; then
-        # Command succeeded but wrote elsewhere - env var not picked up
-        test_passed
-        add_detail "• ENV var: COLORSCHEME_OUTPUT__DIRECTORY=$env_test_dir"
-        add_detail "• Note: Env var not applied (may need different format or not supported)"
-        add_detail "• Command succeeded, output written to default location"
     else
-        test_failed "Command failed entirely" "$cmd" "$output"
+        test_failed "env var COLORSCHEME_OUTPUT__DIRECTORY had no effect" "$cmd" "$output"
     fi
 }
 
@@ -977,6 +969,17 @@ test_dry_run_configuration_resolution() {
     else
         test_failed "configuration sources not shown" \
             "color-scheme-core show --dry-run" \
+            "$dry_run_output"
+    fi
+
+    print_test "dry-run shows docker as package default with Default attribution"
+    dry_run_output=$(color-scheme-core generate "$TEST_IMAGE" --dry-run 2>&1)
+    if echo "$dry_run_output" | grep -qE "Default.*docker|docker.*Default"; then
+        test_passed
+        add_detail "docker shown with Default source attribution"
+    else
+        test_failed "dry-run did not show docker with Default attribution" \
+            "color-scheme-core generate --dry-run" \
             "$dry_run_output"
     fi
 }
