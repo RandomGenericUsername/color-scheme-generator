@@ -64,9 +64,11 @@ return the same object identity.
 
 **Layer order (lowest to highest priority):**
 
-1. Package defaults (registered in `SchemaRegistry`)
+1. Package defaults (from registered `settings.toml` files)
 2. Project config (`{project_root}/settings.toml`)
 3. User config (`$XDG_CONFIG_HOME/color-scheme/settings.toml`, falling back to `~/.config/color-scheme/settings.toml` when `$XDG_CONFIG_HOME` is unset)
+4. Environment variables (`COLORSCHEME_SECTION__KEY`)
+5. CLI overrides (applied by `get_config(overrides=...)`)
 
 **Raises:**
 - `SettingsError` — system not yet configured (call `configure()` first)
@@ -360,13 +362,14 @@ Result: `formats == ["json", "sh"]`.
 |-----|---------|
 | BHV-0017 | Duplicate namespace in `SchemaRegistry.register` raises `SettingsRegistryError` |
 | BHV-0018 | `SchemaRegistry.get` on unknown namespace raises `SettingsRegistryError` |
-| BHV-0019 | Layer order: package < project < user < CLI |
+| BHV-0019 | Layer order: package < project < user < env < CLI |
 | BHV-0020 | List values are replaced, not merged, when overridden |
 | BHV-0021 | `get_config(overrides)` values take precedence over all layers |
 | BHV-0022 | `load_config()` caches result; second call returns same object |
 | BHV-0031 | `COLORSCHEME_SECTION__KEY` maps to `section.key` |
 | BHV-0032 | `COLOR_SCHEME_TEMPLATES` maps to `templates.directory` |
 | BHV-0037 | User config path is `$XDG_CONFIG_HOME/color-scheme/settings.toml`; falls back to `~/.config/color-scheme/settings.toml` when `$XDG_CONFIG_HOME` is unset; an explicit `user_config_path` always takes precedence |
+| BHV-0038 | Env-var layer (`COLORSCHEME_*`) is processed by `load_config()` as layer 4, between user config and CLI overrides. Variables follow the pattern `COLORSCHEME_SECTION__KEY` (double underscore separates section from key). |
 
 
 ---

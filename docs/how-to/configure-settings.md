@@ -159,13 +159,14 @@ fresh = reload_config()
 
 | Behavior | Expected |
 |----------|----------|
-| Layers applied in order package < project < user < CLI | BHV-0019 |
+| Layers applied in order package < project < user < env < CLI | BHV-0019 |
 | List values in override layer replace the entire list | BHV-0020 |
 | `get_config(overrides)` takes precedence over all layers | BHV-0021 |
 | `load_config()` returns the same object on second call | BHV-0022 |
 | `COLORSCHEME_SECTION__KEY` maps to `section.key` in config | BHV-0031 |
 | `COLOR_SCHEME_TEMPLATES` maps to `templates.directory` | BHV-0032 |
 | User config resolved via `$XDG_CONFIG_HOME`; falls back to `~/.config` | BHV-0037 |
+| Set `COLORSCHEME_GENERATION__DEFAULT_BACKEND=custom` and run `color-scheme-core generate`; verify `custom` backend is used | BHV-0038 |
 
 
 ---
