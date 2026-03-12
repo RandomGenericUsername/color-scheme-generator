@@ -16,7 +16,7 @@ installed on the host.
 |---------|-----------|---------|
 | `version` | No | Show package version |
 | `generate` | Yes | Generate color files via container |
-| `show` | No | Display colors (delegates to core CLI on host) |
+| `show` | Yes | Display colors via container |
 | `install` | Yes | Build backend container images |
 | `uninstall` | Yes | Remove backend container images |
 
@@ -105,8 +105,9 @@ Same as `color-scheme-core show`: `--backend` / `-b`, `--saturation` / `-s`,
 
 ### Description
 
-Delegates directly to `color-scheme-core show` on the host. No container is launched.
-Output format is identical to the core `show` command.
+Runs inside a container, like all other orchestrator commands. TTY detection is
+performed inside the container so that Rich renders colour tables interactively
+when the host terminal supports it.
 
 ---
 

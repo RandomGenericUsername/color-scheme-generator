@@ -20,9 +20,9 @@ The project provides two separate command-line entry points:
   startup adds overhead), but backend installation is managed once via
   `color-scheme install`.
 
-The `show` command is an exception: the orchestrator's `show` delegates directly to
-the core CLI on the host, because terminal color display must happen in the calling
-terminal, not inside a container.
+`show` runs inside a container, like all other orchestrator commands. TTY detection
+is performed inside the container so that Rich renders colour tables interactively
+when the host terminal supports it.
 
 ### Three backends
 
