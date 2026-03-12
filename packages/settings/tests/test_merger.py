@@ -79,6 +79,29 @@ class TestDeepMerge:
         deep_merge({"a": {"b": 0}}, override)
         assert override == override_copy
 
+    def test_deep_merge_result_not_mutated_by_second_merge(self):
+        """CRIT-03: result of first merge must not be mutated by a second merge."""
+        base = {"section": {"key": "original"}}
+        override1 = {"section": {"other": "value1"}}
+        override2 = {"section": {"key": "mutated"}}
+
+        result1 = deep_merge(base, override1)
+        deep_merge(result1, override2)
+
+        assert result1["section"]["key"] == "original"
+
+    def test_deep_merge_unmerged_nested_not_shared_with_base(self):
+        """CRIT-03: nested dicts not touched by override must not share refs with base."""
+        base = {"section": {"key": "value", "sub": {"nested": "original"}}}
+        override = {"section": {"key": "changed"}}
+
+        result = deep_merge(base, override)
+        # Directly mutate the unmerged nested dict in result
+        result["section"]["sub"]["nested"] = "mutated"
+
+        # base must not be affected (fails with shallow copy)
+        assert base["section"]["sub"]["nested"] == "original"
+
 
 class TestMergeLayers:
     """Tests for merge_layers function."""

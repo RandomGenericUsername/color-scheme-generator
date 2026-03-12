@@ -1,5 +1,6 @@
 """Deep merge algorithm for layered settings."""
 
+import copy
 from typing import Any
 
 from color_scheme_settings.loader import LayerSource
@@ -14,7 +15,7 @@ def deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]
     - Scalars: replaced entirely
     - Keys in override not in base: added
     """
-    result = base.copy()
+    result = copy.deepcopy(base)
     for key, value in override.items():
         if key in result and isinstance(result[key], dict) and isinstance(value, dict):
             result[key] = deep_merge(result[key], value)
