@@ -3,6 +3,8 @@
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
+
 from color_scheme_settings.paths import (
     APP_NAME,
     CONTAINER_OUTPUT_DIR,
@@ -195,3 +197,23 @@ class TestGetEnvTemplatesOverride:
             mock_getenv.return_value = None
             result = get_env_templates_override()
             assert result is None
+
+
+class TestXdgConfigHomeFunctions:
+    """Tests for the dynamic path functions (MIN-01)."""
+
+    def test_xdg_config_home_respects_env_var_after_import(
+        self, monkeypatch: pytest.MonkeyPatch
+    ):
+        from color_scheme_settings import paths
+        monkeypatch.setenv("XDG_CONFIG_HOME", "/tmp/test-xdg")
+        result = paths.get_xdg_config_home()
+        assert str(result) == "/tmp/test-xdg"
+
+    def test_get_user_settings_file_uses_current_xdg(
+        self, monkeypatch: pytest.MonkeyPatch
+    ):
+        from color_scheme_settings import paths
+        monkeypatch.setenv("XDG_CONFIG_HOME", "/tmp/test-xdg")
+        result = paths.get_user_settings_file()
+        assert str(result) == "/tmp/test-xdg/color-scheme/settings.toml"

@@ -59,6 +59,16 @@ def is_container_environment() -> bool:
     return CONTAINER_TEMPLATES_DIR.exists()
 
 
+def get_xdg_config_home() -> Path:
+    """Return XDG_CONFIG_HOME, reading the environment at call time."""
+    return Path(os.getenv("XDG_CONFIG_HOME", str(Path.home() / ".config")))
+
+
+def get_user_settings_file() -> Path:
+    """Return the user settings file path, reading XDG_CONFIG_HOME at call time."""
+    return get_xdg_config_home() / APP_NAME / SETTINGS_FILENAME
+
+
 def get_env_templates_override() -> Path | None:
     """Get template directory from COLOR_SCHEME_TEMPLATES env var."""
     env_value = os.getenv("COLOR_SCHEME_TEMPLATES")
