@@ -212,21 +212,6 @@ def generate(
         console.print(f"[cyan]Extracting colors from:[/cyan] {shown_image}")
         color_scheme = generator.generate(image_path, generator_config)
 
-        # Apply saturation adjustment if specified
-        if (
-            generator_config.saturation_adjustment is not None
-            and generator_config.saturation_adjustment != 1.0
-        ):
-            sat = generator_config.saturation_adjustment
-            console.print(f"[cyan]Adjusting saturation:[/cyan] {sat}")
-            # Adjust all colors
-            color_scheme.background = color_scheme.background.adjust_saturation(sat)
-            color_scheme.foreground = color_scheme.foreground.adjust_saturation(sat)
-            color_scheme.cursor = color_scheme.cursor.adjust_saturation(sat)
-            color_scheme.colors = [
-                c.adjust_saturation(sat) for c in color_scheme.colors
-            ]
-
         # Write output files
         output_manager = OutputManager(config.core)
         if generator_config.output_dir is None:
@@ -415,19 +400,6 @@ def show(
         # Create generator and extract colors
         generator = factory.create(backend)
         color_scheme = generator.generate(image_path, generator_config)
-
-        # Apply saturation adjustment if specified
-        if (
-            generator_config.saturation_adjustment is not None
-            and generator_config.saturation_adjustment != 1.0
-        ):
-            sat = generator_config.saturation_adjustment
-            color_scheme.background = color_scheme.background.adjust_saturation(sat)
-            color_scheme.foreground = color_scheme.foreground.adjust_saturation(sat)
-            color_scheme.cursor = color_scheme.cursor.adjust_saturation(sat)
-            color_scheme.colors = [
-                c.adjust_saturation(sat) for c in color_scheme.colors
-            ]
 
         if not console.is_terminal:
             # Non-TTY: pure data bullet list, no preamble, no Rich markup

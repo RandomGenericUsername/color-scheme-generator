@@ -1,11 +1,13 @@
 """Integration tests for CLI generate command."""
 
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import pytest
 from typer.testing import CliRunner
 
 from color_scheme.cli.main import app
+from color_scheme.core.types import Color, ColorScheme
 
 
 class TestCLIGenerate:
@@ -129,3 +131,50 @@ class TestCLIGenerate:
         assert result.exit_code == 0
         assert "Generated color scheme" not in result.stdout
         assert "Generated Files" not in result.stdout
+
+
+class TestGenerateSaturationAppliedOnce:
+    """CRIT-04: CLI must not re-apply saturation after the backend already applied it."""
+
+    @pytest.fixture
+    def runner(self):
+        return CliRunner()
+
+    @pytest.fixture
+    def mock_color_scheme(self):
+        mock_color = MagicMock(spec=Color)
+        mock_color.adjust_saturation.return_value = mock_color
+        mock_color.hex = "#aabbcc"
+        mock_scheme = MagicMock(spec=ColorScheme)
+        mock_scheme.background = mock_color
+        mock_scheme.foreground = mock_color
+        mock_scheme.cursor = mock_color
+        mock_scheme.colors = [mock_color] * 16
+        mock_scheme.output_files = {}
+        return mock_scheme, mock_color
+
+    def test_cli_does_not_call_adjust_saturation_after_backend(
+        self, runner, mock_color_scheme, tmp_path
+    ):
+        """The CLI must not call adjust_saturation — the backend already did."""
+        mock_scheme, mock_color = mock_color_scheme
+        test_image = Path(__file__).parent.parent / "fixtures" / "test_image.png"
+
+        with patch("color_scheme.cli.main.BackendFactory") as mock_factory_cls, \
+             patch("color_scheme.cli.main.OutputManager"):
+            mock_backend = MagicMock()
+            mock_backend.generate.return_value = mock_scheme
+            mock_factory_cls.return_value.create.return_value = mock_backend
+
+            runner.invoke(
+                app,
+                ["generate", str(test_image),
+                 "--output-dir", str(tmp_path),
+                 "--backend", "custom",
+                 "--saturation", "1.5"],
+            )
+
+        assert mock_color.adjust_saturation.call_count == 0, (
+            f"CLI called adjust_saturation {mock_color.adjust_saturation.call_count} "
+            f"time(s) — the backend already applies saturation in generate()"
+        )
