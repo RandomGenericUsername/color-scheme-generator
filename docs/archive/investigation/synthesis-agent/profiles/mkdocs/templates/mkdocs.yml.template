@@ -1,4 +1,0 @@
-site_name: Project Docs
-nav:
-  - Home: docs/index.md
-  - Reference: docs/reference.md
