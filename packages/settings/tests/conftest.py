@@ -47,7 +47,6 @@ n_clusters = 16
 def orchestrator_defaults_toml(tmp_settings_dir: Path) -> Path:
     """Create an orchestrator package settings.toml (flat sections)."""
     content = """\
-[container]
 engine = "docker"
 """
     file_path = tmp_settings_dir / "orchestrator_settings.toml"
