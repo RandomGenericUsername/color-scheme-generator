@@ -26,6 +26,10 @@ New to color-scheme? Start with the tutorial:
 
 → **[Generate Your First Color Scheme](tutorials/getting-started.md)**
 
+## Changelog
+
+See [Changelog](changelog.md) for a history of all notable changes.
+
 ---
 
 ## How-to guides
