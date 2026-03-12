@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 from color_scheme_settings.errors import SettingsValidationError
 from color_scheme_settings.transforms import (
     convert_keys_to_lowercase,
+    parse_env_vars,
     resolve_environment_variables,
 )
 from color_scheme_settings.unified import build_validated_namespace
@@ -84,3 +85,43 @@ class TestResolveEnvironmentVariables:
 
     def test_empty_dict(self):
         assert resolve_environment_variables({}) == {}
+
+
+class TestParseEnvVars:
+    """Tests for parse_env_vars() shared utility."""
+
+    def test_single_key(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setenv("COLORSCHEME_OUTPUT__DIRECTORY", "/tmp/out")
+        result = parse_env_vars()
+        assert result == {"output": {"directory": "/tmp/out"}}
+
+    def test_nested_double_underscore(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setenv("COLORSCHEME_GENERATION__DEFAULT_BACKEND", "wallust")
+        result = parse_env_vars()
+        assert result["generation"]["default_backend"] == "wallust"
+
+    def test_color_scheme_templates_special_case(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setenv("COLOR_SCHEME_TEMPLATES", "/custom/templates")
+        result = parse_env_vars(environ={"COLOR_SCHEME_TEMPLATES": "/custom/templates"})
+        assert result == {"templates": {"directory": "/custom/templates"}}
+
+    def test_unrelated_vars_ignored(self):
+        result = parse_env_vars(environ={"HOME": "/home/user", "PATH": "/usr/bin"})
+        assert "home" not in result
+        assert "path" not in result
+
+    def test_empty_environ(self):
+        result = parse_env_vars(environ={})
+        assert result == {}
+
+    def test_keys_normalised_to_lowercase(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setenv("COLORSCHEME_OUTPUT__DIRECTORY", "/tmp")
+        result = parse_env_vars()
+        assert "output" in result
+        assert "directory" in result["output"]
+
+    def test_explicit_environ_overrides_os_environ(self):
+        result = parse_env_vars(
+            environ={"COLORSCHEME_OUTPUT__DIRECTORY": "/explicit"}
+        )
+        assert result == {"output": {"directory": "/explicit"}}

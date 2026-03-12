@@ -35,3 +35,44 @@ def resolve_environment_variables(data: dict[str, Any]) -> dict[str, Any]:
         return value
 
     return _resolve(data)
+
+
+def parse_env_vars(environ: dict | None = None) -> dict[str, dict]:
+    """Parse COLORSCHEME_* environment variables into a section-keyed dict.
+
+    Pattern: COLORSCHEME_SECTION__KEY (double underscore separates section from key)
+    Special case: COLOR_SCHEME_TEMPLATES=/path → {"templates": {"directory": "/path"}}
+
+    Keys are normalised to lowercase.
+    Unrecognised environment variables are ignored.
+
+    Args:
+        environ: Environment dict to parse. Defaults to os.environ if None.
+
+    Returns:
+        Dict mapping section name to {key: value} pairs.
+        Example: {"output": {"directory": "/tmp"}, "generation": {"default_backend": "pywal"}}
+    """
+    if environ is None:
+        environ = dict(os.environ)
+
+    result: dict[str, dict] = {}
+    prefix = "COLORSCHEME_"
+
+    for key, value in environ.items():
+        if key.startswith(prefix):
+            config_key = key[len(prefix):]
+            parts = config_key.split("__", 1)
+            if len(parts) == 2:
+                section, field = parts[0].lower(), parts[1].lower()
+                if section not in result:
+                    result[section] = {}
+                result[section][field] = value
+
+    # Special case: COLOR_SCHEME_TEMPLATES
+    if "COLOR_SCHEME_TEMPLATES" in environ:
+        if "templates" not in result:
+            result["templates"] = {}
+        result["templates"]["directory"] = environ["COLOR_SCHEME_TEMPLATES"]
+
+    return result
