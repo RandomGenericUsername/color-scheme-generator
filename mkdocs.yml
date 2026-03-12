@@ -17,13 +17,9 @@ theme:
     - navigation.top
     - search.highlight
 
-exclude_docs: |
-  archive/
-  audit-*.md
-  plans/
-
 nav:
   - Home: index.md
+  - Changelog: changelog.md
   - Tutorial:
     - Getting Started: tutorials/getting-started.md
   - How-To:
