@@ -24,9 +24,9 @@ class MockOrchestratorConfig(BaseModel):
 @pytest.fixture(autouse=True)
 def clean_registry():
     """Reset registry before each test."""
-    SchemaRegistry._entries.clear()
+    SchemaRegistry.clear()
     yield
-    SchemaRegistry._entries.clear()
+    SchemaRegistry.clear()
 
 
 class TestSchemaEntry:

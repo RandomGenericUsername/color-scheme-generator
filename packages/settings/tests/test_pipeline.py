@@ -95,6 +95,20 @@ saturation_adjustment = 1.5
     return user_file
 
 
+class TestRegistrationBleedGuard:
+    """Guard against schema registrations leaking between test sessions."""
+
+    def test_registry_is_empty_before_test_setup(self):
+        """The registry must be empty before any test registers schemas.
+
+        If this test fails, a previous test leaked schema registrations.
+        Check that all tests using SchemaRegistry have a clean_state autouse fixture.
+        """
+        assert SchemaRegistry.all_namespaces() == [], (
+            f"Registry leaked from a previous test: {SchemaRegistry.all_namespaces()}"
+        )
+
+
 class TestFullPipeline:
     """End-to-end tests for the complete settings pipeline."""
 
