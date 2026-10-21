@@ -18,7 +18,7 @@
 
 ## Ops tasks
 
-(none)
+- [OPS-002-invocation-contract-ci](./OPS-002-invocation-contract-ci/ticket.md) — Prove this repo's own side of the csg invocation contract in CI | `in-progress` | openspec: none (recorded: ops-task, no spec delta)
 
 ## Spikes
 
