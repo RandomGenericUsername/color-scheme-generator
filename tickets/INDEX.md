@@ -18,7 +18,7 @@
 
 ## Ops tasks
 
-(none)
+- [OPS-001-repin-contracts-v020](./OPS-001-repin-contracts-v020/ticket.md) — Re-pin contracts v0.2.0 and release csg v0.2.0 | `in-progress` | openspec: none (recorded: ops-task, no spec delta)
 
 ## Spikes
 
