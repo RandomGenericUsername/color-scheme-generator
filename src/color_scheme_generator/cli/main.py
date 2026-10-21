@@ -134,8 +134,10 @@ def main_callback(
         verbosity = Verbosity.QUIET
     elif verbose > 0:
         match verbose:
-            case 1: verbosity = Verbosity.VERBOSE
-            case _: verbosity = Verbosity.DEBUG
+            case 1:
+                verbosity = Verbosity.VERBOSE
+            case _:
+                verbosity = Verbosity.DEBUG
     else:
         verbosity = None  # use TOML default
 
@@ -257,7 +259,9 @@ def generate(
             processor = deps.processor
         elif effective_runtime == RuntimeMode.CONTAINER:
             engine_value = container_engine or settings.container.engine or ContainerEngine.PODMAN
-            engine_obj = ContainerEngine(engine_value) if isinstance(engine_value, str) else engine_value
+            engine_obj = (
+                ContainerEngine(engine_value) if isinstance(engine_value, str) else engine_value
+            )
             container_runtime = create_container_engine(engine=engine_obj)
             processor = create_container_processor(
                 container_runtime,

@@ -31,7 +31,9 @@ class TemplateDirResolver:
 
     def resolve(self, settings_dir: Path | None = None) -> Path:
         try:
-            result = self._resolver.resolve(_RESOLUTION_POLICY, explicit_path=str(settings_dir) if settings_dir else None)
+            result = self._resolver.resolve(
+                _RESOLUTION_POLICY, explicit_path=str(settings_dir) if settings_dir else None
+            )
         except PathResolutionError as exc:
             raise ConfigResolutionError(
                 "templates_dir", f"Failed to resolve templates directory: {exc}"

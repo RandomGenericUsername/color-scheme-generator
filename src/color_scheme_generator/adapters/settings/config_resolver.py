@@ -67,8 +67,14 @@ class AssembledConfigResolver:
         strategies = [
             CliPathStrategy(kind=ResourceKind.FILE),
             EnvPathStrategy(kind=ResourceKind.FILE),
-            DirectoryTraversalStrategy(filename="settings.toml", max_levels=3, kind=ResourceKind.FILE),
-            XdgStrategy(xdg_subdir="color-scheme-generator", filename="settings.toml", kind=ResourceKind.FILE),
+            DirectoryTraversalStrategy(
+                filename="settings.toml", max_levels=3, kind=ResourceKind.FILE
+            ),
+            XdgStrategy(
+                xdg_subdir="color-scheme-generator",
+                filename="settings.toml",
+                kind=ResourceKind.FILE,
+            ),
             DefaultFileStrategy(
                 path=Path(resource_files("color_scheme_generator") / "defaults" / "settings.toml"),
                 kind=ResourceKind.FILE,

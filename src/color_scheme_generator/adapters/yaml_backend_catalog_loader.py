@@ -64,8 +64,14 @@ class YamlBackendCatalogLoader:
         strategies = [
             CliPathStrategy(kind=ResourceKind.FILE),
             EnvPathStrategy(kind=ResourceKind.FILE),
-            DirectoryTraversalStrategy(filename="backends.yaml", max_levels=3, kind=ResourceKind.FILE),
-            XdgStrategy(xdg_subdir="color-scheme-generator", filename="backends.yaml", kind=ResourceKind.FILE),
+            DirectoryTraversalStrategy(
+                filename="backends.yaml", max_levels=3, kind=ResourceKind.FILE
+            ),
+            XdgStrategy(
+                xdg_subdir="color-scheme-generator",
+                filename="backends.yaml",
+                kind=ResourceKind.FILE,
+            ),
             DefaultFileStrategy(
                 path=resource_files("color_scheme_generator.defaults") / "backends.yaml",
                 kind=ResourceKind.FILE,

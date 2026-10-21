@@ -268,8 +268,12 @@ class ContainerProcessor:
             if cs_data and isinstance(cs_data, dict):
                 from color_scheme_generator.domain.models import Color as _Color
                 color_scheme = ColorScheme(
-                    background=_Color(cs_data["background"]["hex"], tuple(cs_data["background"]["rgb"])),
-                    foreground=_Color(cs_data["foreground"]["hex"], tuple(cs_data["foreground"]["rgb"])),
+                    background=_Color(
+                        cs_data["background"]["hex"], tuple(cs_data["background"]["rgb"])
+                    ),
+                    foreground=_Color(
+                        cs_data["foreground"]["hex"], tuple(cs_data["foreground"]["rgb"])
+                    ),
                     cursor=_Color(cs_data["cursor"]["hex"], tuple(cs_data["cursor"]["rgb"])),
                     colors=tuple(_Color(c["hex"], tuple(c["rgb"])) for c in cs_data["colors"]),
                     source_image=request.image_path.resolve(),

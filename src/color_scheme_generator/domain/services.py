@@ -66,7 +66,10 @@ class ParameterResolutionService:
             else:
                 raise ConfigResolutionError(
                     key=param.name,
-                    reason=f"Required parameter '{param.name}' has no default and no override was provided",
+                    reason=(
+                        f"Required parameter '{param.name}' has no default "
+                        "and no override was provided"
+                    ),
                 )
         return resolved
 

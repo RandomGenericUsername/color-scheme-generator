@@ -1,0 +1,11 @@
+# The image build needs only the files the Dockerfile copies; keep the context
+# small and deterministic.
+.git
+.venv
+dist
+build
+.worktrees
+.pytest_cache
+.ruff_cache
+**/__pycache__
+**/*.pyc

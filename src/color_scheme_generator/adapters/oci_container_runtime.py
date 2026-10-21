@@ -106,7 +106,9 @@ class OciContainerRuntimeAdapter:
         from color_scheme_generator.domain.exceptions import ImageBuildError
 
         if timeout is not None and timeout <= 0:
-            raise ImageBuildError(image=image_name, reason=f"Invalid timeout: {timeout}", backend=backend)
+            raise ImageBuildError(
+                image=image_name, reason=f"Invalid timeout: {timeout}", backend=backend
+            )
         try:
             return self._engine.images.build(context, image_name, timeout)
         except ImageError as exc:

@@ -11,7 +11,12 @@ from color_scheme_generator.factory import CliDependencies
 
 def dump_config(
     ctx: typer.Context,
-    output: Path | None = typer.Option(None, "--output", "-o", help="Output file path or directory (appends settings.toml)"),  # noqa: B008
+    output: Path | None = typer.Option(  # noqa: B008
+        None,
+        "--output",
+        "-o",
+        help="Output file path or directory (appends settings.toml)",
+    ),
 ) -> None:
     deps: CliDependencies = ctx.obj["deps"]
     content = (

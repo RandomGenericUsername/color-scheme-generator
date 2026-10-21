@@ -1,27 +1,34 @@
 [project]
 name = "color-scheme-generator"
 version = "0.1.0"
-description = "Extract color palettes from wallpaper images for desktop theming"
+description = "Color scheme generator (csg) with wallust/pywal container backends for the dotfiles CLI toolchain"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.14"
 dependencies = [
-    "typer>=0.12",
-    "cli-invocation-contract",
-    "config-assembler-engine",
-    "oci-runtime",
-    "cli-output",
-    "pydantic>=2.0",
+    "cli-invocation-contract>=0.1.0",
+    "cli-output>=0.1.0",
+    "config-assembler-engine>=0.1.0",
+    "oci-runtime>=0.5.0",
     "jinja2>=3.1",
+    "pydantic>=2.0",
     "rich>=13.0",
+    "typer>=0.12",
 ]
-
-[project.scripts]
-csg = "color_scheme_generator.cli.main:app"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Typing :: Typed",
+]
 
 [project.optional-dependencies]
 custom = ["pillow>=11", "numpy>=2", "scikit-learn>=1.6"]
 
+[project.scripts]
+csg = "color_scheme_generator.cli.main:app"
+
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build]
@@ -31,6 +38,19 @@ include = [
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/color_scheme_generator"]
+
+# The harness trees (.agents/, _bmad/, .opencode/, openspec/, tickets/) are not
+# package content; keep them out of the sdist.
+[tool.hatch.build.targets.sdist]
+only-include = [
+    "pyproject.toml",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "src/color_scheme_generator",
+    "tests",
+    "docs",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -49,12 +69,14 @@ line-length = 100
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP", "B"]
-ignore = ["B905"]
+ignore = ["B008", "B905"]
 
 [tool.ruff.format]
 quote-style = "double"
 
 [dependency-groups]
 dev = [
-    "pytest>=9.1.1",
+    "pytest>=8.0",
+    "pytest-cov>=7.0",
+    "ruff>=0.15.17",
 ]

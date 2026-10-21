@@ -32,9 +32,9 @@ class Color:
 
     def adjust_saturation(self, factor: float) -> Color:
         r, g, b = self.rgb
-        h, l, s = colorsys.rgb_to_hls(r / 255.0, g / 255.0, b / 255.0)
+        h, lightness, s = colorsys.rgb_to_hls(r / 255.0, g / 255.0, b / 255.0)
         s = max(0.0, min(1.0, s * factor))
-        r2, g2, b2 = colorsys.hls_to_rgb(h, l, s)
+        r2, g2, b2 = colorsys.hls_to_rgb(h, lightness, s)
         nr, ng, nb = round(r2 * 255), round(g2 * 255), round(b2 * 255)
         return Color(f"#{nr:02x}{ng:02x}{nb:02x}", (nr, ng, nb))
 
@@ -44,7 +44,10 @@ class ColorScheme:
     background: Color
     foreground: Color
     cursor: Color
-    colors: tuple[Color, Color, Color, Color, Color, Color, Color, Color, Color, Color, Color, Color, Color, Color, Color, Color]
+    colors: tuple[
+        Color, Color, Color, Color, Color, Color, Color, Color,
+        Color, Color, Color, Color, Color, Color, Color, Color,
+    ]
     source_image: Path
     backend: Backend
     generated_at: datetime
