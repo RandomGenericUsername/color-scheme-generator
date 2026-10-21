@@ -49,3 +49,8 @@ at `0.1.0` (spine AD-9: versions never move backwards).
   `v0.1.0`.
 - Suite: 639 tests, green in the ambient and hermetic environments, and independent of a host
   `podman`/`docker` (engine-dependent tests skip with a reason).
+- `tests/conftest.py` pins `_TYPER_FORCE_DISABLE_TERMINAL`, `NO_COLOR`, `COLUMNS` and
+  `TERMINAL_WIDTH` before the CLI modules are imported. Typer forces a terminal when it sees
+  `GITHUB_ACTIONS`, which made Rich wrap and interleave ANSI between the characters of an option
+  name, so `--help` substring assertions failed on CI but not on a developer terminal. The fix is
+  in the test harness; no product code changed.

@@ -10,7 +10,7 @@
 
 ## Requirements
 
-- [REQ-001-repo-birth](./REQ-001-repo-birth/ticket.md) — Birth the color-scheme-generator repo (mu-strict, `csg`) and cut v0.1.0 | `in-progress` | openspec: repo-birth
+(none)
 
 ## Bugs
 
@@ -29,3 +29,5 @@
 (none)
 
 ## Done (links only, newest last)
+
+- [REQ-001-repo-birth](./REQ-001-repo-birth/ticket.md) — Birth the color-scheme-generator repo (mu-strict, `csg`) and cut v0.1.0 | `done` | openspec: repo-birth (open; closes when the change is archived)
