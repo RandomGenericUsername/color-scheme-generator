@@ -7,23 +7,13 @@ pin, and the `install`/`uninstall` verbs.
 ## Requirements
 
 ### Requirement: every image builds from this repo root
-The four images SHALL be built with the repository root as context, and
+All four images SHALL be built with the repository root as context.
 `src/color_scheme_generator/adapters/docker/Dockerfile.base` SHALL copy only repo-relative paths
 (`pyproject.toml`, `uv.lock`, `README.md`, `LICENSE`, `src/`). The per-backend Dockerfiles
 (`custom`, `pywal`, `wallust`) SHALL keep their `ARG BASE_IMAGE` and add only engine-level
-packages. No Dockerfile path may name a sibling repo or a parent directory.
+packages.
 
 Source: spine AD-5/AD-7; `Dockerfile.base` lines 1–18; `Dockerfile.{custom,pywal,wallust}`.
-
-#### Scenario: build with no monorepo present
-- **WHEN** `podman build -t color-scheme-generator-base:v0.1.0 -f
-  src/color_scheme_generator/adapters/docker/Dockerfile.base .` runs in a standalone checkout
-- **THEN** the build exits 0
-
-#### Scenario: backend images derive from the pinned base
-- **WHEN** each `Dockerfile.{custom,pywal,wallust}` is built with
-  `--build-arg BASE_IMAGE=<base>:v0.1.0`
-- **THEN** every build exits 0 and no Dockerfile needs a sibling checkout
 
 #### Scenario: no sibling or parent references
 - **WHEN** `rg -n "src/shared|src/cli-tools|\.\./" src/color_scheme_generator/adapters/docker/`

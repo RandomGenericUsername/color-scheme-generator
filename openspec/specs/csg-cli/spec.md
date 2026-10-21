@@ -30,19 +30,25 @@ Source: `src/color_scheme_generator/cli/main.py`; `src/color_scheme_generator/ad
 - **THEN** the exit code is 0 and those eight `colors.*` files exist in the output directory
 
 ### Requirement: settings discovery is layered and ordered
-Settings SHALL resolve in this order (highest priority first): `--config` flag, `COLORSCHEME__*`
-environment overrides, `COLORSCHEME_CONFIG_FILE_PATH`, `settings.toml` in the CWD or up to three
-parent levels, `$XDG_CONFIG_HOME/color-scheme-generator/settings.toml`, packaged defaults. A bad
-explicit config SHALL fail loudly rather than silently fall back.
+Settings SHALL resolve highest-priority-first: `--config`, `COLORSCHEME__*` env overrides,
+`COLORSCHEME_CONFIG_FILE_PATH`, `settings.toml` in the CWD or up to three parents,
+`$XDG_CONFIG_HOME/color-scheme-generator/settings.toml`, then packaged defaults.
 
-Source: `src/color_scheme_generator/adapters/settings/config_resolver.py` (`ResolutionPolicy(env_prefix="COLORSCHEME")`);
-`src/color_scheme_generator/cli/main.py` app help.
+Source: `src/color_scheme_generator/adapters/settings/config_resolver.py`
+(`ResolutionPolicy(env_prefix="COLORSCHEME")`); `src/color_scheme_generator/cli/main.py` app help.
 
 #### Scenario: env override wins over the bundled default
 - **WHEN** `COLORSCHEME__OUTPUT__DIRECTORY=<tmp>` is set for a `generate` run
 - **THEN** the artifacts land in `<tmp>` and the bundled `/tmp/color-scheme` default is not used
 
-#### Scenario: invalid explicit config fails
+### Requirement: a bad explicit config fails loudly
+A malformed or unreadable `--config` file SHALL raise a non-zero exit with the error on stderr,
+never a silent fallback to the packaged defaults.
+
+Source: `src/color_scheme_generator/adapters/settings/config_resolver.py` (`ConfigParseError`,
+`PathResolutionError` → `ConfigResolutionError`).
+
+#### Scenario: invalid explicit config
 - **WHEN** `csg info --config <malformed settings.toml>` runs
 - **THEN** the exit code is non-zero and the error is printed on stderr
 
