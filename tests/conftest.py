@@ -1,9 +1,22 @@
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+
+# Output determinism (S6a). Typer reads these at IMPORT time, and a CI runner
+# exports GITHUB_ACTIONS (Typer then forces a terminal) plus a narrow width, so
+# Rich wraps and interleaves ANSI between the characters of an option name and a
+# `--help` substring assertion fails on the runner but not on a developer's
+# terminal. Pin them before the CLI modules are imported; the hermetic fixture
+# re-asserts them per test so a test cannot leak a host value either.
+os.environ["_TYPER_FORCE_DISABLE_TERMINAL"] = "1"
+os.environ["NO_COLOR"] = "1"
+os.environ["COLUMNS"] = "200"
+os.environ["TERMINAL_WIDTH"] = "200"
+os.environ.pop("FORCE_COLOR", None)
 
 import pytest
 from typer.testing import CliRunner
