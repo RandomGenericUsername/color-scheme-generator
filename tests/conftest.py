@@ -51,6 +51,14 @@ def _hermetic_environment(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> No
         monkeypatch.setenv(name, str(path))
     for name in _HERMETIC_HOST_ONLY_VARS:
         monkeypatch.delenv(name, raising=False)
+    # Output determinism (S6a): a CI runner can export FORCE_COLOR/narrow
+    # COLUMNS, which makes Rich wrap and interleave ANSI between the characters
+    # of an option name, so a substring assertion on `--help` output fails on
+    # the runner but not on a developer's terminal. Pin both here instead of
+    # weakening the assertions.
+    monkeypatch.delenv("FORCE_COLOR", raising=False)
+    monkeypatch.setenv("NO_COLOR", "1")
+    monkeypatch.setenv("COLUMNS", "200")
     monkeypatch.chdir(work)
 
 
