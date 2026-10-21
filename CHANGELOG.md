@@ -8,7 +8,7 @@ Notable changes to the `color-scheme-generator` repo. Format follows
 
 ### Added
 
-- `tests/integration/test_invocation_contract.py` proves this repo's own half of the runtime↔CLI
+- `tests/contract/test_invocation_contract.py` proves this repo's own half of the runtime↔CLI
   invocation contract in CI: it runs the installed `csg` console script with the pinned
   `cli_invocation_contract` record (the 8 `--format` flags, `COLORSCHEME__OUTPUT__DIRECTORY` and
   `COLORSCHEME__OUTPUT__OVERWRITE`) in a scrubbed environment and asserts the 8 required artifacts
