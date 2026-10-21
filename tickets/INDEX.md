@@ -18,7 +18,7 @@
 
 ## Ops tasks
 
-(none)
+- [OPS-003-contract-test-layout](./OPS-003-contract-test-layout/ticket.md) — Move the invocation-contract test to `tests/contract/` (path-only) | `in-progress` | openspec: none (recorded: ops-task, no spec delta)
 
 ## Spikes
 
