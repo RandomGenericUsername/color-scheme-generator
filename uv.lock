@@ -22,8 +22,8 @@ wheels = [
 
 [[package]]
 name = "cli-invocation-contract"
-version = "0.1.0"
-source = { git = "https://github.com/RandomGenericUsername/contracts?tag=v0.1.0#48cf3cfed4b192b241505789409c4f282921c896" }
+version = "0.2.0"
+source = { git = "https://github.com/RandomGenericUsername/contracts?tag=v0.2.0#c6c3ab5d523d06210f8e87535c464d3190d005c0" }
 
 [[package]]
 name = "cli-output"
@@ -35,7 +35,7 @@ dependencies = [
 
 [[package]]
 name = "color-scheme-generator"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "cli-invocation-contract" },
@@ -64,7 +64,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "cli-invocation-contract", git = "https://github.com/RandomGenericUsername/contracts?tag=v0.1.0" },
+    { name = "cli-invocation-contract", git = "https://github.com/RandomGenericUsername/contracts?tag=v0.2.0" },
     { name = "cli-output", git = "https://github.com/RandomGenericUsername/cli-output?tag=v0.1.0" },
     { name = "config-assembler-engine", git = "https://github.com/RandomGenericUsername/config-assembler-engine?tag=v0.1.0" },
     { name = "jinja2", specifier = ">=3.1" },

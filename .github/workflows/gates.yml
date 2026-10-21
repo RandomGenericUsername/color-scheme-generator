@@ -87,7 +87,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build the four images from the repo root and run the CLI in the base
-        run: make image IMAGE_ENGINE=docker IMAGE_TAG=v0.1.0
+        # The tag is derived from pyproject (`IMAGE_TAG ?= v$(VERSION)`), so a
+        # release bump cannot leave the image job building a stale tag.
+        run: make image IMAGE_ENGINE=docker
 
   release:
     name: release

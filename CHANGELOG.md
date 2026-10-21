@@ -6,6 +6,22 @@ Notable changes to the `color-scheme-generator` repo. Format follows
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-21
+
+Dependency re-pin and release. No product behaviour change: `csg`'s invocation record is unchanged
+by contract data v2, whose single addition is the itr-only `ICON_RENDERER__TEMPLATES__DIR` env key.
+
+### Changed
+
+- `cli-invocation-contract` (`contracts`) re-pinned `v0.1.0` → `v0.2.0` (annotated tag object
+  `442fb9abdc73fa109115ba804911a10af9f4cad1`, peeled commit
+  `c6c3ab5d523d06210f8e87535c464d3190d005c0`). `uv.lock` records the peeled commit; the package
+  reports `CONTRACT_VERSION` `0.2.0` with `DATA_VERSION` `2`.
+- Package version `0.1.0` → `0.2.0`; `csg --version` now prints `0.2.0 contract 0.2.0`.
+- `tests/unit/cli/test_version_flag.py` still derives the token from
+  `cli_invocation_contract.CONTRACT_VERSION` and additionally asserts the expected `0.2.0` literal,
+  so a stale pin or lock fails the suite instead of shipping an old token.
+
 ## [0.1.0] - 2026-10-21
 
 First release. The package content is the in-tree `src/cli-tools/color-scheme-generator` package

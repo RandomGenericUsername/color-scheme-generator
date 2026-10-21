@@ -1,6 +1,6 @@
 [project]
 name = "color-scheme-generator"
-version = "0.1.0"
+version = "0.2.0"
 description = "Color scheme generator (csg) with wallust/pywal container backends for the dotfiles CLI toolchain"
 readme = "README.md"
 license = "MIT"
@@ -58,7 +58,7 @@ pythonpath = ["src", "."]
 addopts = ["--strict-markers", "-rxX"]
 
 [tool.uv.sources]
-cli-invocation-contract = { git = "https://github.com/RandomGenericUsername/contracts", tag = "v0.1.0" }
+cli-invocation-contract = { git = "https://github.com/RandomGenericUsername/contracts", tag = "v0.2.0" }
 cli-output = { git = "https://github.com/RandomGenericUsername/cli-output", tag = "v0.1.0" }
 config-assembler-engine = { git = "https://github.com/RandomGenericUsername/config-assembler-engine", tag = "v0.1.0" }
 oci-runtime = { git = "https://github.com/RandomGenericUsername/oci-runtime", tag = "v0.5.0" }
