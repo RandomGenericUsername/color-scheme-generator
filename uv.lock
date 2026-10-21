@@ -57,6 +57,7 @@ custom = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "color-scheme-generator", extra = ["custom"] },
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "ruff" },
@@ -80,6 +81,7 @@ provides-extras = ["custom"]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "color-scheme-generator", extras = ["custom"] },
     { name = "pytest", specifier = ">=8.0" },
     { name = "pytest-cov", specifier = ">=7.0" },
     { name = "ruff", specifier = ">=0.15.17" },

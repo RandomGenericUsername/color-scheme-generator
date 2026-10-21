@@ -76,6 +76,7 @@ quote-style = "double"
 
 [dependency-groups]
 dev = [
+    "color-scheme-generator[custom]",
     "pytest>=8.0",
     "pytest-cov>=7.0",
     "ruff>=0.15.17",

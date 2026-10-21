@@ -6,6 +6,22 @@ Notable changes to the `color-scheme-generator` repo. Format follows
 
 ## [Unreleased]
 
+### Added
+
+- `tests/integration/test_invocation_contract.py` proves this repo's own half of the runtime↔CLI
+  invocation contract in CI: it runs the installed `csg` console script with the pinned
+  `cli_invocation_contract` record (the 8 `--format` flags, `COLORSCHEME__OUTPUT__DIRECTORY` and
+  `COLORSCHEME__OUTPUT__OVERWRITE`) in a scrubbed environment and asserts the 8 required artifacts
+  through `assert_cli_writes_artifacts`. The pure-Python `custom` backend is selected through the
+  documented `COLORSCHEME__GENERATION__BACKEND` env override, so no `wal`/`wallust` binary is
+  needed.
+
+### Changed
+
+- The `dev` dependency group includes `color-scheme-generator[custom]`, so `make sync` provides the
+  backend the conformance test exercises. Tests/CI only: no package version bump, no tag, and the
+  wheel/sdist content is unchanged.
+
 ## [0.2.0] - 2026-10-21
 
 Dependency re-pin and release. No product behaviour change: `csg`'s invocation record is unchanged

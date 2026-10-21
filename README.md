@@ -99,6 +99,11 @@ make build         # sdist + wheel in dist/
 make image         # build the four container images from this repo root
 ```
 
+The `dev` dependency group carries `color-scheme-generator[custom]`, so `make sync` installs
+Pillow/numpy/scikit-learn. That is what lets `tests/integration/test_invocation_contract.py` run the
+real `csg` binary against the pinned `cli_invocation_contract` record (8 `--format` flags, the two
+`COLORSCHEME__OUTPUT__*` env keys, 8 artifacts) in every CI job without a `wal`/`wallust` binary.
+
 As a consumer, pin an immutable tag — never a path and never a branch:
 
 ```toml
