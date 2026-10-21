@@ -7,8 +7,8 @@ lane: 3
 links:
   openspec: repo-birth
   bmad: none
-worktree: none
-branch: main
+worktree: .worktrees/REQ-001/
+branch: ticket/REQ-001-archive-repo-birth
 ---
 
 # Birth the color-scheme-generator repo (mu-strict, csg) and cut v0.1.0
@@ -68,7 +68,13 @@ remaining S6 steps in that repo.
 - [x] `git status --porcelain` is empty in both repos; `dotfiles-v3` `master` is at the same SHA
   as before the slice.
   Verify: `git status --porcelain` → empty; `git -C /home/inumaki/Development/dotfiles-v3 rev-parse
-  master` → `6e0633baa2dae28f3193397fa529234074f026c1`.
+  master` → `6e0633baa2dae28f3193397fa529234074f026c1` at closeout. (That repo has since advanced
+  to `56fc4b7` with the out-of-scope S6 consumer rewire; this ticket never moved its `master` —
+  see the verification table.)
+- [x] The `repo-birth` change is archived with its delta merged into the main spec set, and strict
+  validation passes over the four capabilities with no active change left.
+  Verify: `openspec validate --specs --strict` → `4 passed, 0 failed`; `openspec validate --all
+  --strict` → exit 0; `openspec list --json` → `"changes": []`.
 
 ## Out of scope
 
@@ -157,6 +163,34 @@ no product change.
 change there is the local `split/color-scheme-generator` branch. The remaining S6 work lives in
 `dotfiles-v3` (manifest/assets/role/verify pin, `deploy-coverage` shape assertions, in-tree
 deletion).
+
+### Closeout verification (re-executed 2026-10-21 on `main` at `4fb2bcc`)
+
+Every closeout claim was re-run rather than read back. This commit adds only the archive below plus
+these records; it carries no product change.
+
+| Claim | Command | Observed |
+| --- | --- | --- |
+| tree clean before branching | `git status --porcelain`; `bash scripts/worktree-guard.sh check-clean` | `0` lines; exit 0 |
+| gate set green | `make gates` | exit 0; `639 passed in 27.76s`, `639 passed in 27.42s`, `All checks passed!`, `Resolved 35 packages in 2ms` |
+| gate set green on the ticket branch (after the archive) | `cd .worktrees/REQ-001 && make sync && make gates` | exit 0; `639 passed in 28.71s`, `639 passed in 26.81s`, `All checks passed!`, `Resolved 35 packages in 1ms` |
+| workflow ↔ Makefile parity | `make ci-gates-parity` | exit 0; `PASS gates=['docs-check', 'hermetic', 'lint', 'lock-check', 'test'] jobs=['ci-gates-parity', 'docs-check', 'hermetic', 'image', 'lint', 'lock-check', 'release', 'test'] exempt=['ci-gates-parity', 'image', 'release']` |
+| packaging | `uv build` | exit 0; `dist/color_scheme_generator-0.1.0-py3-none-any.whl` (77 847 B) + `.tar.gz` (126 115 B). This is a second build, so its byte sizes are reported as observed; the sdist differs from the release copy below (126 115 vs 125 873 B) because they are separate builds |
+| tagged tool installs isolated | `UV_TOOL_DIR=/tmp/opencode/csg-tag-install UV_TOOL_BIN_DIR=/tmp/opencode/csg-tag-bin uv tool install --force --python 3.14 git+https://github.com/RandomGenericUsername/color-scheme-generator@v0.1.0`; `<bin>/csg --version` | exit 0; `Installed 1 executable: csg`; `0.1.0 contract 0.1.0` (the `--python 3.14` is required by `requires-python = ">=3.14"`; `--python 3.12` correctly fails resolution) |
+| images at the pin | `make image IMAGE_ENGINE=podman IMAGE_TAG=v0.1.0`; `podman run --rm csg-base-podman:v0.1.0 csg --version` | exit 0; digests `base 08433e07010b`, `custom 8c9ae1fa1c48`, `pywal 0610cc35a02a`, `wallust 51b2886ce49a`; `0.1.0 contract 0.1.0` |
+| release carries both artifacts | `gh release view v0.1.0 --json tagName,isDraft,isPrerelease,assets` | `v0.1.0`, `draft:false`, `pre:false`; wheel 77 847 B + sdist 125 873 B, both `uploaded` |
+| CI green | `gh run list -R RandomGenericUsername/color-scheme-generator --limit 3` | `39606842707` main `4fb2bcc` success; `39605345653` v0.1.0 `14f2faf` success; `39605204861` main `14f2faf` success |
+| tag is the fixed annotated object | `git cat-file -t v0.1.0`; `git rev-parse v0.1.0`; `git rev-parse 'v0.1.0^{commit}'`; anonymous `ls-remote` | `tag`; `47afbbdf4b3d1d7a2ac6dbc9cfea3d6d4487b335`; `14f2faf590f503cc60baf0da81955076e9e42214`; one line, unchanged |
+| repo is public | `gh api repos/RandomGenericUsername/color-scheme-generator --jq '.private,.visibility'` | `false`, `public` |
+| harness still byte-identical | `diff -r /home/inumaki/Development/mu/<path> <path>` for `_bmad`, `.agents/skills`, `.opencode`, `scripts/worktree-guard.sh`, `skills-lock.json`, `tickets/_template`, `tickets/_fixtures`, `tickets/LIFECYCLE.md`; `test -L CLAUDE.md`; `rg -c "Evidence:\|Verify:" AGENTS.md` | `IDENTICAL` × 8; symlink exit 0; `6` |
+| carried archive still byte-identical | `git -C dotfiles-v3 archive 8e8de381^ src/cli-tools/openspec \| tar -x -C /tmp/…`; `diff -r -x README.md /tmp/…/openspec openspec/archive/cli-tools-pre-split` | empty, exit 0. The live source path is gone because `dotfiles-v3` retired `src/cli-tools/` in `8e8de381`, so the comparison is against that commit's parent |
+| `dotfiles-v3` untouched by this ticket | `git -C /home/inumaki/Development/dotfiles-v3 status --porcelain`; `rev-parse master` | `0` lines; `56fc4b7efcd410f59f194f5560c6e7d2962f7386` (closeout recorded `6e0633baa`; the delta is the out-of-scope S6 consumer rewire) |
+| change archived and merged | `openspec archive repo-birth --yes` | `repo-harness: create`, `+ 6 added`; `Change 'repo-birth' archived as '2026-10-21-repo-birth'`; the four archived files are byte-identical to the change at `4fb2bcc` |
+| strict validation after archive | `openspec validate --specs --strict`; `openspec validate --all --strict`; `openspec list --json` | `4 passed, 0 failed`; exit 0, same totals; `"changes": []` |
+
+The archived delta's `## Purpose` was a placeholder the CLI writes for a new capability, so the
+merged `openspec/specs/repo-harness/spec.md` was given an authored Purpose before validation; the
+six requirements and their scenarios are the delta verbatim.
 
 ### Birth-worktree exception
 
