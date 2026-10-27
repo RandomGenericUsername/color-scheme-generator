@@ -295,10 +295,13 @@ Planned test files:
 - `tests/unit/adapters/test_container_processor.py` — existing fake gains the new methods; existing
   assertions stay green.
 
-## Release / pin chain (documented follow-up, not this ticket)
+## Release / pin chain (documented follow-up)
 
 This planning ticket must not tag, release, or edit another repo. After the fix and its regression
 tests are green on `main`:
+
+Status: step 1 (csg release) completed 2026-10-26 — see `Release / evidence` below. Steps 2–4
+remain another repo's work and were not started.
 
 1. **csg release:** bump `pyproject.toml` and `CHANGELOG.md` to `0.2.1` (patch; behavior fix, no
    public API change), run `make gates && make build && make image`, annotate tag `v0.2.1`, let tag
@@ -350,6 +353,31 @@ tests are green on `main`:
 | repro after fix (docker) | `ENGINE=docker CSG_TAG=latest bash tickets/BUG-001-csg-stale-container-sweep/repro.sh` | before: `csg-bug001-stale\|created\|csg.boot_id=00000000-0000-4000-8000-000000000000,…`; `csg exit: 0`; after: `(no output)` |
 | podman preserves unlabelled/foreign, normal run leaves none | create `csg-bug001-manual` (no label) and `csg-bug001-foreign` (`other.tool=true`) from `localhost/csg-wallust-podman:v0.2.0`; run container-mode `csg generate --backend wallust --container-engine podman` | before/after both `manual\|created\|io.buildah.version=1.45.1` and `foreign\|created\|io.buildah.version=1.45.1,other.tool=true`; `csg_exit=0`; `podman ps -a --filter label=csg.managed=true` → `(no output)`; `colors.yaml` written |
 | docker preserves unlabelled/foreign, normal run leaves none | same probe with `csg-wallust-docker:latest` and `--container-engine docker` | before/after both `manual\|created\|` and `foreign\|created\|other.tool=true`; `csg_exit=0`; `docker ps -a --filter label=csg.managed=true` → `(no output)`; `colors.yaml` written |
+
+## Release / evidence (2026-10-26)
+
+Released as `v0.2.1` from `main`. Release commit `a6fdc7f4bde3c2e09f02e3fad7fa629a270c1315`;
+annotated tag object `d60ac9ec03b0bb7e92ca8c0b87a560a5b3d580fe`, peeling to that commit. GitHub
+Release: <https://github.com/RandomGenericUsername/color-scheme-generator/releases/tag/v0.2.1>.
+The completed OpenSpec change was archived after the release (repo closeout pattern, REQ-001) with
+its delta merged into `openspec/specs/csg-container-mode/`; strict validation passes with no active
+change. Release/pin chain steps 2–4 (dotfiles-v3 pin, engine release, v3 pin) remain out of scope
+for this repo and were not started.
+
+| Claim | Command | Observed |
+| --- | --- | --- |
+| preconditions | `git status --porcelain`; `git rev-parse HEAD`; `git tag -l v0.2.1` | 0 lines; `7fa92e5fad0970540e6b0dc5f720987024c6d329`; no output |
+| release metadata commit | `git show --stat a6fdc7f` | 5 files, +42/−13: `pyproject.toml` and `uv.lock` project version `0.2.1`, `__version__ = "0.2.1"`, Keep-a-Changelog `0.2.1` entry, README current-version examples |
+| gates | `make gates` | exit 0; `674 passed in 23.74s`, `All checks passed!`, `674 passed in 23.88s`, `Resolved 35 packages`, docs-check passed |
+| build | `make build` | exit 0; `dist/color_scheme_generator-0.2.1-py3-none-any.whl` (79 815 B) + `dist/color_scheme_generator-0.2.1.tar.gz` (136 394 B) |
+| version | `uv run csg --version` | `0.2.1 contract 0.2.0` |
+| local images at the pin | `make image IMAGE_ENGINE=podman`; `podman images --digests` | exit 0; four `v0.2.1` images (base `e835c6ec…`, custom `8d125022…`, pywal `56f491d0…`, wallust `99dbe319…`); base prints `0.2.1 contract 0.2.0` |
+| workflow ↔ Makefile parity | `make ci-gates-parity` | exit 0; `PASS gates=[docs-check, hermetic, lint, lock-check, test] jobs=[…] exempt=[ci-gates-parity, image, release]` |
+| annotated tag identity | `git cat-file -t v0.2.1`; `git rev-parse v0.2.1`; `git rev-parse 'v0.2.1^{commit}'`; anonymous `ls-remote` | `tag`; `d60ac9ec03b0bb7e92ca8c0b87a560a5b3d580fe`; `a6fdc7f4bde3c2e09f02e3fad7fa629a270c1315`; one line `d60ac9ec… refs/tags/v0.2.1` |
+| tag CI green | `gh run view 40428261469` | success, all 8 jobs: test, lint, hermetic, lock-check, docs-check, ci-gates-parity, image, release |
+| `main` CI green | `gh run view 40428254460` | success |
+| release carries both artifacts | `gh release view v0.2.1 --json tagName,name,url,assets` | `v0.2.1`, draft false, prerelease false; wheel `color_scheme_generator-0.2.1-py3-none-any.whl` 79 815 B + sdist `color_scheme_generator-0.2.1.tar.gz` 136 394 B, both `uploaded` |
+| change archived and merged | `openspec archive csg-stale-container-sweep --yes`; `openspec validate --specs --strict`; `openspec validate --all --strict`; `openspec list --json` | archived as `2026-10-26-csg-stale-container-sweep`; `+ 3 added` requirements to `csg-container-mode`; `4 passed, 0 failed`; exit 0, same totals; `"changes": []` |
 
 ## Implementation prompt (self-contained, next session)
 
