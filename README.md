@@ -28,7 +28,7 @@ csg --version
 ```
 
 - `--version` prints `<package version> contract <contracts version>`, e.g.
-  `0.2.0 contract 0.2.0`. The contract token comes from
+  `0.2.1 contract 0.2.0`. The contract token comes from
   `cli_invocation_contract.CONTRACT_VERSION`, not from `cli-output`.
 - Global flags: `--output-format {json,plain,rich}`, `-v/-vv/-vvv`, `-q`.
 - Exit codes: `0` success, non-zero a domain/config error with the message on the output stream.
@@ -52,15 +52,15 @@ path outside this repo is referenced. The per-backend Dockerfiles keep their `AR
 | `Dockerfile.wallust` | the pinned `wallust` 3.5.2 release binary |
 
 ```bash
-make image                                   # all four, at v0.2.0, then csg --version
-COLORSCHEME__CONTAINER__IMAGE_TAG=v0.2.0 \
+make image                                   # all four, at v0.2.1, then csg --version
+COLORSCHEME__CONTAINER__IMAGE_TAG=v0.2.1 \
   csg install --context . --container-engine podman
-podman run --rm csg-base-podman:v0.2.0 csg --version   # 0.2.0 contract 0.2.0
+podman run --rm csg-base-podman:v0.2.1 csg --version   # 0.2.1 contract 0.2.0
 ```
 
 The image names are the CLI's own scheme, `<prefix>-<suffix>-<engine>:<tag>`:
-`csg-base-podman:v0.2.0`, `csg-custom-podman:v0.2.0`, `csg-pywal-podman:v0.2.0`,
-`csg-wallust-podman:v0.2.0`. The tag comes from `[container] image_tag` (override
+`csg-base-podman:v0.2.1`, `csg-custom-podman:v0.2.1`, `csg-pywal-podman:v0.2.1`,
+`csg-wallust-podman:v0.2.1`. The tag comes from `[container] image_tag` (override
 `COLORSCHEME__CONTAINER__IMAGE_TAG`); there is no separate `--image-tag` flag because the setting is
 the single source of truth.
 
@@ -108,15 +108,15 @@ As a consumer, pin an immutable tag — never a path and never a branch:
 
 ```toml
 # pyproject.toml
-dependencies = ["color-scheme-generator>=0.2.0"]
+dependencies = ["color-scheme-generator>=0.2.1"]
 
 [tool.uv.sources]
-color-scheme-generator = { git = "https://github.com/RandomGenericUsername/color-scheme-generator", tag = "v0.2.0" }
+color-scheme-generator = { git = "https://github.com/RandomGenericUsername/color-scheme-generator", tag = "v0.2.1" }
 ```
 
 ```bash
-uv tool install "git+https://github.com/RandomGenericUsername/color-scheme-generator@v0.2.0"
-csg --version    # 0.2.0 contract 0.2.0
+uv tool install "git+https://github.com/RandomGenericUsername/color-scheme-generator@v0.2.1"
+csg --version    # 0.2.1 contract 0.2.0
 ```
 
 A published tag is never moved or deleted; a fix ships as a new tag.

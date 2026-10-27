@@ -6,6 +6,9 @@ Notable changes to the `color-scheme-generator` repo. Format follows
 
 ## [Unreleased]
 
+The entries below are tests/CI-only and stay unreleased because they do not change the shipped
+wheel or sdist content.
+
 ### Added
 
 - `tests/contract/test_invocation_contract.py` proves this repo's own half of the runtime↔CLI
@@ -21,6 +24,32 @@ Notable changes to the `color-scheme-generator` repo. Format follows
 - The `dev` dependency group includes `color-scheme-generator[custom]`, so `make sync` provides the
   backend the conformance test exercises. Tests/CI only: no package version bump, no tag, and the
   wheel/sdist content is unchanged.
+
+## [0.2.1] - 2026-10-26
+
+Patch release for BUG-001. Container-mode `generate` and `show` now label their wrappers as
+csg-owned and sweep stale csg wrappers at startup, so a host `SIGKILL` or power loss no longer
+leaves detached containers behind indefinitely. No CLI surface, image build, template catalog or
+dependency change.
+
+### Fixed
+
+- Container-mode wrappers carry `csg.managed=true`, `csg.session=<uuid>`, `csg.created_at=<RFC3339
+  UTC>` and `csg.timeout_seconds=<int>`, plus `csg.boot_id` when the host exposes it. Ownership is
+  explicit instead of inferred from the image name.
+- A best-effort sweep runs before image preflight. It removes previous-boot csg-labelled wrappers
+  immediately, and same-boot wrappers only after their own timeout plus a 60 s grace. Young
+  same-boot wrappers from a concurrent run, unlabelled/foreign containers, and wrappers with no
+  parseable age are left untouched; list/inspect/remove failures are logged and never fail the
+  requested palette run.
+- The existing in-process `finally` removal remains: the sweep is crash/power-loss recovery, not a
+  replacement. Regression coverage lives in
+  `tests/unit/adapters/test_stale_container_sweep.py` and
+  `tests/unit/adapters/test_oci_container_runtime_labels.py`.
+
+### Changed
+
+- Package version `0.2.0` → `0.2.1`; `csg --version` now prints `0.2.1 contract 0.2.0`.
 
 ## [0.2.0] - 2026-10-21
 

@@ -1,6 +1,6 @@
 [project]
 name = "color-scheme-generator"
-version = "0.2.0"
+version = "0.2.1"
 description = "Color scheme generator (csg) with wallust/pywal container backends for the dotfiles CLI toolchain"
 readme = "README.md"
 license = "MIT"
