@@ -2,7 +2,7 @@
 id: BUG-001
 title: "Sweep stale csg containers left by host SIGKILL or power loss"
 kind: bug
-status: in-progress
+status: done
 lane: 2
 severity: medium
 links:
@@ -40,11 +40,13 @@ make sync
 ENGINE=podman bash tickets/BUG-001-csg-stale-container-sweep/repro.sh
 ```
 
-The script creates `csg-bug001-stale` with the labels the fix will use, runs a **normal**
+The script creates `csg-bug001-stale` with the labels the fix uses, runs a **normal**
 container-mode `csg generate`, and prints the labelled inventory before and after. It accepts
 `ENGINE=docker`, `CSG_TAG=...`, `CSG_BACKEND=...`, and `CSG_REPRO_ROOT=...`; it never removes the
 stale container, so the observation is not hidden by its own cleanup. The script is prototype
-evidence, not product code.
+evidence, not product code. The simulated wrapper carries a fixed previous-boot `csg.boot_id`, so
+the run exercises the immediate previous-boot path; the same-boot age path is covered by the unit
+suite because a freshly engine-created container is young by definition.
 
 ### Host SIGKILL / power-loss equivalent
 
@@ -265,20 +267,20 @@ prerequisite.
 
 ## Acceptance / tests
 
-- [ ] Normal run leaves no csg-labelled wrapper:
+- [x] Normal run leaves no csg-labelled wrapper:
   `uv run pytest tests/unit/adapters/test_stale_container_sweep.py -q` (normal-run case) and a
   real-engine run with `podman ps -a --filter label=csg.managed=true` empty afterward.
-- [ ] Stale labelled container is removed: a labelled wrapper older than `timeout+grace` is gone
+- [x] Stale labelled container is removed: a labelled wrapper older than `timeout+grace` is gone
   after the next successful `generate`/`show`, and the run still succeeds.
-- [ ] Previous-boot labelled container is removed immediately even when young.
-- [ ] Young same-boot labelled container is kept (concurrent-run safety).
-- [ ] Unlabelled container from a csg image and a foreign-labelled container are untouched.
-- [ ] Unknown age is skipped, not guessed.
-- [ ] Sweep failure does not block generation; the requested run proceeds.
-- [ ] Sweep runs before image preflight: a missing image still leaves the stale wrapper removed.
-- [ ] The `repro.sh` command passes after the fix: stale container gone, `csg exit: 0`.
-- [ ] `make gates` → exit 0; `openspec validate csg-stale-container-sweep --strict` → valid.
-- [ ] Real-engine acceptance recorded in this ticket for both podman and, when available, docker:
+- [x] Previous-boot labelled container is removed immediately even when young.
+- [x] Young same-boot labelled container is kept (concurrent-run safety).
+- [x] Unlabelled container from a csg image and a foreign-labelled container are untouched.
+- [x] Unknown age is skipped, not guessed.
+- [x] Sweep failure does not block generation; the requested run proceeds.
+- [x] Sweep runs before image preflight: a missing image still leaves the stale wrapper removed.
+- [x] The `repro.sh` command passes after the fix: stale container gone, `csg exit: 0`.
+- [x] `make gates` → exit 0; `openspec validate csg-stale-container-sweep --strict` → valid.
+- [x] Real-engine acceptance recorded in this ticket for both podman and, when available, docker:
   stale removed; unlabelled/foreign untouched; normal run leaves none.
 
 Planned test files:
@@ -340,6 +342,14 @@ tests are green on `main`:
 | host SIGKILL leaves an unlabelled wrapper; next run does not remove it | background `csg generate`, poll `podman ps --filter ancestor=localhost/csg-wallust-podman:v0.2.0`, `kill -9`, then run `csg generate` again | `objective_keldysh|running|Up Less than a second|io.buildah.version=1.45.1`; second run exit 0; still `Up 11 seconds|io.buildah.version=1.45.1` |
 | ticket worktree/branch | `bash scripts/worktree-guard.sh create BUG-001 csg-stale-container-sweep` | `.worktrees/BUG-001/`; `ticket/BUG-001-csg-stale-container-sweep` |
 | change validates | `openspec validate csg-stale-container-sweep --strict` | `Change 'csg-stale-container-sweep' is valid` |
+| fix implemented | `git show --stat 457a600` | 10 files, 936 insertions: `ManagedContainer` domain record, port `labels`/list/inspect/remove, adapter mapping, startup sweep in both verbs, two regression suites, fake updates and the repro boot-id simulation |
+| regression suite | `uv run pytest tests/unit/adapters/test_stale_container_sweep.py tests/unit/adapters/test_oci_container_runtime_labels.py -q` | `28 passed` |
+| full suite | `make test` | `674 passed in 23.78s` |
+| gates | `make gates` | exit 0: 674 tests, ruff clean, hermetic 674, lock-check resolved, docs-check passed |
+| repro after fix (podman) | `ENGINE=podman bash tickets/BUG-001-csg-stale-container-sweep/repro.sh` | before: `csg-bug001-stale\|created\|csg.boot_id=00000000-0000-4000-8000-000000000000,csg.created_at=2026-01-01T00:00:00Z,csg.managed=true,…`; `csg exit: 0`; after: `(no output)` |
+| repro after fix (docker) | `ENGINE=docker CSG_TAG=latest bash tickets/BUG-001-csg-stale-container-sweep/repro.sh` | before: `csg-bug001-stale\|created\|csg.boot_id=00000000-0000-4000-8000-000000000000,…`; `csg exit: 0`; after: `(no output)` |
+| podman preserves unlabelled/foreign, normal run leaves none | create `csg-bug001-manual` (no label) and `csg-bug001-foreign` (`other.tool=true`) from `localhost/csg-wallust-podman:v0.2.0`; run container-mode `csg generate --backend wallust --container-engine podman` | before/after both `manual\|created\|io.buildah.version=1.45.1` and `foreign\|created\|io.buildah.version=1.45.1,other.tool=true`; `csg_exit=0`; `podman ps -a --filter label=csg.managed=true` → `(no output)`; `colors.yaml` written |
+| docker preserves unlabelled/foreign, normal run leaves none | same probe with `csg-wallust-docker:latest` and `--container-engine docker` | before/after both `manual\|created\|` and `foreign\|created\|other.tool=true`; `csg_exit=0`; `docker ps -a --filter label=csg.managed=true` → `(no output)`; `colors.yaml` written |
 
 ## Implementation prompt (self-contained, next session)
 

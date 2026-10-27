@@ -14,7 +14,7 @@
 
 ## Bugs
 
-- [BUG-001-csg-stale-container-sweep](./BUG-001-csg-stale-container-sweep/ticket.md) — Sweep stale csg containers left by host SIGKILL or power loss | `in-progress` | severity: medium | openspec: csg-stale-container-sweep
+(none)
 
 ## Ops tasks
 
@@ -34,3 +34,4 @@
 - [OPS-001-repin-contracts-v020](./OPS-001-repin-contracts-v020/ticket.md) — Re-pin contracts v0.2.0 and release csg v0.2.0 | `done` | openspec: none (recorded: ops-task, no spec delta)
 - [OPS-002-invocation-contract-ci](./OPS-002-invocation-contract-ci/ticket.md) — Prove this repo's own side of the csg invocation contract in CI | `done` | openspec: none (recorded: ops-task, no spec delta)
 - [OPS-003-contract-test-layout](./OPS-003-contract-test-layout/ticket.md) — Move the invocation-contract test to `tests/contract/` (path-only) | `done` | openspec: none (recorded: ops-task, no spec delta)
+- [BUG-001-csg-stale-container-sweep](./BUG-001-csg-stale-container-sweep/ticket.md) — Sweep stale csg containers left by host SIGKILL or power loss | `done` | severity: medium | openspec: csg-stale-container-sweep
