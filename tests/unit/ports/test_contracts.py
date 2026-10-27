@@ -302,6 +302,21 @@ class TestContainerRuntimeContract:
             OciContainerRuntimeAdapter(engine=MagicMock()), ContainerRuntimePort
         )
 
+    def test_signature_list_containers(self) -> None:
+        assert_signature_compatible(
+            OciContainerRuntimeAdapter(engine=MagicMock()), ContainerRuntimePort
+        )
+
+    def test_signature_inspect_container(self) -> None:
+        assert_signature_compatible(
+            OciContainerRuntimeAdapter(engine=MagicMock()), ContainerRuntimePort
+        )
+
+    def test_signature_remove_container(self) -> None:
+        assert_signature_compatible(
+            OciContainerRuntimeAdapter(engine=MagicMock()), ContainerRuntimePort
+        )
+
     def test_signature_image_exists(self) -> None:
         assert_signature_compatible(
             OciContainerRuntimeAdapter(engine=MagicMock()), ContainerRuntimePort
@@ -344,3 +359,24 @@ class TestContainerRuntimeContract:
             "`memory_limit` must immediately follow `environment` to preserve "
             "keyword-call compatibility"
         )
+
+    def test_run_declares_labels_last(self) -> None:
+        params = list(inspect.signature(ContainerRuntimePort.run).parameters)
+        assert "labels" in params, (
+            "ContainerRuntimePort.run must declare a `labels` parameter "
+            "(otherwise the processor cannot pass wrapper ownership labels)"
+        )
+        assert params[-1] == "labels", (
+            "`labels` must be the last `run` parameter so existing positional "
+            "and keyword callers stay compatible"
+        )
+        assert params.index("labels") == params.index("memory_limit") + 1
+
+    def test_list_containers_defaults(self) -> None:
+        signature = inspect.signature(ContainerRuntimePort.list_containers)
+        assert signature.parameters["filters"].default is None
+        assert signature.parameters["show_all"].default is True
+
+    def test_remove_container_defaults_to_force(self) -> None:
+        signature = inspect.signature(ContainerRuntimePort.remove_container)
+        assert signature.parameters["force"].default is True

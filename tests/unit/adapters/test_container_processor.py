@@ -25,6 +25,7 @@ from color_scheme_generator.domain.models import (
     GenerationResult,
     GenerationSettings,
     GeneratorConfig,
+    ManagedContainer,
     OutputSettings,
     RuntimeSettings,
 )
@@ -56,10 +57,28 @@ class _FakeContainerRuntime:
         self.run_calls: list[dict[str, object]] = []
         self.last_run_config: dict[str, object] | None = None
         self.serialized_settings: str | None = None
+        self.list_calls: list[dict[str, object]] = []
+        self.containers: dict[str, ManagedContainer] = {}
+        self.removed: list[tuple[str, bool]] = []
 
     def image_exists(self, image: str) -> bool:
         self.image_exists_calls.append(image)
         return self._image_exists
+
+    def list_containers(
+        self,
+        filters: dict[str, str] | None = None,
+        show_all: bool = True,
+    ) -> list[ManagedContainer]:
+        self.list_calls.append({"filters": filters, "show_all": show_all})
+        return list(self.containers.values())
+
+    def inspect_container(self, name: str) -> ManagedContainer:
+        return self.containers[name]
+
+    def remove_container(self, name: str, force: bool = True) -> None:
+        self.removed.append((name, force))
+        self.containers.pop(name, None)
 
     def run(
         self,
@@ -69,6 +88,7 @@ class _FakeContainerRuntime:
         timeout: int,
         environment: dict[str, str] | None = None,
         memory_limit: str | None = None,
+        labels: dict[str, str] | None = None,
     ) -> _FakeRunResult:
         config: dict[str, object] = {
             "image": image,
@@ -77,6 +97,7 @@ class _FakeContainerRuntime:
             "timeout": timeout,
             "environment": environment,
             "memory_limit": memory_limit,
+            "labels": labels,
         }
         self.run_calls.append(config)
         self.last_run_config = config

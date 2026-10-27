@@ -7,7 +7,7 @@ from color_scheme_generator.domain.enums import Backend
 if TYPE_CHECKING:
     from oci_runtime.domain.types import BuildContext
 
-from color_scheme_generator.domain.models import ContainerMount, ContainerResult
+from color_scheme_generator.domain.models import ContainerMount, ContainerResult, ManagedContainer
 
 
 @runtime_checkable
@@ -20,7 +20,21 @@ class ContainerRuntimePort(Protocol):
         timeout: int,
         environment: dict[str, str] | None = None,
         memory_limit: str | None = None,
+        labels: dict[str, str] | None = None,
     ) -> ContainerResult:
+        ...
+
+    def list_containers(
+        self,
+        filters: dict[str, str] | None = None,
+        show_all: bool = True,
+    ) -> list[ManagedContainer]:
+        ...
+
+    def inspect_container(self, name: str) -> ManagedContainer:
+        ...
+
+    def remove_container(self, name: str, force: bool = True) -> None:
         ...
 
     def image_exists(self, image: str) -> bool:

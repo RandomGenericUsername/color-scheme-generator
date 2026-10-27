@@ -5,7 +5,8 @@ import logging
 import os
 import tempfile
 import time
-from datetime import datetime
+import uuid
+from datetime import UTC, datetime, timedelta
 from pathlib import Path, PurePosixPath
 from typing import TYPE_CHECKING
 
@@ -22,6 +23,7 @@ from color_scheme_generator.domain.models import (
     ColorScheme,
     ContainerMount,
     GenerationResult,
+    ManagedContainer,
 )
 
 logger = logging.getLogger(__name__)
@@ -34,6 +36,36 @@ _CONTAINER_ENV = {
     "COLORSCHEME_TEMPLATES_TEMPLATES_DIR": "/templates",
     "COLORSCHEME__RUNTIME__MODE": "local",
 }
+
+_BOOT_ID_PATH = Path("/proc/sys/kernel/random/boot_id")
+_MANAGED_LABEL = "csg.managed"
+_SWEEP_GRACE_SECONDS = 60
+
+
+def _read_boot_id() -> str:
+    """Return the host boot id, or "" when the host does not expose it."""
+    try:
+        with _BOOT_ID_PATH.open("r", encoding="utf-8") as handle:
+            return handle.readline().strip()
+    except OSError:
+        return ""
+
+
+def _parse_container_timestamp(raw: str | None) -> datetime | None:
+    """Parse an engine or label timestamp, returning an aware UTC datetime."""
+    if not raw:
+        return None
+    value = raw.strip()
+    if value.endswith("Z"):
+        value = f"{value[:-1]}+00:00"
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=UTC)
+    return parsed.astimezone(UTC)
+
 
 if TYPE_CHECKING:
     from color_scheme_generator.adapters.template_dir_resolver import TemplateDirResolver
@@ -163,14 +195,111 @@ class ContainerProcessor:
             raise FileNotFoundError(f"Templates directory not found: {templates_dir}")
         return templates_dir
 
+    @staticmethod
+    def _build_wrapper_labels(settings: AppSettings, session_id: str) -> dict[str, str]:
+        labels = {
+            "csg.managed": "true",
+            "csg.session": session_id,
+            "csg.created_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+            "csg.timeout_seconds": str(settings.container.timeout_seconds),
+        }
+        boot_id = _read_boot_id()
+        if boot_id:
+            labels["csg.boot_id"] = boot_id
+        return labels
+
+    @staticmethod
+    def _container_created_at(container: ManagedContainer) -> datetime | None:
+        created = _parse_container_timestamp(container.created)
+        if created is not None:
+            return created
+        return _parse_container_timestamp(container.labels.get("csg.created_at"))
+
+    def _sweep_stale_containers(self, settings: AppSettings, session_id: str) -> None:
+        """Best-effort removal of csg-owned wrappers left by a crashed run."""
+        try:
+            candidates = self._container_runtime.list_containers(
+                filters={"label": "csg.managed=true"},
+                show_all=True,
+            )
+        except Exception as exc:
+            logger.warning("Skipping stale csg container sweep; inventory failed: %s", exc)
+            return
+
+        current_boot_id = _read_boot_id()
+        now = datetime.now(UTC)
+
+        for candidate in candidates:
+            try:
+                container = self._container_runtime.inspect_container(candidate.name)
+            except Exception as exc:
+                logger.warning(
+                    "Skipping csg container %s; inspect failed: %s",
+                    candidate.name,
+                    exc,
+                )
+                continue
+
+            labels = container.labels
+            if labels.get(_MANAGED_LABEL) != "true":
+                continue
+            if labels.get("csg.session") == session_id:
+                continue
+
+            previous_boot = (
+                current_boot_id
+                and labels.get("csg.boot_id")
+                and labels["csg.boot_id"] != current_boot_id
+            )
+            if previous_boot:
+                reason = "previous boot"
+            else:
+                created = self._container_created_at(container)
+                if created is None:
+                    logger.debug("Skipping csg container %s; age is unknown", container.name)
+                    continue
+
+                timeout_seconds = settings.container.timeout_seconds
+                raw_timeout = labels.get("csg.timeout_seconds")
+                if raw_timeout:
+                    try:
+                        timeout_seconds = int(raw_timeout)
+                    except ValueError:
+                        logger.debug(
+                            "Invalid csg.timeout_seconds on %s; using settings timeout",
+                            container.name,
+                        )
+
+                age = now - created
+                if age <= timedelta(seconds=timeout_seconds + _SWEEP_GRACE_SECONDS):
+                    continue
+                reason = (
+                    f"age {age.total_seconds():.0f}s exceeds "
+                    f"{timeout_seconds + _SWEEP_GRACE_SECONDS}s"
+                )
+
+            try:
+                self._container_runtime.remove_container(container.name, force=True)
+                logger.info("Removed stale csg container %s (%s)", container.name, reason)
+            except Exception as exc:
+                logger.warning(
+                    "Failed to remove stale csg container %s: %s",
+                    container.name,
+                    exc,
+                )
+
     def process_generate(
         self, request: GenerationRequest, settings: AppSettings
     ) -> GenerationResult:
         start = time.monotonic()
         temp_toml_path: Path | None = None
+        session_id = str(uuid.uuid4())
+        labels = self._build_wrapper_labels(settings, session_id)
 
         try:
             image = self._select_image(settings, request.config.backend.value)
+
+            self._sweep_stale_containers(settings, session_id)
 
             if not self._container_runtime.image_exists(image):
                 raise ContainerImageNotFoundError(image, request.config.backend)
@@ -247,6 +376,7 @@ class ContainerProcessor:
                     timeout=settings.container.timeout_seconds,
                     environment=_CONTAINER_ENV,
                     memory_limit=settings.container.memory_limit,
+                    labels=labels,
                 )
             except ContainerTimeoutError:
                 raise
@@ -326,9 +456,13 @@ class ContainerProcessor:
     ) -> GenerationResult:
         start = time.monotonic()
         temp_toml_path: Path | None = None
+        session_id = str(uuid.uuid4())
+        labels = self._build_wrapper_labels(settings, session_id)
 
         try:
             image = self._select_image(settings, request.config.backend.value)
+
+            self._sweep_stale_containers(settings, session_id)
 
             if not self._container_runtime.image_exists(image):
                 raise ContainerImageNotFoundError(image, request.config.backend)
@@ -394,6 +528,7 @@ class ContainerProcessor:
                     timeout=settings.container.timeout_seconds,
                     environment=_CONTAINER_ENV,
                     memory_limit=settings.container.memory_limit,
+                    labels=labels,
                 )
             except ContainerTimeoutError:
                 raise

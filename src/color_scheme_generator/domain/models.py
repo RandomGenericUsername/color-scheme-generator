@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import colorsys
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path, PurePosixPath
@@ -184,3 +185,16 @@ class ContainerResult:
     stdout: str
     stderr: str
     duration: float
+
+
+@dataclass(frozen=True)
+class ManagedContainer:
+    """A container known to (or discoverable by) the container runtime."""
+
+    name: str
+    state: str
+    labels: Mapping[str, str]
+    created: str | None = None
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "labels", MappingProxyType(dict(self.labels)))

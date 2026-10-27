@@ -260,10 +260,26 @@ class TestContainerRuntimePort:
                 command: list[str],
                 mounts: list[ContainerMount],
                 timeout: int,
+                environment: dict[str, str] | None = None,
+                memory_limit: str | None = None,
+                labels: dict[str, str] | None = None,
             ) -> ContainerResult:
                 return ContainerResult(
                     return_code=0, stdout="", stderr="", duration=0.0
                 )
+
+            def list_containers(
+                self,
+                filters: dict[str, str] | None = None,
+                show_all: bool = True,
+            ) -> list:
+                return []
+
+            def inspect_container(self, name: str) -> object:
+                return object()
+
+            def remove_container(self, name: str, force: bool = True) -> None:
+                pass
 
             def image_exists(self, image: str) -> bool:
                 return True

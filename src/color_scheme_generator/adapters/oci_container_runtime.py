@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import os
-from typing import TYPE_CHECKING
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any
 
 from color_scheme_generator.domain.enums import Backend
+from color_scheme_generator.domain.models import ManagedContainer
 
 if TYPE_CHECKING:
     from oci_runtime.domain.types import BuildContext
@@ -24,6 +26,7 @@ class OciContainerRuntimeAdapter:
         timeout: int,
         environment: dict[str, str] | None = None,
         memory_limit: str | None = None,
+        labels: dict[str, str] | None = None,
     ) -> ContainerResult:
         if timeout <= 0:
             raise ValueError(f"Invalid timeout: {timeout}")
@@ -52,6 +55,7 @@ class OciContainerRuntimeAdapter:
             user=host_user,
             network=NetworkMode.NONE,
             memory_limit=memory_limit,
+            labels=labels or {},
         )
         from color_scheme_generator.adapters.error_mapping import map_oci_error
 
@@ -77,6 +81,50 @@ class OciContainerRuntimeAdapter:
             stderr=result.stderr,
             duration=0.0,
         )
+
+    @staticmethod
+    def _map_container(info: Any) -> ManagedContainer:
+        labels = info.labels
+        if not isinstance(labels, Mapping):
+            # Docker's list payload reports Labels as a comma-separated string;
+            # only inspect yields a mapping. The filtered list is used for names.
+            labels = {}
+        return ManagedContainer(
+            name=str(info.name),
+            state=str(info.state),
+            labels=dict(labels),
+            created=info.created,
+        )
+
+    def list_containers(
+        self,
+        filters: dict[str, str] | None = None,
+        show_all: bool = True,
+    ) -> list[ManagedContainer]:
+        from color_scheme_generator.adapters.error_mapping import map_oci_error
+
+        try:
+            containers = self._engine.containers.list(show_all=show_all, filters=filters)
+        except Exception as exc:
+            raise map_oci_error(exc) from exc
+        return [self._map_container(info) for info in containers]
+
+    def inspect_container(self, name: str) -> ManagedContainer:
+        from color_scheme_generator.adapters.error_mapping import map_oci_error
+
+        try:
+            info = self._engine.containers.inspect(name)
+        except Exception as exc:
+            raise map_oci_error(exc) from exc
+        return self._map_container(info)
+
+    def remove_container(self, name: str, force: bool = True) -> None:
+        from color_scheme_generator.adapters.error_mapping import map_oci_error
+
+        try:
+            self._engine.containers.remove(name, force=force)
+        except Exception as exc:
+            raise map_oci_error(exc) from exc
 
     def image_exists(self, image: str) -> bool:
         from color_scheme_generator.adapters.error_mapping import map_oci_error

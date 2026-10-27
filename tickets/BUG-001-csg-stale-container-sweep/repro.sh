@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 # Prototype repro for BUG-001 — NOT product code.
 #
-# Creates a container that carries the labels the fix will use, runs a normal
+# Creates a container that carries the labels the fix uses, runs a normal
 # container-mode csg generate, and shows that the pre-existing labelled
-# container is still there afterwards. Current csg has no startup sweep, so the
-# stale container survives. After the fix, the same run must remove it.
+# container is still there afterwards. The fake boot id simulates a wrapper
+# left by a previous boot (power loss), which the fix removes immediately;
+# current csg has no startup sweep, so the stale container survives. After the
+# fix, the same run must remove it.
 #
 # Requirements: a built csg engine image (default csg-wallust-podman:v0.2.0),
 # a synced .venv (make sync), and podman or docker.
@@ -71,6 +73,7 @@ fi
   --label csg.session=00000000-0000-4000-8000-000000000000 \
   --label csg.created_at=2026-01-01T00:00:00Z \
   --label csg.timeout_seconds=300 \
+  --label csg.boot_id=00000000-0000-4000-8000-000000000000 \
   "$SHORT_REF" true >/dev/null
 
 echo "--- before the csg run ---"
