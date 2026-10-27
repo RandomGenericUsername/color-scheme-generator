@@ -2,7 +2,7 @@
 id: BUG-001
 title: "Sweep stale csg containers left by host SIGKILL or power loss"
 kind: bug
-status: triage
+status: in-progress
 lane: 2
 severity: medium
 links:

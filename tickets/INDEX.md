@@ -14,7 +14,7 @@
 
 ## Bugs
 
-- [BUG-001-csg-stale-container-sweep](./BUG-001-csg-stale-container-sweep/ticket.md) — Sweep stale csg containers left by host SIGKILL or power loss | `triage` | severity: medium | openspec: csg-stale-container-sweep
+- [BUG-001-csg-stale-container-sweep](./BUG-001-csg-stale-container-sweep/ticket.md) — Sweep stale csg containers left by host SIGKILL or power loss | `in-progress` | severity: medium | openspec: csg-stale-container-sweep
 
 ## Ops tasks
 
