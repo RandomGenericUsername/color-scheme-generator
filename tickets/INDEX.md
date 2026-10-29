@@ -14,7 +14,7 @@
 
 ## Bugs
 
-(none)
+- [BUG-002-csg-exit-zero-artifacts](./BUG-002-csg-exit-zero-artifacts/ticket.md) — csg exits 0 without artifacts when CWD templates/ is not a csg catalog | severity: high | `in-progress` | worktree .worktrees/BUG-002, branch ticket/BUG-002-csg-exit-zero-artifacts
 
 ## Ops tasks
 
