@@ -13,6 +13,7 @@ import pytest
 from color_scheme_generator.adapters.container_processor import _CONTAINER_ENV, ContainerProcessor
 from color_scheme_generator.domain.enums import Backend, ColorFormat, RuntimeMode
 from color_scheme_generator.domain.exceptions import (
+    ConfigResolutionError,
     ContainerImageNotFoundError,
     ContainerTimeoutError,
     InvalidImageError,
@@ -49,10 +50,12 @@ class _FakeContainerRuntime:
         image_exists: bool = True,
         run_error: Exception | None = None,
         run_result: _FakeRunResult | None = None,
+        write_outputs: bool = True,
     ) -> None:
         self._image_exists = image_exists
         self._run_error = run_error
-        self._run_result = run_result or _FakeRunResult()
+        self._run_result = run_result
+        self._write_outputs = write_outputs
         self.image_exists_calls: list[str] = []
         self.run_calls: list[dict[str, object]] = []
         self.last_run_config: dict[str, object] | None = None
@@ -106,12 +109,28 @@ class _FakeContainerRuntime:
                 self.serialized_settings = Path(mount.source).read_text()
         if self._run_error is not None:
             raise self._run_error
+        output_files: list[str] = []
+        formats = [
+            command[index + 1]
+            for index, token in enumerate(command[:-1])
+            if token == "--format"
+        ] or ["json"]
         for mount in mounts:
             if not mount.read_only and mount.target == PurePosixPath("/output"):
                 source = Path(mount.source)
                 source.mkdir(parents=True, exist_ok=True)
-                (source / "colors.json").write_text("dummy")
-        return self._run_result
+                if self._write_outputs:
+                    for fmt in formats:
+                        name = f"colors.{fmt}"
+                        (source / name).write_text("dummy")
+                        output_files.append(f"/output/{name}")
+        if self._run_result is not None:
+            return self._run_result
+        return _FakeRunResult(
+            stdout=json.dumps(
+                {"success": True, "output_files": output_files}
+            )
+        )
 
 
 def _make_settings(**overrides: object) -> AppSettings:
@@ -167,12 +186,21 @@ def _make_request(
     )
 
 
+def _write_catalog(templates_dir: Path, *formats: ColorFormat) -> Path:
+    """Materialize a minimal csg catalog for the requested formats."""
+    templates_dir.mkdir(parents=True, exist_ok=True)
+    for fmt in formats or (ColorFormat.JSON,):
+        (templates_dir / f"colors.{fmt.value}.j2").write_text(
+            "{{ background.hex }}\n", encoding="utf-8"
+        )
+    return templates_dir
+
+
 def _setup_test_env(tmp_path: Path) -> tuple[Path, Path, ContainerProcessor]:
     img = tmp_path / "input" / "wallpaper.png"
     img.parent.mkdir(parents=True, exist_ok=True)
     img.write_text("dummy")
-    tdir = tmp_path / "templates"
-    tdir.mkdir(parents=True, exist_ok=True)
+    tdir = _write_catalog(tmp_path / "templates", ColorFormat.JSON)
     output_dir = tmp_path / "output"
     output_dir.mkdir(parents=True, exist_ok=True)
     processor = ContainerProcessor(
@@ -180,7 +208,7 @@ def _setup_test_env(tmp_path: Path) -> tuple[Path, Path, ContainerProcessor]:
         default_settings_path=tmp_path / "settings.toml",
     )
     (tmp_path / "settings.toml").write_text("")
-    (tmp_path / "defaults" / "templates").mkdir(parents=True, exist_ok=True)
+    _write_catalog(tmp_path / "defaults" / "templates", *ColorFormat)
     return tdir, output_dir, processor
 
 
@@ -208,10 +236,10 @@ class TestContainerProcessorGenerate:
         """
         img = tmp_path / "img.png"
         img.write_text("dummy")
-        explicit = tmp_path / "spine-templates"
-        explicit.mkdir()
-        other = tmp_path / "bundled"
-        other.mkdir()
+        explicit = _write_catalog(
+            tmp_path / "spine-templates", ColorFormat.JSON
+        )
+        other = _write_catalog(tmp_path / "bundled", ColorFormat.JSON)
         output_dir = tmp_path / "out"
         output_dir.mkdir()
 
@@ -274,8 +302,7 @@ class TestContainerProcessorGenerate:
     def test_constructs_four_mounts_with_source_target_read_only(self, tmp_path: Path) -> None:
         img = tmp_path / "img.png"
         img.write_text("dummy")
-        tdir = tmp_path / "templates"
-        tdir.mkdir()
+        tdir = _write_catalog(tmp_path / "templates", ColorFormat.JSON)
         output_dir = tmp_path / "out"
         output_dir.mkdir()
 
@@ -516,13 +543,12 @@ class TestContainerProcessorGenerate:
 
     def test_timeout_maps_to_container_timeout_error(self, tmp_path: Path) -> None:
         fake_runtime = _FakeContainerRuntime(run_error=ContainerTimeoutError())
-        tdir = tmp_path / "templates"
-        tdir.mkdir()
+        tdir = _write_catalog(tmp_path / "templates", ColorFormat.JSON)
         img = tmp_path / "img.png"
         img.write_text("dummy")
         output_dir = tmp_path / "out"
         output_dir.mkdir()
-        (tmp_path / "defaults" / "templates").mkdir(parents=True, exist_ok=True)
+        _write_catalog(tmp_path / "defaults" / "templates", ColorFormat.JSON)
 
         processor = ContainerProcessor(
             fake_runtime, default_settings_path=tmp_path / "settings.toml"
@@ -554,13 +580,12 @@ class TestContainerProcessorGenerate:
                 timeout=30.0,
             )
         )
-        tdir = tmp_path / "templates"
-        tdir.mkdir()
+        tdir = _write_catalog(tmp_path / "templates", ColorFormat.JSON)
         img = tmp_path / "img.png"
         img.write_text("dummy")
         output_dir = tmp_path / "out"
         output_dir.mkdir()
-        (tmp_path / "defaults" / "templates").mkdir(parents=True, exist_ok=True)
+        _write_catalog(tmp_path / "defaults" / "templates", ColorFormat.JSON)
 
         processor = ContainerProcessor(
             fake_runtime, default_settings_path=tmp_path / "settings.toml"
@@ -671,11 +696,148 @@ class TestContainerProcessorGenerate:
         assert hasattr(result, "return_code")
         assert hasattr(result, "duration")
 
+    def test_missing_requested_template_fails_before_mount(
+        self, tmp_path: Path
+    ) -> None:
+        """BUG-002: a decoy templates dir must not be bind-mounted."""
+        img = tmp_path / "img.png"
+        img.write_text("dummy")
+        tdir = tmp_path / "templates"
+        (tdir / "ags-app").mkdir(parents=True)
+        output_dir = tmp_path / "out"
+        output_dir.mkdir()
+
+        fake_runtime = _FakeContainerRuntime()
+        processor = ContainerProcessor(fake_runtime, templates_dir=tdir)
+        request = GenerationRequest(
+            image_path=img,
+            config=GeneratorConfig(
+                backend=Backend.CUSTOM,
+                params={},
+                formats=(ColorFormat.JSON,),
+                output_dir=output_dir,
+            ),
+        )
+
+        with pytest.raises(ConfigResolutionError) as exc_info:
+            processor.process_generate(request, _make_settings())
+
+        assert "colors.json.j2" in exc_info.value.reason
+        assert fake_runtime.run_calls == []
+
+    def test_rc_zero_with_inner_failure_and_empty_artifacts_fails_closed(
+        self, tmp_path: Path
+    ) -> None:
+        """BUG-002: never trust a container rc when the inner run failed."""
+        img = tmp_path / "img.png"
+        img.write_text("dummy")
+        tdir = _write_catalog(tmp_path / "templates", ColorFormat.JSON)
+        output_dir = tmp_path / "out"
+        output_dir.mkdir()
+
+        fake_runtime = _FakeContainerRuntime(
+            write_outputs=False,
+            run_result=_FakeRunResult(
+                return_code=0,
+                stdout=json.dumps(
+                    {
+                        "success": False,
+                        "output_files": [],
+                        "stderr": "inner render failed",
+                    }
+                ),
+                stderr="container wrapper stderr",
+            ),
+        )
+        processor = ContainerProcessor(fake_runtime, templates_dir=tdir)
+        request = GenerationRequest(
+            image_path=img,
+            config=GeneratorConfig(
+                backend=Backend.CUSTOM,
+                params={},
+                formats=(ColorFormat.JSON,),
+                output_dir=output_dir,
+            ),
+        )
+
+        result = processor.process_generate(request, _make_settings())
+
+        assert result.success is False
+        assert result.return_code == 1
+        assert result.output_files == ()
+        assert any("inner csg reported success=false" in e for e in result.errors)
+        assert any("colors.json" in e for e in result.errors)
+        assert "container wrapper stderr" in result.stderr
+        assert "inner render failed" in result.stderr
+        assert '"output_files": []' in result.stdout
+
+    def test_cli_exits_nonzero_for_container_inner_failure(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from typer.testing import CliRunner
+
+        from color_scheme_generator.cli.main import app
+        from color_scheme_generator.factory import CliDependencies
+
+        img = tmp_path / "img.png"
+        img.write_text("dummy")
+        tdir = _write_catalog(tmp_path / "templates", ColorFormat.JSON)
+        output_dir = tmp_path / "out"
+        output_dir.mkdir()
+
+        fake_runtime = _FakeContainerRuntime(
+            write_outputs=False,
+            run_result=_FakeRunResult(
+                return_code=0,
+                stdout=json.dumps(
+                    {
+                        "success": False,
+                        "output_files": [],
+                        "stderr": "inner boom",
+                    }
+                ),
+                stderr="outer stderr",
+            ),
+        )
+        processor = ContainerProcessor(fake_runtime, templates_dir=tdir)
+        config_resolver = MagicMock()
+        config_resolver.resolve.return_value = _make_settings()
+        deps = CliDependencies(
+            backend_registry={},
+            config_resolver=config_resolver,
+            processor=processor,
+        )
+        monkeypatch.setattr(
+            "color_scheme_generator.cli.main.build_deps", lambda: deps
+        )
+
+        completed = CliRunner().invoke(
+            app,
+            [
+                "generate",
+                str(img),
+                "--backend",
+                "custom",
+                "--format",
+                "json",
+                "-o",
+                str(output_dir),
+            ],
+        )
+
+        assert completed.exit_code == 1, (
+            f"expected failure\nstdout={completed.stdout}\nstderr={completed.stderr}"
+        )
+        payload = json.loads(completed.stdout)
+        assert payload["success"] is False
+        assert payload["errors"]
+        assert "outer stderr" in payload["stderr"]
+        assert "inner boom" in payload["stderr"]
+
 
 class TestContainerProcessorShow:
     def test_show_mounts_only_three_without_output_dir(self, tmp_path: Path) -> None:
-        tdir = tmp_path / "templates"
-        tdir.mkdir()
+        tdir = _write_catalog(tmp_path / "templates", ColorFormat.JSON)
         img = tmp_path / "img.png"
         img.write_text("dummy")
         output_dir = tmp_path / "out"
@@ -701,7 +863,7 @@ class TestContainerProcessorShow:
             fake_runtime, default_settings_path=tmp_path / "settings.toml"
         )
         (tmp_path / "settings.toml").write_text("")
-        (tmp_path / "defaults" / "templates").mkdir(parents=True, exist_ok=True)
+        _write_catalog(tmp_path / "defaults" / "templates", ColorFormat.JSON)
         settings = _make_settings()
         request = GenerationRequest(
             image_path=img,
@@ -733,8 +895,7 @@ class TestContainerProcessorShow:
         assert templates_mount.source == tmp_path / "defaults" / "templates"
 
     def test_show_inner_command_has_no_runtime_flag(self, tmp_path: Path) -> None:
-        tdir = tmp_path / "templates"
-        tdir.mkdir()
+        tdir = _write_catalog(tmp_path / "templates", ColorFormat.JSON)
         img = tmp_path / "img.png"
         img.write_text("dummy")
         output_dir = tmp_path / "out"
@@ -745,7 +906,7 @@ class TestContainerProcessorShow:
             fake_runtime, default_settings_path=tmp_path / "settings.toml"
         )
         (tmp_path / "settings.toml").write_text("")
-        (tmp_path / "defaults" / "templates").mkdir(parents=True, exist_ok=True)
+        _write_catalog(tmp_path / "defaults" / "templates", ColorFormat.JSON)
         settings = _make_settings()
         request = GenerationRequest(
             image_path=img,
@@ -766,8 +927,7 @@ class TestContainerProcessorShow:
         assert command[1] == "show"
 
     def test_show_runs_use_expected_environment(self, tmp_path: Path) -> None:
-        tdir = tmp_path / "templates"
-        tdir.mkdir()
+        tdir = _write_catalog(tmp_path / "templates", ColorFormat.JSON)
         img = tmp_path / "img.png"
         img.write_text("dummy")
         output_dir = tmp_path / "out"
@@ -778,7 +938,7 @@ class TestContainerProcessorShow:
             fake_runtime, default_settings_path=tmp_path / "settings.toml"
         )
         (tmp_path / "settings.toml").write_text("")
-        (tmp_path / "defaults" / "templates").mkdir(parents=True, exist_ok=True)
+        _write_catalog(tmp_path / "defaults" / "templates", ColorFormat.JSON)
         settings = _make_settings()
         request = GenerationRequest(
             image_path=img,

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -107,7 +108,11 @@ class _SweepRuntime:
                 source = Path(mount.source)
                 source.mkdir(parents=True, exist_ok=True)
                 (source / "colors.json").write_text("dummy")
-        return _FakeRunResult()
+        return _FakeRunResult(
+            stdout=json.dumps(
+                {"success": True, "output_files": ["/output/colors.json"]}
+            )
+        )
 
     def call_names(self) -> list[str]:
         return [name for name, _ in self.calls]
@@ -179,6 +184,9 @@ def _make_processor(
     image.write_text("dummy")
     templates = tmp_path / "templates"
     templates.mkdir()
+    (templates / "colors.json.j2").write_text(
+        "{{ background.hex }}\n", encoding="utf-8"
+    )
     output_dir = tmp_path / "output"
     output_dir.mkdir()
 

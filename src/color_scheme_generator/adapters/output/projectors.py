@@ -71,14 +71,26 @@ def project_result(result: GenerationResult) -> CustomView:
         "backend": result.backend.value,
         "duration": result.duration,
         "command": result.command or None,
+        # BUG-002: failures must be diagnosable from the JSON payload.
+        "return_code": result.return_code,
+        "stdout": result.stdout,
+        "stderr": result.stderr,
+        "errors": list(result.errors),
     }
-    lines = ["Success"]
+    lines = ["Success" if result.success else "Failure"]
     lines.append(f"Backend: {result.backend.value}")
     lines.append(f"Duration: {result.duration:.2f}s")
     if result.output_files:
         lines.append("Output files:")
         for path in result.output_files:
             lines.append(f"  {path}")
+    if result.errors:
+        lines.append("Errors:")
+        for error in result.errors:
+            lines.append(f"  {error}")
+    if result.stderr:
+        lines.append("Stderr:")
+        lines.append(result.stderr)
     lines.append("")
 
     def rich(console: Console) -> None:
@@ -105,6 +117,13 @@ def project_result(result: GenerationResult) -> CustomView:
             console.print(Text("Output files:", style="bold"))
             for path in result.output_files:
                 console.print(f"  {path}")
+        if result.errors:
+            console.print(Text("Errors:", style="bold red"))
+            for error in result.errors:
+                console.print(f"  {error}")
+        if result.stderr:
+            console.print(Text("Stderr:", style="bold"))
+            console.print(result.stderr)
         console.print()
 
     return CustomView(plain="\n".join(lines), object=obj, rich=rich)

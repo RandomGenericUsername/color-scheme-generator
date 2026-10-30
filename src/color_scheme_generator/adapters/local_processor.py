@@ -72,9 +72,17 @@ class LocalProcessor:
         self,
         color_scheme: ColorScheme,
         request: GenerationRequest,
-    ) -> tuple[list[Path], str]:
+    ) -> tuple[list[Path], list[str]]:
+        requested = [
+            f"colors.{fmt.value}.j2" for fmt in request.config.formats
+        ]
         if self._template_renderer is None:
-            return [], ""
+            if not requested:
+                return [], []
+            return [], [
+                "No template renderer configured; cannot render requested "
+                f"template(s): {', '.join(requested)}"
+            ]
 
         output_files: list[Path] = []
         errors: list[str] = []
@@ -82,18 +90,30 @@ class LocalProcessor:
         for fmt in request.config.formats:
             template_name = f"colors.{fmt.value}.j2"
             output_path = request.config.output_dir / f"colors.{fmt.value}"
-            if not request.config.overwrite and output_path.exists():
+            if not request.config.overwrite and output_path.is_file():
                 # overwrite=false means skip existing outputs (mirrors
                 # `dump-templates --overwrite`). A skip is not an error and
                 # must not flip success.
                 continue
             try:
                 self._template_renderer.render(template_name, color_scheme, output_path)
-                output_files.append(output_path)
             except ColorSchemeError as exc:
-                errors.append(str(exc))
+                errors.append(f"{template_name}: {exc}")
+                continue
+            if output_path.is_file():
+                output_files.append(output_path)
 
-        return output_files, "; ".join(errors)
+        # BUG-002: never report success unless every requested artifact is on
+        # disk. A renderer that silently writes nothing (or a skipped stale
+        # path that disappeared) must fail the run.
+        for fmt in request.config.formats:
+            output_path = request.config.output_dir / f"colors.{fmt.value}"
+            if not output_path.is_file():
+                errors.append(
+                    f"Missing requested artifact colors.{fmt.value} at {output_path}"
+                )
+
+        return output_files, errors
 
     def _build_command(self, request: GenerationRequest) -> str:
         cmd = ["csg", "generate", str(request.image_path)]
@@ -110,17 +130,19 @@ class LocalProcessor:
     ) -> GenerationResult:
         color_scheme, duration = self._generate_extract(request)
 
-        output_files, stderr = self._render_formats(color_scheme, request)
+        output_files, errors = self._render_formats(color_scheme, request)
+        success = not errors
 
         return GenerationResult(
-            success=not stderr,
+            success=success,
             color_scheme=color_scheme,
             output_files=tuple(output_files),
             backend=request.config.backend,
-            stderr=stderr,
-            return_code=0,
+            stderr="; ".join(errors),
+            return_code=0 if success else 1,
             duration=duration,
             command=self._build_command(request),
+            errors=tuple(errors),
         )
 
     def process_show(
