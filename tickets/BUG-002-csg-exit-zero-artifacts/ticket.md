@@ -2,7 +2,7 @@
 id: BUG-002
 title: "csg generate exits 0 without artifacts when CWD templates/ is not a csg catalog"
 kind: bug
-status: in-progress
+status: done
 lane: 2
 severity: high
 links:
@@ -103,3 +103,13 @@ The failure semantics are also broken:
 - `ags-wallpaper-selector` BUG-001 — stale producer / selector CWD context.
 - Implement on `origin/main` (includes v0.2.1); do not use the stale local
   checkout at `dd8e226`.
+
+## Closeout evidence (2026-10-30)
+
+- Released `v0.2.2` (tag pushed); gates: 687 passed, lint/lock/docs green.
+- Selector CWD `apps/wallpaper-selector/v0.1.0` with decoy `templates/ags-app`:
+  fallback to the real XDG catalog, rc 0, all 8 artifacts written.
+- Explicit `--templates-dir` at the decoy: rc 1, `ConfigResolutionError` names
+  the invalid catalog; no artifacts and no exit-0 success.
+- Container-mode path validates the catalog before mounting; inner failure is
+  propagated.
