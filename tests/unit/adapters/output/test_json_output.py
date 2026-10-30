@@ -75,6 +75,30 @@ class TestJsonOutput:
         assert cs["backend"] == "custom"
         assert cs["generated_at"] == "2026-07-15T12:00:00"
 
+    def test_process_result_failure_includes_stderr_and_errors(self, capsys):
+        from color_scheme_generator.adapters.output.json_output import JsonOutput
+
+        result = GenerationResult(
+            success=False,
+            color_scheme=None,
+            output_files=(),
+            backend=Backend.CUSTOM,
+            stderr="container said no",
+            return_code=1,
+            duration=0.2,
+            stdout='{"success": false}',
+            errors=("inner csg reported success=false",),
+        )
+
+        JsonOutput().process_result(result)
+        data = json.loads(capsys.readouterr().out)
+
+        assert data["success"] is False
+        assert data["return_code"] == 1
+        assert data["stderr"] == "container said no"
+        assert data["stdout"] == '{"success": false}'
+        assert data["errors"] == ["inner csg reported success=false"]
+
     def test_process_result_datetime_iso8601(self, capsys):
         from color_scheme_generator.adapters.output.json_output import JsonOutput
 

@@ -11,6 +11,7 @@ from color_scheme_generator.domain.enums import Backend, ColorFormat
 from color_scheme_generator.domain.exceptions import (
     BackendNotAvailableError,
     BackendNotRegisteredError,
+    TemplateNotFoundError,
 )
 from color_scheme_generator.domain.models import (
     Color,
@@ -38,11 +39,12 @@ def _make_request(
     backend: Backend = Backend.CUSTOM,
     output_dir: Path = Path("/tmp/output"),
     overwrite: bool = True,
+    formats: tuple[ColorFormat, ...] = (ColorFormat.JSON,),
 ) -> GenerationRequest:
     config = GeneratorConfig(
         backend=backend,
         params={},
-        formats=(ColorFormat.JSON,),
+        formats=formats,
         output_dir=output_dir,
         overwrite=overwrite,
     )
@@ -52,27 +54,83 @@ def _make_request(
     )
 
 
+def _writing_renderer(fail_templates: tuple[str, ...] = ()) -> MagicMock:
+    """Renderer stand-in that writes the artifact it is asked to render."""
+    renderer = MagicMock()
+
+    def render(template_name: str, scheme: ColorScheme, output_path: Path) -> None:
+        if template_name in fail_templates:
+            raise TemplateNotFoundError(template_name, (Path("/templates"),))
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text("rendered", encoding="utf-8")
+
+    renderer.render.side_effect = render
+    return renderer
+
+
 class TestLocalProcessor:
-    def test_process_generate_returns_successful_result(self) -> None:
+    def test_process_generate_returns_successful_result(self, tmp_path: Path) -> None:
         scheme = _make_scheme()
         mock_gen = MagicMock()
         mock_gen.is_available.return_value = True
         mock_gen.generate.return_value = scheme
 
         registry = {Backend.CUSTOM: mock_gen}
-        processor = LocalProcessor(registry)
+        processor = LocalProcessor(registry, template_renderer=_writing_renderer())
 
-        result = processor.process_generate(_make_request(), object())
+        result = processor.process_generate(_make_request(output_dir=tmp_path), object())
 
         assert isinstance(result, GenerationResult)
         assert result.success is True
         assert result.color_scheme == scheme
-        assert result.output_files == ()
+        assert result.output_files == (tmp_path / "colors.json",)
         assert result.backend == Backend.CUSTOM
         assert result.stderr == ""
         assert result.return_code == 0
         assert isinstance(result.duration, float)
         assert result.duration >= 0
+
+    def test_missing_renderer_fails_closed(self, tmp_path: Path) -> None:
+        scheme = _make_scheme()
+        mock_gen = MagicMock()
+        mock_gen.is_available.return_value = True
+        mock_gen.generate.return_value = scheme
+
+        processor = LocalProcessor({Backend.CUSTOM: mock_gen})
+
+        result = processor.process_generate(_make_request(output_dir=tmp_path), object())
+
+        assert result.success is False
+        assert result.return_code == 1
+        assert "No template renderer configured" in result.stderr
+        assert any("colors.json.j2" in error for error in result.errors)
+
+    def test_one_failed_render_fails_closed_and_names_template(
+        self, tmp_path: Path
+    ) -> None:
+        scheme = _make_scheme()
+        mock_gen = MagicMock()
+        mock_gen.is_available.return_value = True
+        mock_gen.generate.return_value = scheme
+        renderer = _writing_renderer(fail_templates=("colors.yaml.j2",))
+
+        processor = LocalProcessor({Backend.CUSTOM: mock_gen}, template_renderer=renderer)
+
+        result = processor.process_generate(
+            _make_request(
+                output_dir=tmp_path,
+                formats=(ColorFormat.JSON, ColorFormat.YAML),
+            ),
+            object(),
+        )
+
+        assert result.success is False
+        assert result.return_code == 1
+        assert any(
+            "colors.yaml.j2" in error and "yaml" in error for error in result.errors
+        )
+        assert any("colors.yaml" in error for error in result.errors)
+        assert (tmp_path / "colors.json").is_file()
 
     def test_process_generate_measures_duration(self) -> None:
         scheme = _make_scheme()
@@ -214,17 +272,19 @@ class TestLocalProcessor:
 
         assert exc_info.value.backend == Backend.CUSTOM
 
-    def test_generate_renders_templates(self) -> None:
+    def test_generate_renders_templates(self, tmp_path: Path) -> None:
         scheme = _make_scheme()
         mock_gen = MagicMock()
         mock_gen.is_available.return_value = True
         mock_gen.generate.return_value = scheme
 
-        mock_renderer = MagicMock()
+        mock_renderer = _writing_renderer()
         registry = {Backend.CUSTOM: mock_gen}
         processor = LocalProcessor(registry, template_renderer=mock_renderer)
 
-        result = processor.process_generate(_make_request(), object())
+        result = processor.process_generate(
+            _make_request(output_dir=tmp_path), object()
+        )
 
         assert mock_renderer.render.called
         assert result.output_files != ()
@@ -244,17 +304,19 @@ class TestLocalProcessor:
         mock_renderer.render.assert_not_called()
         assert result.output_files == ()
 
-    def test_output_files_populated_in_result(self) -> None:
+    def test_output_files_populated_in_result(self, tmp_path: Path) -> None:
         scheme = _make_scheme()
         mock_gen = MagicMock()
         mock_gen.is_available.return_value = True
         mock_gen.generate.return_value = scheme
 
-        mock_renderer = MagicMock()
+        mock_renderer = _writing_renderer()
         registry = {Backend.CUSTOM: mock_gen}
         processor = LocalProcessor(registry, template_renderer=mock_renderer)
 
-        result = processor.process_generate(_make_request(), object())
+        result = processor.process_generate(
+            _make_request(output_dir=tmp_path), object()
+        )
 
         assert len(result.output_files) > 0
         assert all(isinstance(f, Path) for f in result.output_files)
@@ -278,7 +340,7 @@ class TestLocalProcessorOverwrite:
         mock_gen = MagicMock()
         mock_gen.is_available.return_value = True
         mock_gen.generate.return_value = scheme
-        mock_renderer = MagicMock()
+        mock_renderer = _writing_renderer()
         processor = LocalProcessor(
             {Backend.CUSTOM: mock_gen}, template_renderer=mock_renderer
         )

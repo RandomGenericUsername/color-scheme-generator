@@ -25,6 +25,28 @@ wheel or sdist content.
   backend the conformance test exercises. Tests/CI only: no package version bump, no tag, and the
   wheel/sdist content is unchanged.
 
+## [0.2.2] - 2026-10-29
+
+Patch release for BUG-002. `csg generate` no longer exits 0 when the CWD has an unrelated
+`templates/` directory, when the renderer is missing or a format fails, or when a container wrapper
+returns 0 while the inner run failed or wrote no artifacts. Local and container runs now fail
+closed, and the JSON/plain diagnostics carry the inner stdout/stderr and named errors.
+
+### Fixed
+
+- The template resolver content-validates a discovered `templates/` candidate and only accepts a
+  directory with a `colors.*.j2` catalog; a decoy CWD directory falls through to the XDG/packaged
+  catalog. Explicit `--templates-dir`/`COLORSCHEME_TEMPLATES_TEMPLATES_DIR` values that are not a
+  csg catalog raise `ConfigResolutionError` instead of silently falling back.
+- Local `generate` returns `success=false` with a precise error when the renderer is absent or a
+  requested format fails, and verifies every requested `colors.<fmt>` artifact exists afterwards.
+- Container `generate` validates the catalog before mounting, preserves inner stdout/stderr, and
+  derives success from the wrapper rc, the inner `success` flag and the host artifact set. A
+  wrapper rc 0 with an inner failure or empty output is a failure.
+- The CLI exits non-zero when `GenerationResult.success` is false while still emitting the
+  JSON/plain diagnostic; the JSON projector now includes `return_code`, `stdout`, `stderr` and
+  `errors`.
+
 ## [0.2.1] - 2026-10-26
 
 Patch release for BUG-001. Container-mode `generate` and `show` now label their wrappers as

@@ -2,14 +2,26 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import pytest
 from typer.testing import CliRunner
 
-from color_scheme_generator.domain.enums import Backend, ColorFormat
-from color_scheme_generator.domain.exceptions import InvalidImageError
+from color_scheme_generator.adapters.local_processor import LocalProcessor
+from color_scheme_generator.domain.enums import Backend, ColorFormat, RuntimeMode
+from color_scheme_generator.domain.exceptions import (
+    InvalidImageError,
+    TemplateNotFoundError,
+)
+from color_scheme_generator.domain.models import (
+    AppSettings,
+    ContainerSettings,
+    GenerationSettings,
+    OutputSettings,
+    RuntimeSettings,
+)
 from color_scheme_generator.factory import CliDependencies
-from tests.conftest import FakeProcessor
+from tests.conftest import FakeProcessor, _scheme
 
 
 def _invoke(
@@ -180,3 +192,74 @@ class TestCliPackage:
 
         assert app is not None
         assert callable(app)
+
+
+class TestCliGenerateFailsClosed:
+    def _settings(self, output_dir: Path) -> AppSettings:
+        return AppSettings(
+            output=OutputSettings(
+                directory=output_dir,
+                default_formats=(),
+                overwrite=True,
+            ),
+            generation=GenerationSettings(backend=Backend.CUSTOM, default_params={}),
+            runtime=RuntimeSettings(mode=RuntimeMode.LOCAL),
+            container=ContainerSettings(engine="podman"),
+        )
+
+    def test_local_render_failure_exits_1_and_names_template(
+        self,
+        runner: CliRunner,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        generator = MagicMock()
+        generator.is_available.return_value = True
+        generator.generate.return_value = _scheme()
+        renderer = MagicMock()
+
+        def render(template_name: str, scheme: object, output_path: Path) -> None:
+            if template_name == "colors.yaml.j2":
+                raise TemplateNotFoundError(template_name, (tmp_path / "templates",))
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            output_path.write_text("rendered", encoding="utf-8")
+
+        renderer.render.side_effect = render
+        processor = LocalProcessor(
+            {Backend.CUSTOM: generator}, template_renderer=renderer
+        )
+        config_resolver = MagicMock()
+        config_resolver.resolve.return_value = self._settings(tmp_path / "out")
+        deps = CliDependencies(
+            backend_registry={},
+            config_resolver=config_resolver,
+            processor=processor,
+        )
+
+        result = _invoke(
+            runner,
+            deps,
+            [
+                "generate",
+                str(tmp_path / "wallpaper.png"),
+                "--backend",
+                "custom",
+                "--format",
+                "json",
+                "--format",
+                "yaml",
+                "-o",
+                str(tmp_path / "out"),
+            ],
+            monkeypatch,
+        )
+
+        assert result.exit_code == 1, (
+            f"expected failure\nstdout={result.stdout}\nstderr={result.stderr}"
+        )
+        payload = json.loads(result.stdout)
+        assert payload["success"] is False
+        assert any("colors.yaml.j2" in error for error in payload["errors"])
+        assert any("yaml" in error for error in payload["errors"])
+        assert payload["stderr"]
+        assert (tmp_path / "out" / "colors.json").is_file()

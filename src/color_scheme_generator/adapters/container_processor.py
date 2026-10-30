@@ -12,8 +12,12 @@ from typing import TYPE_CHECKING
 
 from oci_runtime import engine_qualified_image
 
+from color_scheme_generator.adapters.template_dir_resolver import (
+    missing_template_names,
+)
 from color_scheme_generator.domain.enums import Backend, ColorFormat
 from color_scheme_generator.domain.exceptions import (
+    ConfigResolutionError,
     ContainerImageNotFoundError,
     ContainerTimeoutError,
     InvalidImageError,
@@ -170,14 +174,20 @@ class ContainerProcessor:
         except (KeyError, TypeError, ValueError):
             return None
 
-    def _resolve_templates_dir(self) -> Path:
-        """Templates dir for the /templates bind-mount.
+    def _resolve_templates_dir(
+        self, formats: tuple[ColorFormat, ...] = ()
+    ) -> Path:
+        """Templates dir for the /templates bind-mount, validated before use.
 
         Precedence: explicit CLI ``--templates-dir`` > resolver chain >
         settings-adjacent defaults > system path. The explicit branch is
         what makes ``csg generate --templates-dir <dir> --runtime
         container`` mount the requested dir instead of silently mounting
         resolver defaults (the container previously ignored the flag).
+
+        BUG-002: every requested ``colors.<fmt>.j2`` template must exist
+        before the directory is mounted. Mounting a decoy ``templates/``
+        produced an inner empty success and an outer exit 0.
         """
         if self._templates_dir is not None:
             templates_dir = self._templates_dir
@@ -193,6 +203,13 @@ class ContainerProcessor:
             )
         if not templates_dir.is_dir():
             raise FileNotFoundError(f"Templates directory not found: {templates_dir}")
+        missing = missing_template_names(templates_dir, formats)
+        if missing:
+            raise ConfigResolutionError(
+                "templates_dir",
+                f"Templates directory {templates_dir} is missing requested "
+                f"template(s): {', '.join(missing)}",
+            )
         return templates_dir
 
     @staticmethod
@@ -317,7 +334,7 @@ class ContainerProcessor:
             output_dir = request.config.output_dir
             output_dir.mkdir(parents=True, exist_ok=True)
 
-            templates_dir = self._resolve_templates_dir()
+            templates_dir = self._resolve_templates_dir(request.config.formats)
 
             toml_content = self._serialize_settings(settings)
             with tempfile.NamedTemporaryFile(
@@ -387,12 +404,20 @@ class ContainerProcessor:
 
             duration = time.monotonic() - start
 
-            inner = {}
-            if container_result.return_code == 0 and container_result.stdout:
+            inner: dict[str, object] = {}
+            inner_parse_error = ""
+            if container_result.stdout.strip():
                 try:
-                    inner = json.loads(container_result.stdout)
-                except json.JSONDecodeError:
-                    pass
+                    parsed = json.loads(container_result.stdout)
+                except json.JSONDecodeError as exc:
+                    inner_parse_error = f"inner csg returned invalid JSON: {exc}"
+                else:
+                    if isinstance(parsed, dict):
+                        inner = parsed
+                    else:
+                        inner_parse_error = "inner csg JSON output is not an object"
+            else:
+                inner_parse_error = "inner csg produced no JSON output"
 
             cs_data = inner.get("color_scheme")
             if cs_data and isinstance(cs_data, dict):
@@ -413,28 +438,70 @@ class ContainerProcessor:
             else:
                 color_scheme = None
 
-            container_output = Path("/output")
+            # BUG-002: success is the conjunction of the container exit code,
+            # the inner csg result, and every requested artifact landing on
+            # the host. A decoy templates mount used to yield rc 0, an empty
+            # `output_files`, and a false success.
             host_output = request.config.output_dir
-            inner_files = inner.get("output_files", [])
-            if inner_files:
-                output_files = tuple(
-                    Path(str(p).replace(str(container_output), str(host_output)))
-                    for p in inner_files
+            expected_names = [
+                f"colors.{fmt.value}" for fmt in request.config.formats
+            ]
+            missing_names = [
+                name for name in expected_names
+                if not (host_output / name).is_file()
+            ]
+            output_files = tuple(
+                host_output / name for name in expected_names
+                if (host_output / name).is_file()
+            )
+
+            errors: list[str] = []
+            if container_result.return_code != 0:
+                errors.append(
+                    f"container exited with code {container_result.return_code}"
                 )
-            else:
-                output_files = (
-                    tuple(output_dir.iterdir()) if output_dir.exists() else ()
+            if inner_parse_error:
+                errors.append(inner_parse_error)
+            elif inner.get("success") is not True:
+                detail_parts: list[str] = []
+                inner_stderr = str(inner.get("stderr") or "").strip()
+                if inner_stderr:
+                    detail_parts.append(inner_stderr)
+                inner_errors = inner.get("errors")
+                if isinstance(inner_errors, list):
+                    detail_parts.extend(str(item) for item in inner_errors)
+                detail = f": {'; '.join(detail_parts)}" if detail_parts else ""
+                errors.append(f"inner csg reported success=false{detail}")
+            if missing_names:
+                errors.append(
+                    "missing requested artifact(s) in "
+                    f"{host_output}: {', '.join(missing_names)}"
                 )
 
+            stderr_parts: list[str] = []
+            if container_result.stderr.strip():
+                stderr_parts.append(container_result.stderr.strip())
+            inner_stderr_raw = inner.get("stderr")
+            if inner_stderr_raw:
+                stderr_parts.append(str(inner_stderr_raw).strip())
+            stderr_parts.extend(errors)
+
+            success = not errors
             return GenerationResult(
-                success=container_result.return_code == 0,
+                success=success,
                 color_scheme=color_scheme,
                 output_files=output_files,
                 backend=request.config.backend,
-                stderr=container_result.stderr,
-                return_code=container_result.return_code,
+                stderr="\n".join(part for part in stderr_parts if part),
+                return_code=(
+                    container_result.return_code
+                    if container_result.return_code != 0
+                    else (0 if success else 1)
+                ),
                 duration=duration,
                 command=command_str,
+                stdout=container_result.stdout,
+                errors=tuple(errors),
             )
 
         except ContainerTimeoutError:
@@ -446,6 +513,7 @@ class ContainerProcessor:
                 stderr="Container execution timed out",
                 return_code=-1,
                 duration=time.monotonic() - start,
+                errors=("Container execution timed out",),
             )
         finally:
             if temp_toml_path is not None and temp_toml_path.exists():
@@ -553,6 +621,7 @@ class ContainerProcessor:
                 return_code=container_result.return_code,
                 duration=duration,
                 command=command_str,
+                stdout=container_result.stdout,
             )
 
         except ContainerTimeoutError:

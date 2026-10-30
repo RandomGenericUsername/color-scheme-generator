@@ -45,10 +45,10 @@ def show(
             typer.echo(str(exc), err=True)
         raise typer.Exit(code=1) from None
 
-    if templates_dir is not None and deps.template_renderer is not None:
-        deps.template_renderer.update_templates_dir(str(templates_dir))
-
     try:
+        if templates_dir is not None and deps.template_renderer is not None:
+            deps.template_renderer.update_templates_dir(str(templates_dir))
+
         raw_params = parse_params(param)
 
         resolved_backend = backend or settings.generation.backend or Backend.CUSTOM

@@ -83,6 +83,10 @@ class GenerationResult:
     return_code: int
     duration: float
     command: str = ""
+    # Raw inner/backend stdout, preserved for diagnostics (BUG-002).
+    stdout: str = ""
+    # Structured failure reasons, in addition to `stderr` (BUG-002).
+    errors: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)

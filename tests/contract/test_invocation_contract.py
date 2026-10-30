@@ -165,3 +165,53 @@ def test_csg_writes_every_artifact_the_contract_requires(tmp_path: Path) -> None
         assert path.stat().st_size > 0, f"{path.name} is an empty artifact"
     yaml_artifact = next(path for path in artifacts if path.suffix == ".yaml")
     assert 'backend: "custom"' in yaml_artifact.read_text(encoding="utf-8")
+
+
+def test_decoy_cwd_templates_still_writes_every_artifact(tmp_path: Path) -> None:
+    """BUG-002: a CWD ``templates/`` without a csg catalog is not selected.
+
+    The AGS selector app's CWD contains ``templates/ags-app``. The contract
+    record already declares ``success_requires_artifacts: true``; this test
+    proves the decoy cannot turn into exit 0 with zero artifacts.
+    """
+    record = get("csg")
+    assert record["exit_codes"]["success_requires_artifacts"] is True
+
+    root = tmp_path / "selector-app"
+    output_dir = root / "output"
+    output_dir.mkdir(parents=True)
+    decoy = root / "templates" / "ags-app"
+    decoy.mkdir(parents=True)
+    (decoy / "index.html").write_text("<html>selector</html>", encoding="utf-8")
+
+    wallpaper = root / _WALLPAPER
+    _write_wallpaper(wallpaper)
+    env = _scrubbed_env(root, output_dir, record)
+    argv = _contract_argv(record, wallpaper)
+
+    completed = subprocess.run(
+        argv,
+        cwd=root,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=record["timeout"],
+        check=False,
+    )
+
+    assert completed.returncode == 0, (
+        "decoy CWD templates/ forced a failure instead of falling back\n"
+        f"argv: {argv}\nstdout:\n{completed.stdout}\nstderr:\n{completed.stderr}"
+    )
+    expected = set(record["artifacts"]["filenames"])
+    written = {
+        path.name
+        for path in output_dir.iterdir()
+        if path.is_file()
+    }
+    assert expected <= written, (
+        f"exit 0 without every artifact; missing {sorted(expected - written)}\n"
+        f"stdout:\n{completed.stdout}\nstderr:\n{completed.stderr}"
+    )
+    for name in expected:
+        assert (output_dir / name).stat().st_size > 0, f"{name} is empty"

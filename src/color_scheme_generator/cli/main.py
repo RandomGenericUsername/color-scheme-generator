@@ -216,10 +216,13 @@ def generate(
             Verbosity.DEBUG: logging.DEBUG,
         }[settings_verbosity])
 
-    if templates_dir is not None and deps.template_renderer is not None:
-        deps.template_renderer.update_templates_dir(str(templates_dir))
-
     try:
+        if templates_dir is not None and deps.template_renderer is not None:
+            # BUG-002: an explicit --templates-dir is a request, not a hint.
+            # The resolver rejects a directory without a csg catalog instead
+            # of silently rendering from it.
+            deps.template_renderer.update_templates_dir(str(templates_dir))
+
         raw_params = parse_params(param)
 
         resolved_backend = backend or settings.generation.backend or Backend.CUSTOM
@@ -281,6 +284,12 @@ def generate(
 
             _apply(result.output_files, True)
         deps.output_adapter.process_result(result)
+        # BUG-002: a result is only successful when the processor proved every
+        # requested artifact exists. Emit the diagnostic first, then fail.
+        if not result.success:
+            raise typer.Exit(code=1)
+    except typer.Exit:
+        raise
     except ColorSchemeError as exc:
         deps.output_adapter.error(exc)
         raise typer.Exit(code=1) from None
