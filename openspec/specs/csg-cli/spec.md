@@ -29,6 +29,27 @@ Source: `src/color_scheme_generator/cli/main.py`; `src/color_scheme_generator/ad
   --format adw.css --format sequences --format rasi --format kitty --format btop.theme`
 - **THEN** the exit code is 0 and those eight `colors.*` files exist in the output directory
 
+### Requirement: `generate` fails closed on missing artifacts
+`csg generate` SHALL exit non-zero whenever the processor result reports `success=false`,
+including a missing renderer, a per-format render failure, a container run whose exit code is 0 but
+whose inner `success` is false, or any requested `colors.<fmt>` artifact absent after the run. It
+SHALL still emit the JSON/plain diagnostic, naming the missing format/template and preserving inner
+stderr/stdout.
+
+Source: ticket `BUG-002`; `src/color_scheme_generator/cli/main.py`;
+`src/color_scheme_generator/adapters/{local_processor,container_processor}.py`.
+Verify: `uv run pytest tests/unit/cli/test_generate.py tests/unit/adapters/test_container_processor.py -q`.
+
+#### Scenario: one format fails to render
+- **WHEN** the renderer raises `TemplateNotFoundError` for one requested format
+- **THEN** the exit code is non-zero and the diagnostic names the format/template; artifacts that
+  did render remain on disk
+
+#### Scenario: decoy CWD templates/
+- **WHEN** `csg generate` runs from a CWD whose `templates/` has no csg catalog
+- **THEN** it either writes every requested artifact (catalog fallback) or exits non-zero with the
+  missing templates named; it never exits 0 with an empty or partial artifact set
+
 ### Requirement: settings discovery is layered and ordered
 Settings SHALL resolve highest-priority-first: `--config`, `COLORSCHEME__*` env overrides,
 `COLORSCHEME_CONFIG_FILE_PATH`, `settings.toml` in the CWD or up to three parents,

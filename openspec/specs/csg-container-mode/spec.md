@@ -132,6 +132,28 @@ Verify: `uv run pytest tests/unit/adapters/test_stale_container_sweep.py -q`.
 - **THEN** the wrapper is removed by the existing `finally` and a query for
   `label=csg.managed=true` returns no container from that run
 
+### Requirement: container generate succeeds only with inner success and host artifacts
+
+Container-mode `generate` SHALL validate the resolved templates directory before mounting it.
+It SHALL report success only when the container exit code is 0, the inner `csg` JSON reports
+`success: true`, and every requested `colors.<fmt>` artifact exists on the host. The inner
+stdout/stderr SHALL be preserved in the result diagnostics. A non-zero inner failure or an empty
+or partial artifact set SHALL produce `success=false` and a non-zero CLI exit.
+
+Source: ticket `BUG-002`; `src/color_scheme_generator/adapters/container_processor.py`.
+Verify: `uv run pytest tests/unit/adapters/test_container_processor.py -q`.
+
+#### Scenario: wrapper rc 0 but inner failure
+
+- **WHEN** the container exits 0 but the inner result is `{"success": false, "output_files": []}`
+  and the host output directory is empty
+- **THEN** the result is `success=false`, the inner stderr is preserved, and the CLI exits non-zero
+
+#### Scenario: decoy templates are rejected before the run
+
+- **WHEN** the resolved templates directory lacks a requested `colors.<fmt>.j2` template
+- **THEN** the container is not started and `ConfigResolutionError` names the missing template
+
 ### Requirement: the sweep is best-effort and never blocks generation
 
 List, inspect or remove failures during the sweep SHALL be logged and SHALL NOT fail `generate` or
